@@ -1,0 +1,25 @@
+# Configuración de GitHub para actualizar-agendario.sh
+#
+# Copia este archivo como actualizar.conf en la misma carpeta (/opt/agendario) y rellénalo:
+#   cp /opt/agendario/actualizar.conf.example /opt/agendario/actualizar.conf
+#
+# Mientras no exista actualizar.conf (o GITHUB_URL esté vacío), el script actualiza
+# Agendario en local y no pregunta por GitHub.
+
+# Dirección del repositorio de GitHub (créalo vacío en GitHub antes)
+#   con usuario/token guardado:  https://github.com/Dagarin-es/Agendario.git
+#   con clave SSH:               git@github.com:Dagarin-es/Agendario.git
+GITHUB_URL=""
+
+# Token de GitHub (fine-grained, con permiso «Contents: Read and write» solo en este repositorio).
+# Si lo pones aquí, el script lo usa sin guardarlo en otro sitio ni mostrarlo. Protege el archivo:  chmod 600 actualizar.conf
+# Si lo dejas vacío, git usa tus credenciales guardadas (git-credentials o clave SSH).
+GITHUB_TOKEN=""
+
+# Clon local del repositorio (fuera de /opt para que Arcane no lo vea como proyecto).
+# Si no existe, el script lo clona la primera vez.
+REPO="/root/agendario-repo"
+
+# Opcional: quién firma los commits (si lo dejas vacío se usa tu configuración global de git)
+GIT_NAME=""
+GIT_EMAIL=""

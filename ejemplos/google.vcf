@@ -1,0 +1,19 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:Lucía Fernández
+N:Fernández;Lucía;;;
+EMAIL;TYPE=INTERNET;TYPE=HOME:lucia@example.com
+TEL;TYPE=CELL:+34 611 22 33 44
+ADR;TYPE=HOME:;;Calle Larios\, 5;Málaga;Málaga;29005;España
+BDAY:1990-03-04
+PHOTO:https://lh3.googleusercontent.com/xyz
+CATEGORIES:myContacts,Amigos
+NOTE:Le gusta el café\nsin azúcar
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Fontanero Paco
+N:;Fontanero Paco;;;
+TEL;TYPE=WORK:952 000 000
+CATEGORIES:myContacts,Casa
+END:VCARD

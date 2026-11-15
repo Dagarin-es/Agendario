@@ -1,0 +1,14 @@
+{
+  "name": "agendario",
+  "private": true,
+  "version": "0.8.0-beta",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev:server": "npm run dev -w @agendario/server",
+    "dev:web": "npm run dev -w @agendario/web",
+    "build": "npm run build -w @agendario/web && npm run build -w @agendario/server",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:generate": "npm run db:generate -w @agendario/server"
+  },
+  "engines": { "node": ">=22" }
+}

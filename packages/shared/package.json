@@ -1,0 +1,11 @@
+{
+  "name": "@agendario/shared",
+  "version": "0.8.0-beta",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": { "typecheck": "tsc -p ." },
+  "dependencies": { "zod": "^3.25.0" },
+  "devDependencies": { "typescript": "^5.9.0" }
+}

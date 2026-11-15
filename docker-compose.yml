@@ -1,0 +1,38 @@
+# Agendario: servidor + PostgreSQL.
+# Lo normal es instalar y actualizar con /opt/actualizar-agendario.sh (ver README).
+# A mano, desde la carpeta del código:  cp .env.example .env  →  edita .env  →  docker compose up -d --build
+
+services:
+  app:
+    build: .
+    image: agendario-local        # la construye actualizar-agendario.sh
+    container_name: agendario
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://agendario:${POSTGRES_PASSWORD}@db:5432/agendario
+      TZ: ${TZ:-Europe/Madrid}    # hora local (programación de las copias)
+    ports:
+      - "${APP_PORT:-3002}:3002"
+    volumes:
+      - ./data/app:/data          # fotos de los contactos y copias de seguridad locales (data/app/backups)
+
+  db:
+    image: postgres:17-alpine
+    container_name: agendario-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agendario
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: agendario
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agendario -d agendario"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
