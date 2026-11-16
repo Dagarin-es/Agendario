@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // ---------- Versión ----------
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
-export const APP_VERSION = "0.8.0-beta";
+export const APP_VERSION = "0.8.3-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------
@@ -607,19 +607,18 @@ export type ContactPrefs = z.infer<typeof contactPrefsSchema>;
 
 // ---------- Copias de seguridad ----------
 
-export const backupDestTypes = ["local", "nfs", "smb", "drive", "onedrive"] as const;
+export const backupDestTypes = ["local", "nfs", "smb", "drive"] as const;
 export type BackupDestType = (typeof backupDestTypes)[number];
 export const backupDestLabels: Record<BackupDestType, string> = {
   local: "Carpeta local (en el servidor de Agendario)",
   nfs: "NFS (NAS o servidor de archivos)",
   smb: "SMB / Samba (Windows, NAS)",
   drive: "Google Drive",
-  onedrive: "OneDrive",
 };
 /** Destinos que se autorizan con el botón «Conectar» (código de dispositivo) */
-export const oauthDestTypes: BackupDestType[] = ["drive", "onedrive"];
+export const oauthDestTypes: BackupDestType[] = ["drive"];
 /** Destinos en los que hay que indicar la carpeta obligatoriamente */
-export const folderRequiredTypes: BackupDestType[] = ["drive", "onedrive"];
+export const folderRequiredTypes: BackupDestType[] = ["drive"];
 
 export const backupDestSchema = z.object({
   type: z.enum(backupDestTypes).catch("local").default("local"),
@@ -659,7 +658,7 @@ export const backupConfigSchema = z.object({
 });
 export type BackupConfig = z.infer<typeof backupConfigSchema>;
 
-/** Estado de la conexión con Google Drive / OneDrive (código de dispositivo) */
+/** Estado de la conexión con Google Drive (código de dispositivo) */
 export interface OAuthStart {
   userCode: string;
   verificationUrl: string;
@@ -688,9 +687,9 @@ export interface BackupStatus {
   runs: BackupRun[];
   rclone: boolean;
   /** ¿Están registradas las apps de Google y Microsoft en esta instalación? */
-  oauth: { drive: boolean; onedrive: boolean };
+  oauth: { drive: boolean };
   /** Nube con la que hay autorización ahora mismo */
-  connected: { type: "drive" | "onedrive"; account?: string } | null;
+  connected: { type: "drive"; account?: string } | null;
 }
 
 export interface BackupFile {

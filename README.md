@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> ⚠️ **Versión beta (0.8.0-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
+> ⚠️ **Versión beta (0.8.3-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **contactos compartidos** entre usuarios y **fotos**, pensada para crecer hasta tener apps de escritorio y móvil, sincronización con Google/Outlook/CardDAV y copias cifradas.
 
-Esta es la **versión 0.8.0-beta**: servidor + web app instalable (PWA) en un contenedor Docker.
+Esta es la **versión 0.8.3-beta**: servidor + web app instalable (PWA) en un contenedor Docker.
 
 ---
 
@@ -19,7 +19,7 @@ Esta es la **versión 0.8.0-beta**: servidor + web app instalable (PWA) en un co
 - **Direcciones geolocalizadas**: buscador de direcciones que rellena los campos y guarda las coordenadas, botón **Abrir en mapa** (o en Waze) y mapa en la ficha. Ver *Direcciones y mapas*.
 - **Historial de cambios** (60 días) de cada contacto, con **restaurar** una versión o un solo campo, y **papelera** para recuperar contactos borrados. Ver *Historial y papelera*.
 - **Llamadas y apuntes** de cada conversación (privados) y botones **Llamar · Mensaje · Email** con el teléfono, email y app de mensajería por defecto (general y por contacto). Ver *Llamadas, mensajes y apuntes*.
-- **Copias de seguridad automáticas y cifradas** en una carpeta local, NFS, SMB, Google Drive u OneDrive. Ver *Copias de seguridad*.
+- **Copias de seguridad automáticas y cifradas** en una carpeta local, NFS, SMB o Google Drive. Ver *Copias de seguridad*.
 - **Modo oscuro** (automático, claro u oscuro) en ⚙️ Ajustes → Apariencia.
 - **Foto de contacto**: se guarda normalizada (JPEG de hasta 1024 px más una miniatura de 256 px) y va incluida en la exportación vCard.
 - **Visibilidad por contacto**:
@@ -57,7 +57,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-0.8.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-0.8.3-beta.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -91,7 +91,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-0.8.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-0.8.3-beta.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -99,7 +99,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-0.8.0-beta.zip
+unzip agendario-0.8.3-beta.zip
 cd agendario
 ```
 
@@ -143,7 +143,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-0.8.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-0.8.3-beta.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -355,14 +355,9 @@ En **⚙️ Ajustes → Copias de seguridad** (solo el administrador). Cada copi
 
 1. **Dónde**: elige el destino y rellena sus datos. **Probar conexión** escribe y borra un fichero de prueba con los datos del formulario, **antes de guardar**.
    - **Carpeta local**: por defecto `data/app/backups` en el servidor (`/opt/agendario/data/app/backups`). Sirve como copia rápida, pero conviene tener otra fuera del servidor.
-   - **NFS**: servidor (IP o nombre local) y ruta exportada; opcionalmente una carpeta dentro y el usuario/grupo (UID/GID) con el que escribir. Agendario lleva su propio cliente NFSv3: no hay que montar nada ni tocar el `docker-compose.yml`. En el servidor NFS, la exportación debe:
-     - permitir la **IP local del servidor donde corre Agendario** (no su dirección web), con lectura y escritura;
-     - tener la opción **`insecure`** («Permitir conexiones desde puertos no privilegiados» en Synology y TrueNAS), porque Agendario no se conecta como root;
-     - dejar escribir al UID/GID elegido (con *root squash*, el 0 se convierte en *nobody*).
-     
-     Ejemplo en Linux (`/etc/exports`): `/srv/copias  192.168.1.50(rw,sync,insecure,no_subtree_check)`
+   - **NFS**: escribe el servidor (IP o nombre local) y, al salir del campo, elige la **carpeta compartida** de la lista (puedes añadir una subcarpeta, que se crea sola). Agendario lleva su propio cliente NFSv3: no hay que montar nada. En el NAS solo hay que dar permiso de **lectura/escritura** a esa carpeta para la **IP local del servidor donde corre Agendario** (no su dirección web). En Synology: Panel de control → Carpeta compartida → Editar → Permisos NFS → Crear (IP del servidor, Lectura/Escritura, «Asignar todos los usuarios a admin»). Si el NAS convierte root en otro usuario sin permiso, en «avanzado» puedes indicar el UID/GID de un usuario con permiso.
    - **SMB**: servidor, recurso compartido, usuario y contraseña (Windows, NAS, Samba).
-   - **Google Drive u OneDrive**: indica la **carpeta** (obligatoria) y pulsa **Conectar**. Agendario te da un **código**: ábrelo en `google.com/device` (o `microsoft.com/devicelogin`), entra con tu cuenta, escribe el código y acepta. La pantalla lo detecta sola. En Google, Agendario solo puede ver los ficheros que crea él. Tu contraseña nunca pasa por Agendario.
+   - **Google Drive**: indica la **carpeta** (obligatoria) y pulsa **Conectar**. Agendario te da un **código**: abre `google.com/device` (en el ordenador o en el móvil), entra con tu cuenta, escribe el código y acepta. La pantalla lo detecta sola. Agendario solo puede ver los ficheros que crea él, no el resto de tu Drive, y tu contraseña nunca pasa por Agendario. Puedes retirar el permiso cuando quieras desde tu cuenta de Google (Seguridad → Conexiones con terceros).
 2. **Cuándo**: cada día, semana o mes, a la hora que elijas (hora de España; cámbiala con `TZ` en `.env`).
 3. **Cuántas**: el número de copias que se guardan; al hacer una nueva se borra la más antigua.
 4. **Cifrado**: la contraseña con la que se cifran. ⚠️ **Sin ella no se puede abrir ninguna copia**: guárdala, por ejemplo, en Vaultwarden.
@@ -406,11 +401,11 @@ La configuración de GitHub va aparte, en **`/opt/agendario/actualizar.conf`**. 
 
 Cómo sube:
 
-- **Betas** (versión con guion, como `0.8.0-beta`): a la rama **`beta`**, con la etiqueta `v0.8.0-beta`. Te recuerda crear la *Release* y marcarla como *pre-release*.
+- **Betas** (versión con guion, como `0.8.3-beta`): a la rama **`beta`**, con la etiqueta `v0.8.3-beta`. Te recuerda crear la *Release* y marcarla como *pre-release*.
 - **Estables** (como `1.0.0`): a **`main`**. Te pregunta qué etiqueta anterior quieres borrar (Enter = ninguna).
 - Al repositorio nunca se suben el `.env`, la carpeta `data/` ni `actualizar.conf`: se copia solo el contenido del zip.
 
-**Docker Hub**: cada etiqueta que sube el script activa **GitHub Actions** (`.github/workflows/docker.yml`), que compila la imagen para Intel/AMD y ARM y la publica en `dagarines/agendario`: las betas como `0.8.0-beta` y `beta`, las estables como `1.0.0` y `latest`. Solo hay que crear dos secretos en el repositorio (Settings → Secrets and variables → Actions): `DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN` (token de Docker Hub con permiso *Read & Write*).
+**Docker Hub**: cada etiqueta que sube el script activa **GitHub Actions** (`.github/workflows/docker.yml`), que compila la imagen para Intel/AMD y ARM y la publica en `dagarines/agendario`: las betas como `0.8.3-beta` y `beta`, las estables como `1.0.0` y `latest`. Solo hay que crear dos secretos en el repositorio (Settings → Secrets and variables → Actions): `DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN` (token de Docker Hub con permiso *Read & Write*).
 
 ---
 
@@ -534,10 +529,10 @@ Mientras el proyecto sea beta, la web muestra la etiqueta «Beta». Para quitarl
    - ✅ 0.3: búsqueda y fusión de duplicados, paginación y nuevo menú.
    - ✅ 0.4: selección múltiple con acciones en bloque y duplicados al estilo de Google Contacts (con vista previa y fichas completas).
    - ✅ 0.5: etiquetas en cada teléfono, email y dirección; combinación manual con edición de valores.
-   - ✅ 0.8: todo pasa a llamarse Agendario (con migración automática), modo oscuro, cliente NFS propio, Google Drive y OneDrive con código, probar destino antes de guardar y retención por número de copias.
+   - ✅ 0.8: todo pasa a llamarse Agendario (con migración automática), modo oscuro, cliente NFS propio, Google Drive con código, probar destino antes de guardar y retención por número de copias.
    - ✅ 0.7: nuevo nombre (Agendario) e interfaz, historial de cambios con restaurar, papelera, llamadas y apuntes, acciones por defecto y copias de seguridad cifradas programables.
    - ✅ 0.6: direcciones geolocalizadas (buscador, abrir en mapa o Waze, mapa en la ficha) y orden por geolocalización.
-2. ✅ **Fase 2**: copias cifradas (age), programables, a una carpeta, NFS, SMB, Google Drive u OneDrive. Pendiente: personalizar la interfaz (colores e icono alternativo).
+2. ✅ **Fase 2**: copias cifradas (age), programables, a una carpeta, NFS, SMB o Google Drive. Pendiente: personalizar la interfaz (colores e icono alternativo).
 3. **Fase 3**: servidor **CardDAV**, para sincronizar con la agenda nativa del móvil y del Mac (DAVx5, iOS, macOS).
 4. **Fase 4**: importación desde Google y Outlook, y después sincronización bidireccional.
 5. **Fase 5**: apps empaquetadas con Capacitor (Android/iOS) y Tauri (Mac/Windows).

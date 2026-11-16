@@ -21,6 +21,7 @@ import { useAlert, useConfirm } from "../components/Dialogs";
 import { useUserPrefs } from "../components/QuickActions";
 import { api } from "../lib/api";
 import { useMe } from "../lib/auth";
+import { copyText } from "../lib/clipboard";
 import { getTheme, setTheme, type ThemeMode } from "../lib/theme";
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
@@ -97,6 +98,89 @@ function Help({ children }: { children: ReactNode }) {
   return <div className="space-y-1 rounded-lg bg-slate-50 p-2.5 text-xs leading-relaxed text-slate-600">{children}</div>;
 }
 
+/** NFS: al salir del campo del servidor se consultan sus carpetas exportadas para elegir de una lista. */
+function NfsFields({ d, set }: { d: BackupConfig["dest"]; set: (v: Partial<BackupConfig["dest"]>) => void }) {
+  const [exportsOf, setExportsOf] = useState<{ host: string; list: { path: string; clients: string[] }[] } | null>(null);
+  const [err, setErr] = useState("");
+  const [manual, setManual] = useState(false);
+  const [adv, setAdv] = useState(d.uid !== 0 || d.gid !== 0);
+  const load = useMutation({
+    mutationFn: (host: string) => api.get<{ path: string; clients: string[] }[]>(`/backup/nfs/exports?host=${encodeURIComponent(host)}`),
+    onSuccess: (list, host) => {
+      setErr("");
+      setExportsOf({ host, list });
+      if (!d.share && list.length === 1) set({ share: list[0].path });
+      setManual(!list.length);
+    },
+    onError: (e) => { setErr((e as Error).message); setExportsOf(null); },
+  });
+  // Al abrir la pantalla con un servidor ya guardado, se cargan sus carpetas
+  useEffect(() => {
+    if (d.host.trim()) load.mutate(d.host.trim());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const list = exportsOf?.host === d.host.trim() ? exportsOf.list : null;
+  const inList = !!list?.some((x) => x.path === d.share);
+  const sel = list?.find((x) => x.path === d.share);
+
+  return (
+    <>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="label">Servidor NFS (IP o nombre)</span>
+          <input
+            className="input"
+            placeholder="192.168.1.10"
+            value={d.host}
+            onChange={(e) => set({ host: e.target.value })}
+            onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== exportsOf?.host && load.mutate(e.target.value.trim())}
+          />
+          {load.isPending && <span className="mt-1 block text-xs text-slate-500">Buscando carpetas compartidas…</span>}
+          {err && <span className="mt-1 block text-xs text-red-700">{err}</span>}
+        </label>
+        <label className="block">
+          <span className="label">Carpeta compartida</span>
+          {list && list.length > 0 && !manual ? (
+            <select
+              className="input"
+              value={inList ? d.share : ""}
+              onChange={(e) => (e.target.value === "__otra" ? setManual(true) : set({ share: e.target.value }))}
+            >
+              <option value="">Elige una carpeta…</option>
+              {list.map((x) => (
+                <option key={x.path} value={x.path}>{x.path}</option>
+              ))}
+              <option value="__otra">Escribir otra ruta…</option>
+            </select>
+          ) : (
+            <input className="input" placeholder={list ? "/volume1/copias" : "Escribe el servidor y sal del campo"} value={d.share} onChange={(e) => set({ share: e.target.value })} />
+          )}
+          {sel && sel.clients.length > 0 && <span className="mt-1 block text-xs text-slate-500">Permitida para: {sel.clients.join(", ")}</span>}
+          {list && !list.length && <span className="mt-1 block text-xs text-amber-800">El servidor no anuncia carpetas: escribe la ruta exportada.</span>}
+        </label>
+        <label className="block sm:col-span-2">
+          <span className="label">Carpeta dentro (opcional; se crea si no existe)</span>
+          <input className="input" placeholder="agendario" value={d.path} onChange={(e) => set({ path: e.target.value })} />
+        </label>
+      </div>
+      <button type="button" className="text-xs text-indigo-700 hover:underline" onClick={() => setAdv(!adv)}>
+        {adv ? "▾" : "▸"} Usuario y grupo con los que escribir (avanzado)
+      </button>
+      {adv && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block"><span className="label">Usuario (UID)</span><input className="input" inputMode="numeric" value={d.uid} onChange={(e) => /^\d{0,10}$/.test(e.target.value) && set({ uid: Number(e.target.value || 0) })} /></label>
+          <label className="block"><span className="label">Grupo (GID)</span><input className="input" inputMode="numeric" value={d.gid} onChange={(e) => /^\d{0,10}$/.test(e.target.value) && set({ gid: Number(e.target.value || 0) })} /></label>
+          <p className="text-xs text-slate-500 sm:col-span-2">NFS no usa usuario y contraseña: el NAS decide por la IP. Por defecto se escribe como root (0); si el NAS lo «aplasta» a otro usuario sin permiso, pon aquí el UID/GID de un usuario del NAS con permiso de escritura en esa carpeta (en Synology, el primer usuario suele ser 1026 y el grupo «users» 100).</p>
+        </div>
+      )}
+      <Help>
+        <p>En el NAS, da permiso de <b>lectura/escritura</b> a la carpeta para la <b>IP local del servidor donde corre Agendario</b> (no su dirección web). No hace falta usuario ni contraseña.</p>
+        <p>En Synology: Panel de control → Carpeta compartida → Editar → Permisos NFS → Crear: IP del servidor, privilegio Lectura/Escritura, «Asignar todos los usuarios a admin».</p>
+      </Help>
+    </>
+  );
+}
+
 function DestFields({ cfg, set }: { cfg: BackupConfig; set: (d: Partial<BackupConfig["dest"]>) => void }) {
   const d = cfg.dest;
   const pw = (
@@ -117,24 +201,7 @@ function DestFields({ cfg, set }: { cfg: BackupConfig; set: (d: Partial<BackupCo
         </>
       );
     case "nfs":
-      return (
-        <>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block"><span className="label">Servidor NFS (IP o nombre)</span><input className="input" placeholder="192.168.1.10" value={d.host} onChange={(e) => set({ host: e.target.value })} /></label>
-            <label className="block"><span className="label">Ruta exportada</span><input className="input" placeholder="/volume1/copias" value={d.share} onChange={(e) => set({ share: e.target.value })} /></label>
-            <label className="block sm:col-span-2"><span className="label">Carpeta dentro (opcional; se crea si no existe)</span><input className="input" placeholder="agendario" value={d.path} onChange={(e) => set({ path: e.target.value })} /></label>
-            <label className="block"><span className="label">Usuario (UID) con el que escribir</span><input className="input" inputMode="numeric" value={d.uid} onChange={(e) => /^\d{0,10}$/.test(e.target.value) && set({ uid: Number(e.target.value || 0) })} /></label>
-            <label className="block"><span className="label">Grupo (GID)</span><input className="input" inputMode="numeric" value={d.gid} onChange={(e) => /^\d{0,10}$/.test(e.target.value) && set({ gid: Number(e.target.value || 0) })} /></label>
-          </div>
-          <Help>
-            <p>Agendario se conecta al NFS por su cuenta (NFSv3), sin montar nada. En el servidor NFS, la carpeta exportada debe:</p>
-            <p>· permitir la <b>IP del servidor de Agendario</b> (la IP local de la máquina donde corre Docker; no la dirección web), con lectura y escritura;</p>
-            <p>· tener la opción <b>insecure</b> («Permitir conexiones desde puertos no privilegiados» en Synology y TrueNAS);</p>
-            <p>· dejar escribir al UID/GID de arriba (0 = root; con «root squash» se convierte en nobody, así que usa el UID de un usuario con permiso o quita el squash).</p>
-            <p>Ejemplo en Linux (<code>/etc/exports</code>): <code>/srv/copias 192.168.1.50(rw,sync,insecure,no_subtree_check)</code></p>
-          </Help>
-        </>
-      );
+      return <NfsFields d={d} set={set} />;
     case "smb":
       return (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -157,9 +224,10 @@ function DestFields({ cfg, set }: { cfg: BackupConfig; set: (d: Partial<BackupCo
   }
 }
 
-function Connect({ type, connected, account, available, onChange }: { type: "drive" | "onedrive"; connected?: boolean; account?: string; available: boolean; onChange: () => void }) {
+function Connect({ type, connected, account, available, onChange }: { type: "drive"; connected?: boolean; account?: string; available: boolean; onChange: () => void }) {
   const showAlert = useAlert();
   const [code, setCode] = useState<OAuthStart | null>(null);
+  const [copied, setCopied] = useState(false);
   const name = backupDestLabels[type];
   const start = useMutation({
     mutationFn: () => api.post<OAuthStart>("/backup/oauth/start", { type }),
@@ -180,7 +248,7 @@ function Connect({ type, connected, account, available, onChange }: { type: "dri
   const disconnect = useMutation({ mutationFn: () => api.del("/backup/oauth"), onSuccess: onChange });
 
   if (!available)
-    return <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">Esta instalación todavía no tiene registrada la app de {type === "drive" ? "Google" : "Microsoft"}. Mientras tanto, usa NFS, SMB o la carpeta local.</p>;
+    return <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">Esta instalación no tiene configurada la app de Google. Mientras tanto, usa NFS, SMB o la carpeta local.</p>;
   if (connected)
     return (
       <div className="flex flex-wrap items-center gap-2">
@@ -195,7 +263,7 @@ function Connect({ type, connected, account, available, onChange }: { type: "dri
         <p>2. Escribe este código:</p>
         <div className="flex items-center gap-3">
           <span className="rounded-xl bg-white px-4 py-2 font-mono text-2xl font-semibold tracking-widest text-indigo-900 ring-2 ring-indigo-200">{code.userCode}</span>
-          <button className="btn-ghost text-sm" onClick={() => void navigator.clipboard?.writeText(code.userCode)}>📋 Copiar</button>
+          <button className="btn-ghost text-sm" onClick={async () => setCopied(await copyText(code.userCode))}>{copied ? "✓ Copiado" : "📋 Copiar"}</button>
         </div>
         <p className="flex items-center gap-2 text-slate-600"><span className="inline-block h-3 w-3 animate-pulse rounded-full bg-indigo-500" /> 3. Acepta el permiso. Esta pantalla lo detecta sola…</p>
         <button className="text-xs text-slate-500 hover:underline" onClick={() => setCode(null)}>Cancelar</button>
@@ -203,7 +271,7 @@ function Connect({ type, connected, account, available, onChange }: { type: "dri
     );
   return (
     <div className="space-y-2 rounded-lg bg-indigo-50/60 p-3 text-sm">
-      <p>Pulsa <b>Conectar</b>: te daremos un código para escribir en la página de {type === "drive" ? "Google" : "Microsoft"} con tu cuenta. {type === "drive" && "Agendario solo podrá ver los ficheros que cree él, no el resto de tu Drive."}</p>
+      <p>Pulsa <b>Conectar</b>: te daremos un código para escribir en la página de Google con tu cuenta. Agendario solo podrá ver los ficheros que cree él, no el resto de tu Drive.</p>
       <button className="btn-primary" onClick={() => start.mutate()} disabled={start.isPending}>{start.isPending ? "Pidiendo código…" : `Conectar ${name}`}</button>
     </div>
   );
@@ -491,7 +559,7 @@ export function SettingsPage() {
           <img src="/favicon.svg" alt="" className="h-12 w-12" />
           <div className="text-sm">
             <p className="font-semibold">{APP_NAME} <span className="font-normal text-slate-500">v{APP_VERSION}</span></p>
-            <p className="text-slate-500">Tu agenda de contactos, con su historia, en tu servidor.</p>
+            <p className="text-slate-500">Agenda de contactos vitaminada, sincronizada, con recordatorios de regalos, copias automáticas, búsqueda de duplicados… Todo lo que siempre has echado de menos en tu gestor de contactos y más aún.</p>
           </div>
         </div>
       </Section>

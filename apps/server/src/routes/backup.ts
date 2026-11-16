@@ -8,6 +8,7 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { backupConfigSchema, backupDestSchema, type BackupStatus } from "@agendario/shared";
 import { oauthAvailable, oauthStatus } from "../lib/oauth.js";
+import { listExports } from "../lib/nfs.js";
 import { config } from "../config.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import {
@@ -48,7 +49,7 @@ export const backupRoutes = new Hono<AppEnv>()
       nextRun: (await nextRun(cfg))?.toISOString() ?? null,
       runs: await recentRuns(),
       rclone: await hasRclone(),
-      oauth: { drive: oauthAvailable("drive"), onedrive: oauthAvailable("onedrive") },
+      oauth: { drive: oauthAvailable("drive") },
       connected: await connectedTo(),
       running: isRunning(),
     };
@@ -71,6 +72,12 @@ export const backupRoutes = new Hono<AppEnv>()
     if (draft && !draft.success) throw new HTTPException(400, { message: "Datos del destino no válidos" });
     await testDestination(draft?.data).catch((e) => fail(e, 502));
     return ctx.json({ ok: true });
+  })
+
+  // Carpetas que exporta un servidor NFS (para elegir de una lista)
+  .get("/nfs/exports", zValidator("query", z.object({ host: z.string().trim().min(1).max(255) })), async (ctx) => {
+    const list = await listExports(ctx.req.valid("query").host).catch((e) => fail(e, 502));
+    return ctx.json(list);
   })
 
   .post("/run", async (ctx) => {
@@ -130,7 +137,7 @@ export const backupRoutes = new Hono<AppEnv>()
     }
   })
 
-  .post("/oauth/start", zValidator("json", z.object({ type: z.enum(["drive", "onedrive"]) })), async (ctx) => {
+  .post("/oauth/start", zValidator("json", z.object({ type: z.enum(["drive"]) })), async (ctx) => {
     const r = await startOAuth(ctx.req.valid("json").type).catch((e) => fail(e, 502));
     return ctx.json(r);
   })

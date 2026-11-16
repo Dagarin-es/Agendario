@@ -13,7 +13,7 @@ import { getSetting, setSetting } from "./settings.js";
 
 /**
  * Copias de seguridad: volcado de todas las tablas (JSON) + fotos → .tar.gz → cifrado con age
- * (contraseña) → destino. Los destinos remotos (SMB, WebDAV, Drive, Dropbox, OneDrive) se manejan
+ * (contraseña) → destino. Los destinos remotos (SMB y Google Drive) se manejan
  * con rclone; la carpeta local y NFS (montado como volumen) se escriben directamente.
  */
 
@@ -69,7 +69,7 @@ export async function loadConfig(): Promise<BackupConfig> {
 /** Nube conectada ahora mismo (aunque el destino guardado sea otro) */
 export async function connectedTo() {
   const sec = await loadSecrets();
-  return sec.token && (sec.tokenType === "drive" || sec.tokenType === "onedrive") ? { type: sec.tokenType as "drive" | "onedrive", account: sec.account } : null;
+  return sec.token && sec.tokenType === "drive" ? { type: "drive" as const, account: sec.account } : null;
 }
 
 export const loadSecrets = () => getSetting<Secrets>(SECRETS_KEY, {});
@@ -217,14 +217,12 @@ async function rcloneRemote(dest: BackupDest, sec: Secrets) {
       if (sec.destPassword) lines.push(`pass = ${await obscure(sec.destPassword)}`);
       remotePath = [dest.share.replace(/^\/+|\/+$/g, ""), folder].filter(Boolean).join("/");
       break;
-    case "drive":
-    case "onedrive": {
+    case "drive": {
       if (!sec.token) throw new Error("Falta conectar la cuenta (botón «Conectar»)");
       const app = OAUTH_APPS[dest.type];
       lines.push(`type = ${dest.type}`, `client_id = ${app.clientId}`, `token = ${sec.token}`);
       if (app.clientSecret) lines.push(`client_secret = ${app.clientSecret}`);
-      if (dest.type === "drive") lines.push("scope = drive.file");
-      if (dest.type === "onedrive") lines.push(`drive_id = ${sec.driveId ?? ""}`, `drive_type = ${sec.driveType ?? "personal"}`);
+      lines.push("scope = drive.file");
       break;
     }
   }
@@ -429,7 +427,7 @@ export function describeDest(d: BackupDest) {
     case "smb":
       return `SMB: //${d.host}/${[d.share, d.path].filter(Boolean).join("/")}`;
     default:
-      return `${{ drive: "Google Drive", onedrive: "OneDrive" }[d.type]}: /${d.path}`;
+      return `Google Drive: /${d.path}`;
   }
 }
 
@@ -509,7 +507,7 @@ export async function restoreArchive(work: string) {
   for (const f of files) await copyFile(join(src, f), join(photosDir(), f));
 }
 
-// ---------- Conectar Google Drive y OneDrive (código de dispositivo) ----------
+// ---------- Conectar Google Drive (código de dispositivo) ----------
 
 export function startOAuth(type: OAuthType) {
   return startDeviceFlow(type, async (token) => {
@@ -517,19 +515,10 @@ export function startOAuth(type: OAuthType) {
     sec.token = JSON.stringify(token);
     sec.tokenType = type;
     sec.account = undefined;
-    sec.driveId = undefined;
-    sec.driveType = undefined;
-    const me = await fetch(type === "drive" ? "https://www.googleapis.com/drive/v3/about?fields=user" : "https://graph.microsoft.com/v1.0/me/drive", {
+    const me = await fetch("https://www.googleapis.com/drive/v3/about?fields=user", {
       headers: { Authorization: `Bearer ${token.access_token}` },
     }).catch(() => null);
-    if (type === "onedrive") {
-      // OneDrive necesita saber qué unidad usar: la principal de la cuenta
-      if (!me?.ok) throw new Error("No se ha podido leer la unidad de OneDrive");
-      const d = (await me.json()) as { id: string; driveType: string; owner?: { user?: { displayName?: string } } };
-      sec.driveId = d.id;
-      sec.driveType = d.driveType;
-      sec.account = d.owner?.user?.displayName;
-    } else if (me?.ok) {
+    if (me?.ok) {
       const d = (await me.json()) as { user?: { emailAddress?: string; displayName?: string } };
       sec.account = d.user?.emailAddress ?? d.user?.displayName;
     }

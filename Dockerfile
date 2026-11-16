@@ -1,5 +1,7 @@
 # ---------- 1. Compilación ----------
-FROM node:22-alpine AS build
+# Se compila en la arquitectura de la máquina que construye (el resultado es JavaScript y vale para
+# cualquiera): así la imagen ARM de GitHub Actions no compila emulada, que es lento y falla a veces.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
@@ -21,9 +23,14 @@ RUN npm ci --omit=dev --workspace @agendario/server --include-workspace-root=fal
 
 # ---------- 3. Imagen final ----------
 FROM node:22-alpine
-# rclone: copias de seguridad en SMB, WebDAV, Google Drive, Dropbox y OneDrive · tzdata: hora local de las copias
+# rclone: copias de seguridad en SMB y Google Drive · tzdata: hora local de las copias
 RUN apk add --no-cache su-exec rclone tzdata ca-certificates
-ARG APP_VERSION=0.8.0-beta
+ARG APP_VERSION=0.8.3-beta
+# App de Google para conectar Google Drive (la imagen de Docker Hub la recibe de los secretos de GitHub)
+ARG GOOGLE_CLIENT_ID=""
+ARG GOOGLE_CLIENT_SECRET=""
+ENV GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID} \
+    GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
 ENV NODE_ENV=production \
     PORT=3002 \
     DATA_DIR=/data \

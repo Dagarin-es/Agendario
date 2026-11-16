@@ -2,6 +2,7 @@
 # Necesita dos secretos en GitHub (Settings → Secrets and variables → Actions):
 #   DOCKERHUB_USERNAME  → usuario de Docker Hub
 #   DOCKERHUB_TOKEN     → token de acceso de Docker Hub (Read & Write)
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET → app de Google para Google Drive (opcionales; se meten en la imagen)
 # Opcional, como variable (pestaña «Variables»): DOCKERHUB_IMAGE (por defecto dagarines/agendario)
 #
 # Etiquetas: las betas publican «X.Y.Z-beta» y «beta»; las estables, «X.Y.Z» y «latest».
@@ -42,6 +43,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          build-args: APP_VERSION=${{ steps.meta.outputs.version }}
+          build-args: |
+            APP_VERSION=${{ steps.meta.outputs.version }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

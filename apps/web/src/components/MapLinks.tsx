@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { copyText } from "../lib/clipboard";
 import { geoStatusLabels, isGeolocated, type Address, type GeoStatus } from "@agendario/shared";
 
 /** Texto de la dirección en una línea. */
@@ -75,7 +76,7 @@ export function MapLinks({ address }: { address: Address }) {
             type="button"
             className="block w-full border-t border-slate-100 px-4 py-2 text-left text-slate-600 hover:bg-slate-50"
             onClick={() => {
-              void navigator.clipboard?.writeText(addressLine(address));
+              void copyText(addressLine(address));
               setOpen(false);
             }}
           >

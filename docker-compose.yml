@@ -7,6 +7,9 @@ services:
     build: .
     image: agendario-local        # la construye actualizar-agendario.sh
     container_name: agendario
+    sysctls:
+      # Permite al cliente NFS de las copias conectar desde un puerto < 1024 (sin root ni «insecure» en el NAS)
+      net.ipv4.ip_unprivileged_port_start: "0"
     restart: unless-stopped
     depends_on:
       db:

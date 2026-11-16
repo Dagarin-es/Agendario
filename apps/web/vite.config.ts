@@ -13,7 +13,7 @@ export default defineConfig({
       manifest: {
         name: "Agendario (Beta)",
         short_name: "Agendario (Beta)",
-        description: "Tu agenda de contactos, con su historia, en tu servidor",
+        description: "Agenda de contactos vitaminada, sincronizada, con recordatorios de regalos, copias automáticas y búsqueda de duplicados",
         lang: "es",
         theme_color: "#4338ca",
         background_color: "#f8fafc",

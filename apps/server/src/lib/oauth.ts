@@ -1,30 +1,24 @@
 import type { OAuthStart, OAuthStatus } from "@agendario/shared";
 
 /**
- * Conexión con Google Drive y OneDrive por «código de dispositivo»: la app muestra un código,
- * el usuario lo escribe en google.com/device (o microsoft.com/devicelogin) con su cuenta y
+ * Conexión con Google Drive por «código de dispositivo»: la app muestra un código,
+ * el usuario lo escribe en google.com/device con su cuenta y
  * Agendario lo detecta solo. No hay páginas de vuelta ni direcciones que copiar.
  *
- * Usa las apps «Agendario» registradas una vez por el autor del proyecto (ver docs/registrar-apps.md).
- * Una instalación puede usar las suyas propias con las variables de entorno.
+ * Usa la app «Agendario» registrada por el autor del proyecto (ver docs/registrar-apps.md).
  */
 export const OAUTH_APPS = {
   drive: {
+    // App de Google tipo «TV y dispositivos de entrada limitada». Los valores NO están en el código
+    // (GitHub bloquea subirlos): vienen de las variables GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET,
+    // que la imagen de Docker Hub ya trae de serie (secretos de GitHub Actions) y que en una
+    // instalación propia se ponen en el .env.
     clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-    // Las apps de Google para «TV y dispositivos de entrada limitada» llevan un secreto que no es secreto
-    // (va dentro de cada instalación), igual que hace rclone.
     clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     deviceUrl: "https://oauth2.googleapis.com/device/code",
     tokenUrl: "https://oauth2.googleapis.com/token",
     // Solo los ficheros que crea Agendario: no ve el resto de tu Drive
     scope: "https://www.googleapis.com/auth/drive.file",
-  },
-  onedrive: {
-    clientId: process.env.MICROSOFT_CLIENT_ID ?? "",
-    clientSecret: "",
-    deviceUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/devicecode",
-    tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-    scope: "Files.ReadWrite offline_access User.Read",
   },
 } as const;
 
@@ -53,12 +47,14 @@ const form = (o: Record<string, string>) => new URLSearchParams(o).toString();
  */
 export async function startDeviceFlow(type: OAuthType, onToken: (t: RcloneToken) => Promise<void>): Promise<OAuthStart> {
   const app = OAUTH_APPS[type];
-  if (!app.clientId) throw new Error("Esta instalación no tiene registrada la app de " + (type === "drive" ? "Google" : "Microsoft"));
+  if (!app.clientId) throw new Error("Esta instalación no tiene registrada la app de Google");
   cancelOAuth();
   const res = await fetch(app.deviceUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: form({ client_id: app.clientId, scope: app.scope }),
+  }).catch(() => {
+    throw new Error("No se puede contactar con Google. ¿El servidor de Agendario tiene salida a internet?");
   });
   const d = (await res.json().catch(() => ({}))) as {
     device_code?: string;

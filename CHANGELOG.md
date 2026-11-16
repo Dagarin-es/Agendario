@@ -1,5 +1,24 @@
 # Historial de cambios
 
+## 0.8.3-beta
+- El botón **Copiar** (código de Google Drive y «Copiar dirección» del mapa) funciona también entrando por `http://IP:3002`, sin HTTPS, y confirma «✓ Copiado».
+- Nueva descripción de la app en Ajustes → Acerca de.
+- Imagen Docker: la parte de JavaScript se compila sin emulación en GitHub Actions (más rápido y fiable para ARM).
+- `CLAUDE.md`: guía del proyecto para trabajar con Claude Code.
+- El ID y el secreto de la app de Google ya no van en el código (GitHub bloquea subirlos): llegan por `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (en el `.env`, o de serie en la imagen de Docker Hub).
+
+## 0.8.2-beta
+- **Google Drive listo para usar**: la app «Agendario» de Google viene integrada. En Ajustes → Copias de seguridad elige Google Drive, indica la carpeta y pulsa **Conectar**: escribe el código en google.com/device con tu cuenta y listo. Agendario solo ve los ficheros que crea él.
+- Se quita OneDrive (registrar la app de Microsoft exige un directorio de Azure). Las nubes disponibles quedan en Google Drive.
+- Política de privacidad en `docs/privacidad.md`.
+
+## 0.8.1-beta
+- **NFS más sencillo**:
+  - Al salir del campo del servidor, Agendario consulta las **carpetas que comparte** y las ofrece en una **lista** (con a qué IPs las permite). También se puede escribir otra ruta.
+  - Agendario se conecta desde un puerto «privilegiado», así que **ya no hace falta la opción «insecure»** en el NAS: basta con dar permiso de lectura/escritura a la IP del servidor (el `docker-compose.yml` incluye el ajuste `net.ipv4.ip_unprivileged_port_start`).
+  - El usuario y grupo (UID/GID) pasan a «avanzado», con la explicación de cuándo hacen falta.
+  - Mensajes de error que dicen qué falla: si la ruta no está entre las compartidas (y cuáles hay) o a qué IPs permite la carpeta.
+
 ## 0.8.0-beta
 - **Todo pasa a llamarse Agendario**: carpeta `/opt/agendario`, script `actualizar-agendario.sh`, zip `agendario-*.zip`, imagen `agendario-local`, base de datos y contenedores `agendario`. **Migración automática**: la primera vez, si existe `/opt/contactos`, el script ofrece copiar todos los datos (base de datos, fotos, copias, `.env` y `actualizar.conf`) y deja la instalación antigua parada e intacta. Hay que volver a iniciar sesión.
 - **Modo oscuro**, con selector en ⚙️ Ajustes → Apariencia: automático (el del sistema), claro u oscuro.

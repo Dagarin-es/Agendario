@@ -9,6 +9,8 @@ import { connect, type Socket } from "node:net";
  */
 
 const PROG_PORTMAP = 100000;
+let privilegedPorts = process.env.NFS_PRIVILEGED_PORT !== "false";
+export const usesPrivilegedPorts = () => privilegedPorts;
 const PROG_MOUNT = 100005;
 const PROG_NFS = 100003;
 
@@ -135,9 +137,35 @@ class Rpc {
     private cred: { uid: number; gid: number },
   ) {}
 
-  open(timeoutMs = 8000) {
+  /**
+   * Conecta desde un puerto «privilegiado» (< 1024) si se puede: así el servidor NFS no exige
+   * la opción «insecure». El contenedor lo permite (sysctl ip_unprivileged_port_start=0);
+   * si no, se usa un puerto normal.
+   */
+  async open(timeoutMs = 8000) {
+    if (privilegedPorts) {
+      const start = 600 + Math.floor(Math.random() * 400);
+      for (let i = 0; i < 40; i++) {
+        const localPort = 600 + ((start - 600 + i) % 424);
+        try {
+          return await this.tryOpen(timeoutMs, localPort);
+        } catch (e) {
+          const code = (e as NodeJS.ErrnoException).code;
+          if (code === "EADDRINUSE") continue;
+          if (code === "EACCES" || code === "EPERM") {
+            privilegedPorts = false; // este entorno no lo permite: puertos normales
+            break;
+          }
+          throw e;
+        }
+      }
+    }
+    return this.tryOpen(timeoutMs);
+  }
+
+  private tryOpen(timeoutMs: number, localPort?: number) {
     return new Promise<void>((resolve, reject) => {
-      const s = connect({ host: this.host, port: this.port });
+      const s = connect({ host: this.host, port: this.port, ...(localPort ? { localPort } : {}) });
       const t = setTimeout(() => {
         s.destroy();
         reject(new Error(`no responde ${this.host}:${this.port}`));
@@ -148,7 +176,9 @@ class Rpc {
       });
       s.once("error", (e) => {
         clearTimeout(t);
-        reject(new Error(`no se puede conectar con ${this.host}:${this.port} (${(e as NodeJS.ErrnoException).code ?? e.message})`));
+        const code = (e as NodeJS.ErrnoException).code;
+        if (code === "EADDRINUSE" || code === "EACCES" || code === "EPERM") return reject(e);
+        reject(new Error(`no se puede conectar con ${this.host}:${this.port} (${code ?? e.message})`));
       });
       s.on("data", (d) => this.onData(d));
       s.on("close", () => {
@@ -253,6 +283,32 @@ const check = (r: R, what: string) => {
   if (st !== 0) throw new Error(`${what}: ${nfsErrors[st] ?? `error NFS ${st}`}`);
 };
 
+/** Carpetas que exporta un servidor NFS (y a qué clientes se las permite). */
+export async function listExports(host: string): Promise<{ path: string; clients: string[] }[]> {
+  let port: number;
+  try {
+    port = (await getPort(host, PROG_MOUNT, 3)) || (await getPort(host, PROG_MOUNT, 1));
+  } catch (e) {
+    throw new Error(`No se puede consultar ${host} (puerto 111): ${(e as Error).message}. ¿Es la IP correcta y tiene NFS activado?`);
+  }
+  if (!port) throw new Error(`${host} no ofrece NFSv3. Activa NFSv3 en el servidor.`);
+  const m = new Rpc(host, port, { uid: 0, gid: 0 });
+  await m.open();
+  try {
+    const r = await m.call(PROG_MOUNT, 3, 5, Buffer.alloc(0), 10000);
+    const out: { path: string; clients: string[] }[] = [];
+    while (r.bool()) {
+      const path = r.str();
+      const clients: string[] = [];
+      while (r.bool()) clients.push(r.str());
+      out.push({ path, clients });
+    }
+    return out.sort((a, b) => a.path.localeCompare(b.path));
+  } finally {
+    m.close();
+  }
+}
+
 export type NfsTarget = { host: string; exportPath: string; folder?: string; uid?: number; gid?: number };
 export type NfsEntry = { name: string; size: number; mtime: Date };
 
@@ -282,14 +338,19 @@ export class NfsSession {
     try {
       const r = await m.call(PROG_MOUNT, 3, 1, new W().str(t.exportPath).done());
       const st = r.u32();
-      if (st !== 0)
+      if (st !== 0 && st !== 2) {
+        // ¿La ruta está entre las exportadas? Así el mensaje dice qué falla
+        const list = await listExports(t.host).catch(() => null);
+        if (list && !list.some((x) => x.path === t.exportPath))
+          throw new Error(`${t.host} no exporta «${t.exportPath}». Carpetas disponibles: ${list.map((x) => x.path).join(", ") || "ninguna"}`);
+        const ex = list?.find((x) => x.path === t.exportPath);
         throw new Error(
-          st === 13
-            ? `El servidor no deja montar ${t.exportPath}: comprueba que la ruta exportada es correcta, que la IP de este servidor está autorizada y que la exportación tiene la opción «insecure» (puertos no privilegiados)`
-            : st === 2
-              ? `La ruta exportada ${t.exportPath} no existe en ${t.host}`
-              : `No se puede montar ${t.exportPath} (error ${st})`,
+          `El servidor no deja montar ${t.exportPath} desde esta máquina: añade la IP local del servidor de Agendario a los permisos de esa carpeta NFS (lectura/escritura)` +
+            (ex?.clients.length ? `. Ahora solo la permite a: ${ex.clients.join(", ")}` : "") +
+            (usesPrivilegedPorts() ? "" : ". Y activa «insecure» / «Permitir conexiones desde puertos no privilegiados»"),
         );
+      }
+      if (st !== 0) throw new Error(`La ruta exportada ${t.exportPath} no existe en ${t.host}`);
       root = r.opaque();
     } finally {
       m.close();
