@@ -1,5 +1,19 @@
 # Historial de cambios
 
+## 0.11.0-beta
+- **Ficha más compacta**: foto a la izquierda y, a la derecha, nombre, puesto y empresa, etiquetas, Llamar/WhatsApp/Email y los botones ✏️ Editar, 🕘 Historial y 🗑️ Borrar.
+- **Teléfonos y Emails** en dos recuadros de la misma altura. Las **llamadas y apuntes** van plegados dentro de Teléfonos (botón «Llamadas y apuntes»).
+- **Celebraciones**: Ideas para regalos, 📅 Fechas importantes (con el cumpleaños), 👪 Relaciones y 🎀 Regalos recibidos en cuatro recuadros.
+- **Trabajadores** en la ficha de una empresa (los contactos que la tienen enlazada), con llamada rápida y «+ Añadir trabajador».
+- **Relaciones recíprocas**: al crear una relación se crea la inversa en el otro contacto (cónyuge ↔ cónyuge, padre/madre ↔ hijo/a, jefe/a ↔ trabaja para…) y al borrarla se borra en los dos. Las que ya había se han completado.
+- **Fechas**: calendario más pequeño, a la derecha de la lista en ordenador; iconos más grandes con el número de eventos del día.
+- **Santos automáticos desactivados** (se pueden volver a activar en Ajustes → Fechas).
+- **Lista**: pestañas del abecedario sobrias, «Todos · N» en el chip, la barra fija queda pegada a la cabecera (ya no asoman los contactos por el hueco) y el «1–50 de N» va junto al paginador.
+- **Menú** con icono de hamburguesa y texto, y cada opción con su icono.
+- **Combinar manualmente**: en «Quedará» eliges la etiqueta de cada teléfono, email y web (de tu lista; si escribes una nueva pregunta si la crea) y los reordenas con ▲▼. Las etiquetas que solo cambian en mayúsculas se unifican.
+- **Mapa**: la capa «Callejero» pasa a Esri (la de CARTO ahora pide clave) y hay una nueva «IGN España». Si una capa no carga, el mapa cambia solo a OpenStreetMap. El menú «Abrir con…» ya no queda debajo del mapa.
+- `scripts/limpiar-telefonos.sh`: quita +34 y espacios de los teléfonos y pone las etiquetas con mayúscula y tilde.
+
 ## 0.10.0-beta
 - **Fechas con calendario mensual**: navegas mes a mes; cada día con eventos lleva un icono de regalo **rojo** (sin ideas), **amarillo** (con ideas) o **verde** (comprado o regalado). Recuerdos y otras fechas, punto gris. Debajo, los próximos 30 días, el mes elegido o el día que toques.
 - **Regalos: idea → comprado → regalado**. Al marcar una idea como comprada eliges para qué es (Cumpleaños 2027, Santo, Navidad, Reyes u otra fecha). Si pasa la fecha sin marcarlo como regalado, aviso en la pestaña **Fechas** (🛍️) y en el calendario.

@@ -5,6 +5,7 @@ import type { Address, ContactDetail, LabeledValue } from "@agendario/shared";
 import { Avatar } from "../components/Avatar";
 import { AddressSearch, useGeocoder } from "../components/AddressSearch";
 import { TagChip } from "../components/Tags";
+import { LabelInput, useItemLabels } from "../components/LabelInput";
 import { api } from "../lib/api";
 import { formatPartialDate } from "../lib/format";
 
@@ -194,6 +195,13 @@ export function MergePage() {
   const [notes, setNotes] = useState<Record<Side, boolean>>({ a: false, b: false });
   const [lists, setLists] = useState<Record<string, boolean>>({}); // "phones:a:0" → marcado
   const [ready, setReady] = useState(false);
+  // En «Quedará»: etiqueta elegida para cada dato y orden final
+  const [labelOv, setLabelOv] = useState<Record<string, string>>({});
+  const [order, setOrder] = useState<Partial<Record<ListKey, string[]>>>({});
+  const phoneLabels = useItemLabels("phones");
+  const emailLabels = useItemLabels("emails");
+  const urlLabels = useItemLabels("urls");
+  const canon = (k: ListKey, l: string) => (k === "phones" ? phoneLabels : k === "emails" ? emailLabels : k === "urls" ? urlLabels : null)?.canonical(l) ?? l;
   const [error, setError] = useState("");
 
   /** Marca por defecto lo que haría «Combinar automáticamente» con el principal indicado. */
@@ -254,20 +262,7 @@ export function MergePage() {
         const s = single[k];
         return s ? C[s]![k] : k === "birthday" ? null : "";
       };
-      const list = <K extends ListKey>(k: K) => {
-        const out: (LabeledValue | Address)[] = [];
-        const seen = new Set<string>();
-        for (const s of [principal, other(principal)]) {
-          (C[s]![k] as (LabeledValue | Address)[]).forEach((it, i) => {
-            const key = itemKey(k, it);
-            if (lists[`${k}:${s}:${i}`] && !seen.has(key)) {
-              seen.add(key);
-              out.push(it);
-            }
-          });
-        }
-        return [...out, ...(extra[k] ?? [])];
-      };
+      const list = <K extends ListKey>(k: K) => finalEntries(k).map((e) => e.item);
       const finalNotes = [
         ...[principal, other(principal)].filter((s) => notes[s] && !empty(C[s]!.notes)).map((s) => C[s]!.notes.trim()),
         ...(extraNotes.trim() ? [extraNotes.trim()] : []),
@@ -364,6 +359,30 @@ export function MergePage() {
   };
 
   /** Lista final de un tipo de dato (lo marcado de los dos, sin repetidos; primero el principal). */
+  type Entry = { id: string; item: LabeledValue | Address; extraIndex?: number };
+  /** Lo que quedará en cada lista: lo marcado + lo nuevo, en el orden elegido y con su etiqueta. */
+  const finalEntries = (k: ListKey): Entry[] => {
+    const all: Entry[] = [
+      ...finalList(k).map((it) => ({ id: itemKey(k, it), item: it })),
+      ...(extra[k] ?? []).map((it, i) => ({ id: `x:${i}`, item: it, extraIndex: i })),
+    ];
+    const ord = order[k] ?? [];
+    const pos = (e: Entry, i: number) => (ord.includes(e.id) ? ord.indexOf(e.id) : 1000 + i);
+    const sorted = all.map((e, i) => ({ e, p: pos(e, i) })).sort((a, b) => a.p - b.p).map((x) => x.e);
+    return sorted.map((e) => {
+      const lbl = labelOv[`${k}|${e.id}`] ?? (e.item as LabeledValue).label ?? "";
+      return { ...e, item: { ...e.item, label: canon(k, lbl) } as LabeledValue | Address };
+    });
+  };
+  const moveEntry = (k: ListKey, id: string, d: number) => {
+    const ids = finalEntries(k).map((e) => e.id);
+    const i = ids.indexOf(id);
+    const j = i + d;
+    if (j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j]!, ids[i]!];
+    setOrder((o) => ({ ...o, [k]: ids }));
+  };
+
   const finalList = (k: ListKey) => {
     const out: (LabeledValue | Address)[] = [];
     const seen = new Set<string>();
@@ -521,7 +540,7 @@ export function MergePage() {
             );
           });
         };
-        const fin = finalList(key);
+        const entries = finalEntries(key);
         return (
           <FieldBox shade={shade()}
             key={key}
@@ -531,22 +550,27 @@ export function MergePage() {
             b={col("b")}
             result={
               <>
-                {fin.length || extra[key]?.length ? (
+                {entries.length ? (
                   <ul className="space-y-1 text-sm">
-                    {fin.map((it, i) => (
-                      <li key={i} className="rounded-md bg-white px-2 py-1">
-                        {key === "addresses" ? addrText(it as Address) : (it as LabeledValue).value}
-                        {(it as LabeledValue).label && <span className="text-[11px] text-slate-500"> · {(it as LabeledValue).label}</span>}
-                      </li>
-                    ))}
-                    {extra[key]?.map((it, i) => (
-                      <li key={`x${i}`} className="flex items-start justify-between gap-2 rounded-md bg-amber-50 px-2 py-1 ring-1 ring-amber-200">
-                        <span>
-                          {key === "addresses" ? addrText(it as Address) : (it as LabeledValue).value}
-                          {(it as LabeledValue).label && <span className="text-[11px] text-slate-500"> · {(it as LabeledValue).label}</span>}
-                          <span className="ml-1 text-[10px] font-semibold uppercase text-amber-800">nuevo</span>
+                    {entries.map((e, i) => (
+                      <li key={e.id} className={`flex items-center gap-1.5 rounded-md px-1.5 py-1 ${e.extraIndex !== undefined ? "bg-amber-50 ring-1 ring-amber-200" : "bg-white"}`}>
+                        {entries.length > 1 && (
+                          <span className="flex shrink-0 flex-col">
+                            <button type="button" className="px-0.5 text-[10px] leading-tight text-slate-400 hover:text-indigo-700 disabled:opacity-20" disabled={i === 0} onClick={() => moveEntry(key, e.id, -1)} aria-label="Subir">▲</button>
+                            <button type="button" className="px-0.5 text-[10px] leading-tight text-slate-400 hover:text-indigo-700 disabled:opacity-20" disabled={i === entries.length - 1} onClick={() => moveEntry(key, e.id, 1)} aria-label="Bajar">▼</button>
+                          </span>
+                        )}
+                        <span className="min-w-0 flex-1 break-words">
+                          {key === "addresses" ? addrText(e.item as Address) : (e.item as LabeledValue).value}
+                          {key === "addresses" && (e.item as Address).label && <span className="text-[11px] text-slate-500"> · {(e.item as Address).label}</span>}
+                          {e.extraIndex !== undefined && <span className="ml-1 text-[10px] font-semibold uppercase text-amber-800">nuevo</span>}
                         </span>
-                        <button type="button" className="text-xs text-slate-500 hover:text-red-700" aria-label="Quitar" onClick={() => setExtra((x) => ({ ...x, [key]: x[key]!.filter((_, j) => j !== i) }))}>✕</button>
+                        {key !== "addresses" && (
+                          <LabelInput kind={key} className="w-28 shrink-0 bg-white" value={(e.item as LabeledValue).label} onChange={(v) => setLabelOv((o) => ({ ...o, [`${key}|${e.id}`]: v }))} />
+                        )}
+                        {e.extraIndex !== undefined && (
+                          <button type="button" className="text-xs text-slate-500 hover:text-red-700" aria-label="Quitar" onClick={() => setExtra((x) => ({ ...x, [key]: x[key]!.filter((_, j) => j !== e.extraIndex) }))}>✕</button>
+                        )}
                       </li>
                     ))}
                   </ul>

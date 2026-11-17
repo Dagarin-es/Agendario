@@ -37,6 +37,43 @@ function PencilIcon({ className }: { className?: string }) {
   );
 }
 
+const smallBtn = "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100";
+
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" />
+    </svg>
+  );
+}
+
+/** Trabajadores: contactos que tienen enlazada esta ficha como empresa. */
+function Employees({ c }: { c: ContactDetail }) {
+  return (
+    <section className="card">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="flex items-center gap-1.5 text-[13px] font-semibold text-indigo-900"><span aria-hidden="true">👥</span> Trabajadores ({c.employees.length})</h2>
+        {c.canEdit && <Link className="btn-ghost px-2 py-1 text-sm" to={`/contacts/new?org=${c.id}&orgName=${encodeURIComponent(c.displayName)}`}>+ Añadir trabajador</Link>}
+      </div>
+      <ul className="divide-y divide-slate-100">
+        {c.employees.map((e) => (
+          <li key={e.id} className="flex items-center gap-3 py-2">
+            <Link to={`/contacts/${e.id}`} className="flex min-w-0 flex-1 items-center gap-3 hover:text-indigo-800">
+              <Avatar id={e.id} name={e.displayName} hasPhoto={e.hasPhoto} size={36} version={e.updatedAt} />
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{e.displayName}</span>
+                {e.jobTitle && <span className="block truncate text-xs text-slate-500">{e.jobTitle}</span>}
+              </span>
+            </Link>
+            {e.phone && <a className="btn-ghost px-2 py-1 text-sm" href={telLink(e.phone)} title={`Llamar al ${e.phone}`}>📞</a>}
+            {e.email && <a className="btn-ghost px-2 py-1 text-sm" href={`mailto:${e.email}`} title={e.email}>✉️</a>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex gap-3 py-1.5 text-sm">
@@ -69,6 +106,7 @@ export function ContactDetailPage() {
   const [lastCall, setLastCall] = useState<{ phone: string; at: number } | null>(null);
   const [askCall, setAskCall] = useState(false);
   const [prefill, setPrefill] = useState<InteractionPrefill | null>(null);
+  const [showLog, setShowLog] = useState(false);
   useEffect(() => {
     if (!lastCall) return;
     const onVis = () => document.visibilityState === "visible" && Date.now() - lastCall.at > 3000 && setAskCall(true);
@@ -104,155 +142,187 @@ export function ContactDetailPage() {
   if (error || !c) return <p className="text-red-600">{(error as Error)?.message ?? "No encontrado"}</p>;
 
   const tag = (itemId?: string) => <ItemTag contactId={c.id} itemId={itemId} current={itemId ? c.itemTags[itemId] : undefined} contactTags={c.tags} />;
-  const hasOther = !!(c.birthday || c.nickname);
-  const empty = !c.phones.length && !c.emails.length && !c.urls.length && !c.addresses.length && !hasOther && !c.notes;
+  const hasOther = !!c.nickname; // el cumpleaños se ve en Celebraciones → Fechas importantes
 
   return (
     <div className="space-y-4">
-      {/* Cabecera */}
-      <section className="card relative flex flex-col items-center gap-3 text-center">
-        {c.canEdit && (
-          <Link
-            to={`/contacts/${c.id}/edit`}
-            className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-indigo-800 shadow-sm hover:border-indigo-400 hover:bg-indigo-50"
-            title="Editar contacto"
-            aria-label="Editar contacto"
-          >
-            <PencilIcon className="h-4 w-4" /> <span className="hidden sm:inline">Editar</span>
-          </Link>
-        )}
+      {/* Cabecera compacta: foto a la izquierda, todo lo demás a la derecha */}
+      <section className="card flex items-start gap-4">
         <button
-          className="group relative rounded-full"
+          className="group relative shrink-0 rounded-full"
           disabled={!c.canEdit}
           onClick={() => fileRef.current?.click()}
           title={c.canEdit ? "Cambiar foto" : undefined}
         >
-          <Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} size={112} version={c.updatedAt} />
+          <span className="sm:hidden"><Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} size={72} version={c.updatedAt} /></span>
+          <span className="hidden sm:block"><Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} size={104} version={c.updatedAt} /></span>
           {c.canEdit && (
-            <span className="absolute inset-0 hidden items-center justify-center rounded-full bg-black/40 text-sm text-white group-hover:flex">
+            <span className="absolute inset-0 hidden items-center justify-center rounded-full bg-black/40 text-xs text-white group-hover:flex">
               {uploadPhoto.isPending ? "Subiendo…" : "Cambiar"}
             </span>
           )}
         </button>
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && uploadPhoto.mutate(e.target.files[0])} />
-        <div>
-          <h1 className="text-xl font-semibold">{c.displayName}</h1>
-          {(c.jobTitle || c.organization) && (
-            <p className="text-slate-500">
-              {c.jobTitle}
-              {c.jobTitle && c.organization && " · "}
-              {c.organizationContact ? (
-                <Link to={`/contacts/${c.organizationContact.id}`} className="text-indigo-700 hover:underline" title="Ver la ficha de la empresa">
-                  🔗 {c.organization || c.organizationContact.displayName}
-                </Link>
-              ) : (
-                c.organization
-              )}
-            </p>
+        <div className="min-w-0 flex-1 space-y-2.5">
+          <div>
+            <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold leading-tight">
+              {c.displayName}
+              <span className="text-xs font-normal"><VisibilityBadge v={c.visibility} /></span>
+            </h1>
+            {(c.jobTitle || (c.organization && c.organization !== c.displayName)) && (
+              <p className="mt-0.5 text-slate-500">
+                {c.jobTitle}
+                {c.jobTitle && c.organization && " · "}
+                {c.organizationContact ? (
+                  <Link to={`/contacts/${c.organizationContact.id}`} className="text-indigo-700 hover:underline" title="Ver la ficha de la empresa">
+                    🔗 {c.organization || c.organizationContact.displayName}
+                  </Link>
+                ) : (
+                  c.organization
+                )}
+              </p>
+            )}
+            {!c.isMine && <p className="text-xs text-slate-500">de {c.ownerName}{c.canEdit ? " · puedes editar" : " · solo lectura"}</p>}
+          </div>
+          <ContactTags contactId={c.id} tags={c.tags} align="start" />
+          <QuickActions c={c} align="start" onCall={(phone) => setLastCall({ phone, at: Date.now() })} />
+          {askCall && lastCall && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
+              ¿Apuntar la llamada?
+              <button
+                className="btn-primary px-2.5 py-1"
+                onClick={() => {
+                  setPrefill({ kind: "call_out", channel: lastCall.phone, at: new Date(lastCall.at), durationMin: Math.max(1, Math.round((Date.now() - lastCall.at) / 60000)) });
+                  setAskCall(false);
+                  setLastCall(null);
+                  setShowLog(true);
+                  setTimeout(() => document.getElementById("interactions")?.scrollIntoView({ behavior: "smooth" }), 50);
+                }}
+              >
+                Apuntar
+              </button>
+              <button className="btn-ghost px-2.5 py-1" onClick={() => { setAskCall(false); setLastCall(null); }}>No</button>
+            </div>
           )}
-          <div className="mt-2 flex items-center justify-center gap-2 text-xs text-slate-500">
-            <VisibilityBadge v={c.visibility} />
-            {!c.isMine && <span>de {c.ownerName}{c.canEdit ? " · puedes editar" : " · solo lectura"}</span>}
+          <div className="flex flex-wrap items-center gap-1">
+            {c.canEdit && (
+              <Link to={`/contacts/${c.id}/edit`} className={smallBtn} title="Editar contacto">
+                <PencilIcon className="h-4 w-4" /> Editar
+              </Link>
+            )}
+            <Link to={`/contacts/${c.id}/history`} className={smallBtn} title="Historial de cambios">
+              <HistoryIcon className="h-4 w-4" /> Historial{c.historyCount > 0 && <span className="text-slate-400">({c.historyCount})</span>}
+            </Link>
+            {c.canEdit && c.hasPhoto && (
+              <button className={smallBtn} onClick={() => removePhoto.mutate()} title="Quitar la foto">
+                <span aria-hidden="true">🖼️</span> Quitar foto
+              </button>
+            )}
+            {c.isMine && (
+              <button
+                className={`${smallBtn} text-red-700 hover:bg-red-50`}
+                onClick={async () => (await confirm({ title: `¿Borrar a «${c.displayName}»?`, message: "Irá a la papelera: podrás restaurarlo durante 60 días, con su foto, fechas e ideas de regalo.", confirmText: "Borrar", danger: true })) && remove.mutate()}
+              >
+                <TrashIcon className="h-4 w-4" /> Borrar
+              </button>
+            )}
           </div>
         </div>
-        <ContactTags contactId={c.id} tags={c.tags} />
-        <QuickActions c={c} onCall={(phone) => setLastCall({ phone, at: Date.now() })} />
-        {askCall && lastCall && (
-          <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
-            ¿Apuntar la llamada?
-            <button
-              className="btn-primary px-2.5 py-1"
-              onClick={() => {
-                setPrefill({ kind: "call_out", channel: lastCall.phone, at: new Date(lastCall.at), durationMin: Math.max(1, Math.round((Date.now() - lastCall.at) / 60000)) });
-                setAskCall(false);
-                setLastCall(null);
-                setTimeout(() => document.getElementById("interactions")?.scrollIntoView({ behavior: "smooth" }), 50);
-              }}
-            >
-              Apuntar
+      </section>
+
+      {/* Teléfonos y emails: dos recuadros de la misma altura */}
+      <div className="grid items-stretch gap-4 md:grid-cols-2">
+        <section className="card flex flex-col" id="interactions">
+          <h2 className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-indigo-900"><span aria-hidden="true">📞</span> Teléfonos</h2>
+          <div className="flex-1">
+            {c.phones.length === 0 && <p className="py-1.5 text-sm text-slate-400">Sin teléfonos.</p>}
+            {c.phones.map((p, i) => (
+              <Row key={`p${i}`} label={p.label}>
+                <span className="inline-flex flex-wrap items-center gap-1.5">
+                  <a className="text-indigo-700" href={telLink(p.value)} onClick={() => setLastCall({ phone: p.value, at: Date.now() })}>{p.value}</a>
+                  {tag(p.id)}
+                </span>
+              </Row>
+            ))}
+          </div>
+          <div className="mt-2 border-t border-slate-100 pt-2">
+            <button className="btn-ghost w-full justify-between px-2 py-1.5 text-sm" onClick={() => setShowLog(!showLog)} aria-expanded={showLog}>
+              <span>📒 Llamadas y apuntes{c.interactions.length > 0 && <span className="text-slate-400"> ({c.interactions.length})</span>}</span>
+              <span className="text-slate-400">{showLog ? "▴" : "▾"}</span>
             </button>
-            <button className="btn-ghost px-2.5 py-1" onClick={() => { setAskCall(false); setLastCall(null); }}>No</button>
+            {showLog && (
+              <div className="mt-2">
+                <Interactions c={c} embedded prefill={prefill} onPrefillUsed={() => setPrefill(null)} />
+              </div>
+            )}
           </div>
-        )}
-        <div className="flex flex-wrap justify-center gap-2">
-          <Link to={`/contacts/${c.id}/history`} className="btn-ghost" title="Historial de cambios">
-            <HistoryIcon className="h-4 w-4" /> Historial{c.historyCount > 0 && <span className="text-slate-400">({c.historyCount})</span>}
-          </Link>
-          {c.canEdit && c.hasPhoto && <button className="btn-ghost" onClick={() => removePhoto.mutate()}>Quitar foto</button>}
-          {c.isMine && <button className="btn-danger" onClick={async () => (await confirm({ title: `¿Borrar a «${c.displayName}»?`, message: "Irá a la papelera: podrás restaurarlo durante 60 días, con su foto, fechas e ideas de regalo.", confirmText: "Borrar", danger: true })) && remove.mutate()}>Borrar</button>}
-        </div>
-      </section>
-
-      {/* Datos, en bloques */}
-      <section className="card">
-        <h2 className="section-title">Datos</h2>
-        <div className="space-y-2.5">
-          {c.phones.length > 0 && (
-            <Block icon="📞" title="Teléfonos">
-              {c.phones.map((p, i) => (
-                <Row key={`p${i}`} label={p.label}>
-                  <span className="inline-flex flex-wrap items-center gap-1.5">
-                    <a className="text-indigo-700" href={telLink(p.value)} onClick={() => setLastCall({ phone: p.value, at: Date.now() })}>{p.value}</a>
-                    {tag(p.id)}
-                  </span>
-                </Row>
-              ))}
-            </Block>
-          )}
-          {c.emails.length > 0 && (
-            <Block icon="✉️" title="Emails">
-              {c.emails.map((e, i) => (
-                <Row key={`e${i}`} label={e.label}>
-                  <span className="inline-flex flex-wrap items-center gap-1.5">
-                    <a className="text-indigo-700" href={`mailto:${e.value}`}>{e.value}</a>
-                    {tag(e.id)}
-                  </span>
-                </Row>
-              ))}
-            </Block>
-          )}
-          {c.addresses.length > 0 && (
-            <Block icon="🏠" title="Direcciones">
-              {c.addresses.map((a, i) => (
-                <Row key={`a${i}`} label={a.label}>
-                  <span className="inline-flex flex-wrap items-center gap-1.5">
-                    <span>{addressLine(a)}</span>
-                    {isGeolocated(a) && <span title="Dirección geolocalizada">📍</span>}
-                    {tag(a.id)}
-                  </span>
-                  <div className="mt-1.5"><MapLinks address={a} /></div>
-                  <MiniMap address={a} />
-                </Row>
-              ))}
-            </Block>
-          )}
-          {c.urls.length > 0 && (
-            <Block icon="🌐" title="Webs">
-              {c.urls.map((u, i) => <Row key={`u${i}`} label={u.label}><a className="text-indigo-700" href={u.value} target="_blank" rel="noreferrer">{u.value}</a></Row>)}
-            </Block>
-          )}
-          {hasOther && (
-            <Block icon="🗂️" title="Otros datos">
-              {c.birthday && <Row label="Cumpleaños">{formatPartialDate(c.birthday)}</Row>}
-              {c.nickname && <Row label="Apodo">{c.nickname}</Row>}
-            </Block>
-          )}
-          {c.notes && (
-            <Block icon="📝" title="Notas">
-              <p className="whitespace-pre-wrap py-1.5 text-sm">{c.notes}</p>
-            </Block>
-          )}
-          {empty && <p className="text-sm text-slate-500">Sin datos todavía.</p>}
-        </div>
-      </section>
-
-      <div id="interactions">
-        <Interactions c={c} prefill={prefill} onPrefillUsed={() => setPrefill(null)} />
+        </section>
+        <section className="card flex flex-col">
+          <h2 className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-indigo-900"><span aria-hidden="true">✉️</span> Emails</h2>
+          <div className="flex-1">
+            {c.emails.length === 0 && <p className="py-1.5 text-sm text-slate-400">Sin emails.</p>}
+            {c.emails.map((e, i) => (
+              <Row key={`e${i}`} label={e.label}>
+                <span className="inline-flex flex-wrap items-center gap-1.5">
+                  <a className="break-all text-indigo-700" href={`mailto:${e.value}`}>{e.value}</a>
+                  {tag(e.id)}
+                </span>
+              </Row>
+            ))}
+          </div>
+        </section>
       </div>
-      <GiftIdeas contactId={c.id} ideas={c.giftIdeas} />
-      <ImportantDates c={c} onChange={refresh} />
-      <Relationships c={c} onChange={refresh} />
-      <GiftsReceived contactId={c.id} gifts={c.giftsReceived} />
+
+      {/* Resto de datos */}
+      {(c.addresses.length > 0 || c.urls.length > 0 || hasOther || c.notes) && (
+        <section className="card">
+          <div className="space-y-2.5">
+            {c.addresses.length > 0 && (
+              <Block icon="🏠" title="Direcciones">
+                {c.addresses.map((a, i) => (
+                  <Row key={`a${i}`} label={a.label}>
+                    <span className="inline-flex flex-wrap items-center gap-1.5">
+                      <span>{addressLine(a)}</span>
+                      {isGeolocated(a) && <span title="Dirección geolocalizada">📍</span>}
+                      {tag(a.id)}
+                    </span>
+                    <div className="relative z-10 mt-1.5"><MapLinks address={a} /></div>
+                    <MiniMap address={a} />
+                  </Row>
+                ))}
+              </Block>
+            )}
+            {c.urls.length > 0 && (
+              <Block icon="🌐" title="Webs">
+                {c.urls.map((u, i) => <Row key={`u${i}`} label={u.label}><a className="break-all text-indigo-700" href={u.value} target="_blank" rel="noreferrer">{u.value}</a></Row>)}
+              </Block>
+            )}
+            {hasOther && (
+              <Block icon="🗂️" title="Otros datos">
+                {c.nickname && <Row label="Apodo">{c.nickname}</Row>}
+              </Block>
+            )}
+            {c.notes && (
+              <Block icon="📝" title="Notas">
+                <p className="whitespace-pre-wrap py-1.5 text-sm">{c.notes}</p>
+              </Block>
+            )}
+          </div>
+        </section>
+      )}
+
+      {c.employees.length > 0 && <Employees c={c} />}
+
+      {/* Celebraciones */}
+      <div>
+        <h2 className="mb-2 flex items-center gap-2 px-1 text-base font-semibold text-indigo-950"><span aria-hidden="true">🎉</span> Celebraciones</h2>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <GiftIdeas contactId={c.id} ideas={c.giftIdeas} />
+          <ImportantDates c={c} onChange={refresh} />
+          <Relationships c={c} onChange={refresh} />
+          <GiftsReceived contactId={c.id} gifts={c.giftsReceived} />
+        </div>
+      </div>
 
       {c.isMine && c.visibility === "shared" && c.shares && <SharePanel contactId={c.id} shares={c.shares} />}
       {c.isMine && c.visibility === "private" && (
@@ -286,7 +356,7 @@ function ImportantDates({ c, onChange }: { c: ContactDetail; onChange: () => voi
   return (
     <section className="card">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="section-title mb-0">Fechas importantes</h2>
+        <h2 className="section-title mb-0">📅 Fechas importantes</h2>
         {c.canEdit && !adding && <button className="btn-ghost" onClick={() => setAdding(true)}>+ Añadir</button>}
       </div>
       {adding && (
@@ -302,6 +372,12 @@ function ImportantDates({ c, onChange }: { c: ContactDetail; onChange: () => voi
           </div>
         </form>
       )}
+      {c.birthday && (
+        <div className="mb-2 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+          <span className="flex-1">🎂 Cumpleaños <span className="text-slate-500">· {formatPartialDate(c.birthday)}</span></span>
+          <span className="text-xs text-slate-400">en los datos del contacto</span>
+        </div>
+      )}
       {showAuto && (
         <div className="mb-2 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm">
           <span className={`flex-1 ${c.prefs.autoSaint ? "" : "text-slate-400 line-through"}`}>
@@ -310,7 +386,7 @@ function ImportantDates({ c, onChange }: { c: ContactDetail; onChange: () => voi
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => toggleAuto.mutate(!c.prefs.autoSaint)}>{c.prefs.autoSaint ? "Quitar" : "Volver a poner"}</button>
         </div>
       )}
-      {c.importantDates.length === 0 && !adding && !showAuto && <p className="text-sm text-slate-500">Ninguna. El cumpleaños va en los datos del contacto.</p>}
+      {c.importantDates.length === 0 && !adding && !showAuto && !c.birthday && <p className="text-sm text-slate-500">Ninguna. El cumpleaños va en los datos del contacto.</p>}
       <ul className="space-y-1">
         {c.importantDates.map((d) => (
           <li key={d.id} className="flex items-center gap-2 text-sm">
@@ -343,7 +419,7 @@ function Relationships({ c, onChange }: { c: ContactDetail; onChange: () => void
   return (
     <section className="card">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="section-title mb-0">Relaciones</h2>
+        <h2 className="section-title mb-0">👪 Relaciones</h2>
         {c.canEdit && !adding && <button className="btn-ghost" onClick={() => setAdding(true)}>+ Añadir</button>}
       </div>
       {adding && (

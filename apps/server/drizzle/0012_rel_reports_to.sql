@@ -1,0 +1,1 @@
+ALTER TYPE "public"."relationship_type" ADD VALUE 'reports_to' BEFORE 'other';

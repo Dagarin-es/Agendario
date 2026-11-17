@@ -89,7 +89,7 @@ function ItemRow({ href, item, isDefault, onDefault, onUse }: { href: string; it
 }
 
 /** Botones Llamar · Mensaje · Email con el dato y la app por defecto (cambiables por contacto). */
-export function QuickActions({ c, onCall }: { c: ContactDetail; onCall?: (phone: string) => void }) {
+export function QuickActions({ c, onCall, align = "center" }: { c: ContactDetail; onCall?: (phone: string) => void; align?: "center" | "start" }) {
   const qc = useQueryClient();
   const { data: user } = useUserPrefs();
   const cc = user?.countryCode ?? "34";
@@ -101,7 +101,7 @@ export function QuickActions({ c, onCall }: { c: ContactDetail; onCall?: (phone:
   if (!c.phones.length && !c.emails.length) return null;
 
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className={`flex flex-wrap gap-2 ${align === "start" ? "justify-start" : "justify-center"}`}>
       {d.callPhone && (
         <Split href={telLink(d.callPhone.value)} icon="📞" label="Llamar" onMain={() => onCall?.(d.callPhone!.value)}>
           <span className={menuTitle}>Llamar a…</span>

@@ -57,12 +57,11 @@ function letterOf(text: string): string {
   return /^[A-Z]$/.test(base) ? base : "#";
 }
 
-/** Pestañas del abecedario, a todo el ancho, como las de una agenda. Las letras sin contactos, apagadas. */
-const tabColors = ["bg-indigo-600", "bg-amber-500", "bg-violet-500", "bg-pink-500"];
+/** Pestañas del abecedario, a todo el ancho, como las de una agenda (sobrias). Las letras sin contactos, apagadas. */
 function AlphabetTabs({ present, active, onPick }: { present: Set<string>; active: string | null; onPick: (l: string) => void }) {
   return (
-    <nav className="grid grid-cols-14 gap-px pt-1 sm:grid-cols-28" aria-label="Saltar a la letra">
-      {ALPHABET.map((l, i) => {
+    <nav className="grid grid-cols-14 gap-px border-b border-slate-200 pt-1.5 sm:grid-cols-28" aria-label="Saltar a la letra">
+      {ALPHABET.map((l) => {
         const has = present.has(l);
         const on = active === l;
         return (
@@ -71,12 +70,12 @@ function AlphabetTabs({ present, active, onPick }: { present: Set<string>; activ
             type="button"
             disabled={!has}
             onClick={() => onPick(l)}
-            className={`relative h-7 rounded-t-md text-[11px] font-bold transition sm:h-8 sm:text-xs ${
+            className={`h-7 rounded-t-md text-[11px] font-semibold transition sm:h-8 sm:text-xs ${
               on
-                ? "z-10 -mb-px translate-y-px bg-white text-indigo-900 ring-1 ring-slate-200"
+                ? "bg-indigo-700 text-white"
                 : has
-                  ? `${tabColors[i % 4]} text-white shadow-[inset_0_-3px_0_rgba(0,0,0,0.12)] hover:-translate-y-0.5`
-                  : "bg-slate-100 text-slate-300"
+                  ? "bg-white text-indigo-800 ring-1 ring-inset ring-slate-200 hover:bg-indigo-50"
+                  : "text-slate-300"
             }`}
             aria-label={`Letra ${l}`}
             aria-current={on ? "true" : undefined}
@@ -134,6 +133,8 @@ export function ContactListPage() {
   const deferred = useDeferredValue(q);
   const [pageSize, setPageSize] = useState(loadPageSize);
   const { data: tags } = useTags();
+  const { data: countData } = useQuery({ queryKey: ["contacts", "count"], queryFn: () => api.get<{ total: number }>("/contacts/count"), staleTime: 30_000 });
+  const allCount = countData?.total ?? null;
   const dupCount = useDuplicateCount();
   const topRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
@@ -330,7 +331,7 @@ export function ContactListPage() {
             {levels.map((lv, i) => (
               <div key={lv.parent ?? "root"} className={`-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 py-1 ${i > 0 ? "border-l-2 border-indigo-200" : ""}`}>
                 {i === 0 ? (
-                  <TagChip tag={{ id: "", name: "Todos", color: "slate" }} active={!tag} onClick={() => setTag("")} />
+                  <TagChip tag={{ id: "", name: allCount != null ? `Todos · ${allCount}` : "Todos", color: "slate" }} active={!tag} onClick={() => setTag("")} />
                 ) : (
                   <span className="shrink-0 text-xs text-slate-400">↳ {byId.get(lv.parent!)?.name}:</span>
                 )}
@@ -359,7 +360,7 @@ export function ContactListPage() {
       )}
 
       {total > 0 && (
-        <div className="sticky top-[68px] z-[5] -mx-4 bg-slate-50/95 px-4 py-1.5 backdrop-blur">
+        <div className={`sticky z-[5] -mx-4 bg-slate-50 px-4 pt-1.5 ${showAlphabet && selected.size === 0 ? "" : "pb-1.5"}`} style={{ top: "var(--header-h, 68px)" }}>
           <div className="flex min-h-11 items-center gap-2">
             {/* Selección: casilla + desplegable (agrupados, como en Gmail) */}
             <div className="relative flex shrink-0 items-center rounded-lg border border-slate-300 bg-white">
@@ -415,10 +416,7 @@ export function ContactListPage() {
               </>
             ) : (
               <>
-                <p className="min-w-0 flex-1 truncate text-xs text-slate-500">
-                  {pageSize && total > pageSize ? `${from}–${to} de ${total}` : `${total} ${total === 1 ? "contacto" : "contactos"}`}
-                  {activeTag ? ` con «${activeTag.name}»` : ""}
-                </p>
+                <span className="flex-1" />
                 <label className="flex shrink-0 items-center gap-1.5 text-xs text-slate-500">
                   <span className="hidden sm:inline">Ordenar</span>
                   <select className="input w-auto max-w-[10rem] py-1 text-xs" value={sort} onChange={(e) => changeSort(e.target.value as SortId)} aria-label="Ordenar por">
@@ -490,6 +488,7 @@ export function ContactListPage() {
 
 
 
+      {pageSize > 0 && total > pageSize && <p className="text-center text-xs text-slate-500">{from}–{to} de {total}{activeTag ? ` con «${activeTag.name}»` : ""}</p>}
       <Pager page={current} pages={pages} onPage={goPage} />
 
       {toast && (

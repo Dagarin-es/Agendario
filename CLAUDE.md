@@ -72,6 +72,7 @@ Nunca tocar `/opt/agendario/.env` ni `/opt/agendario/data` sin preguntar. El scr
 
 ## Pendiente (en orden)
 
+> Hecho en 0.11.0-beta: ficha compacta (cabecera, Teléfonos/Emails, Celebraciones, Trabajadores), relaciones recíprocas (`relationshipInverse`, `lib/upgrades.ts` para ajustes de datos de una sola vez), calendario en dos columnas, santos desactivados por defecto, Menú, `components/LabelInput.tsx`.
 > Hecho en 0.10.0-beta: calendario de Fechas con estado de regalos (`lib/events.ts`, `pages/Upcoming.tsx`), idea → comprado → regalado, santos automáticos (`packages/shared/src/santoral.ts`), subetiquetas (`tags.parent_id/position`, `expandTagIds`), abecedario arriba, Combinar desde la lista, reordenar datos, etiquetas de datos en `user_prefs.itemLabels`, historial de sincronizaciones (`sync_log`).
 > Hecho en 0.9.0-beta: sincronización CardDAV/Fastmail (`lib/carddav.ts`, `lib/sync.ts`, `routes/sync.ts`, tablas `sync_accounts`/`sync_links`), mapa con chincheta (`components/MapPicker.tsx`, Leaflet), abecedario y orden de la lista, etiquetas y foto en el formulario, botón Editar con lápiz.
 

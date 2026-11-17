@@ -121,12 +121,17 @@ export function ContactFormPage() {
   // ?back=/duplicates → al guardar o cancelar se vuelve a esa pantalla (solo rutas internas)
   const [search] = useSearchParams();
   const back = search.get("back")?.startsWith("/") ? search.get("back")! : null;
-  const [form, setForm] = useState<ContactInput>(empty);
+  // ?org=<id>&orgName=… → nuevo trabajador con la empresa ya enlazada
+  const [form, setForm] = useState<ContactInput>(() => {
+    const org = search.get("org");
+    const name = search.get("orgName") ?? "";
+    return org && !id ? { ...empty, organizationContactId: org, organization: name } : empty;
+  });
   const [bday, setBday] = useState({ day: "", month: "", year: "" });
   const [error, setError] = useState("");
   const [picking, setPicking] = useState(false);
   const geocoder = useGeocoder();
-  const [orgName, setOrgName] = useState(""); // nombre del contacto enlazado como empresa
+  const [orgName, setOrgName] = useState(search.get("orgName") ?? ""); // nombre del contacto enlazado como empresa
   const [tags, setTags] = useState<TagLite[]>([]);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);

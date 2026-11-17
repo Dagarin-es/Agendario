@@ -87,7 +87,7 @@ function Form({ c, initial, onDone, onCancel, editing }: { c: ContactDetail; ini
 }
 
 /** Llamadas y apuntes de conversaciones (privados: solo los ves tú). */
-export function Interactions({ c, prefill, onPrefillUsed }: { c: ContactDetail; prefill?: InteractionPrefill | null; onPrefillUsed?: () => void }) {
+export function Interactions({ c, prefill, onPrefillUsed, embedded }: { c: ContactDetail; prefill?: InteractionPrefill | null; onPrefillUsed?: () => void; embedded?: boolean }) {
   const qc = useQueryClient();
   const confirm = useConfirm();
   const [adding, setAdding] = useState<Draft | null>(null);
@@ -105,10 +105,11 @@ export function Interactions({ c, prefill, onPrefillUsed }: { c: ContactDetail; 
   const remove = useMutation({ mutationFn: (id: string) => api.del(`/interactions/${id}`), onSuccess: refresh });
   const list = showAll ? c.interactions : c.interactions.slice(0, 5);
 
+  const Wrap = embedded ? "div" : "section";
   return (
-    <section className="card">
+    <Wrap className={embedded ? "" : "card"}>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="section-title mb-0">Llamadas y apuntes</h2>
+        {embedded ? <span /> : <h2 className="section-title mb-0">Llamadas y apuntes</h2>}
         {!adding && (
           <div className="flex gap-1">
             <button className="btn-ghost px-2 text-sm" onClick={() => setAdding(emptyDraft({ kind: "call_out", channel: c.phones[0]?.value }))}>📞 Llamada</button>
@@ -164,6 +165,6 @@ export function Interactions({ c, prefill, onPrefillUsed }: { c: ContactDetail; 
           {showAll ? "Ver menos" : `Ver las ${c.interactions.length}`}
         </button>
       )}
-    </section>
+    </Wrap>
   );
 }

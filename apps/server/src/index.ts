@@ -24,6 +24,7 @@ import { personalRoutes } from "./routes/personal.js";
 import { backupRoutes } from "./routes/backup.js";
 import { syncRoutes } from "./routes/sync.js";
 import { startSyncScheduler } from "./lib/sync.js";
+import { runUpgrades } from "./lib/upgrades.js";
 import { startPurgeJob } from "./lib/history.js";
 import { startBackupScheduler } from "./lib/backup.js";
 import { exportRoutes, groupRoutes, upcomingRoutes } from "./routes/misc.js";
@@ -77,6 +78,7 @@ if (existsSync(config.webDir)) {
 // ---------- Arranque ----------
 console.log("Aplicando migraciones de base de datos…");
 await runMigrations();
+await runUpgrades();
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`Agendario escuchando en http://0.0.0.0:${info.port}`);

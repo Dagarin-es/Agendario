@@ -38,8 +38,16 @@ function MoreMenu() {
   const item = "flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50";
   return (
     <div ref={ref} className="relative shrink-0">
-      <button className="btn-ghost px-2.5 text-lg leading-none" onClick={() => setOpen(!open)} aria-label="Más opciones" aria-expanded={open}>
-        ⋯
+      <button
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm hover:border-indigo-300 hover:bg-indigo-50"
+        onClick={() => setOpen(!open)}
+        aria-label="Menú"
+        aria-expanded={open}
+      >
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+        <span className="hidden sm:inline">Menú</span>
       </button>
       {open && (
         <div className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
@@ -48,12 +56,12 @@ function MoreMenu() {
           <Link to="/trash" className={item}>🗑️ Papelera</Link>
           <Link to="/settings" className={item}>⚙️ Ajustes</Link>
           <div className="my-1 border-t border-slate-100" />
-          <Link to="/import" className={item}>⤓ Importar .vcf</Link>
-          <a href="/api/export/contacts.vcf" className={item}>⤒ Exportar .vcf</a>
-          <a href="/api/export/contacts.vcf?gifts=true" className={item}>⤒ Exportar .vcf con regalos</a>
+          <Link to="/import" className={item}>📥 Importar .vcf</Link>
+          <a href="/api/export/contacts.vcf" className={item}>📤 Exportar .vcf</a>
+          <a href="/api/export/contacts.vcf?gifts=true" className={item}>🎁 Exportar .vcf con regalos</a>
           <div className="my-1 border-t border-slate-100" />
           <div className="truncate px-4 pt-1 text-[11px] text-slate-400">{me?.email}</div>
-          <button className={`${item} text-red-700`} onClick={logout}>Salir</button>
+          <button className={`${item} text-red-700`} onClick={logout}>🚪 Salir</button>
         </div>
       )}
     </div>
@@ -62,10 +70,21 @@ function MoreMenu() {
 
 export function Layout() {
   const dupCount = useDuplicateCount();
+  // Altura real de la cabecera: las barras fijas de cada página se pegan justo debajo
+  const headerRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const set = () => document.documentElement.style.setProperty("--header-h", `${el.getBoundingClientRect().height}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const pendingGifts = usePendingGifts().data?.length ?? 0;
   return (
     <div className="mx-auto flex min-h-dvh max-w-5xl flex-col">
-      <header className="sticky top-0 z-10 flex items-center gap-1 border-b border-slate-200 bg-white/90 px-3 py-3 backdrop-blur sm:gap-2 sm:px-4">
+      <header ref={headerRef} className="sticky top-0 z-10 flex items-center gap-1 border-b border-slate-200 bg-white px-3 py-3 sm:gap-2 sm:px-4">
         <Link to="/" className="mr-1 flex shrink-0 items-center gap-2" title={`${APP_NAME} · versión beta`}>
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
           <span className="hidden flex-col items-start leading-none md:flex">

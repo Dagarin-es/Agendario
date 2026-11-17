@@ -12,9 +12,21 @@ export const mapLayers: LayerDef[] = [
   {
     id: "callejero",
     name: "Callejero",
-    hint: "Calles claras y legibles",
-    tiles: [{ url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", subdomains: "abcd" }],
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>',
+    hint: "Calles claras y legibles (Esri)",
+    tiles: [{ url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", maxNativeZoom: 19 }],
+    attribution: "Mapa © Esri, HERE, Garmin, © OpenStreetMap",
+  },
+  {
+    id: "ign",
+    name: "IGN España",
+    hint: "Mapa base del Instituto Geográfico Nacional (solo España)",
+    tiles: [
+      {
+        url: "https://www.ign.es/wmts/ign-base?request=GetTile&service=WMTS&VERSION=1.0.0&Layer=IGNBaseTodo&Style=default&Format=image/png&TileMatrixSet=GoogleMapsCompatible&TileMatrix={z}&TileRow={y}&TileCol={x}",
+        maxNativeZoom: 20,
+      },
+    ],
+    attribution: 'Mapa base © <a href="https://www.ign.es">Instituto Geográfico Nacional</a>',
   },
   {
     id: "osm",
@@ -66,9 +78,11 @@ function saveLayerId(id: string) {
 }
 
 /** Pone la capa en el mapa (quitando la anterior). */
-export function applyLayer(map: L.Map, id: string, current: L.LayerGroup | null): L.LayerGroup {
+export function applyLayer(map: L.Map, id: string, current: L.LayerGroup | null, onFail?: () => void): L.LayerGroup {
   current?.remove();
   const def = mapLayers.find((l) => l.id === id) ?? mapLayers[0]!;
+  let errors = 0;
+  let loaded = 0;
   const group = L.layerGroup(
     def.tiles.map((t, i) =>
       L.tileLayer(t.url, {
@@ -80,6 +94,17 @@ export function applyLayer(map: L.Map, id: string, current: L.LayerGroup | null)
       }),
     ),
   );
+  // Si la capa no carga (servicio caído o que ahora pide clave), se pasa a OpenStreetMap
+  group.eachLayer((l) => {
+    (l as L.TileLayer).on("tileload", () => loaded++);
+    (l as L.TileLayer).on("tileerror", () => {
+      errors++;
+      if (errors === 4 && loaded === 0 && def.id !== "osm") {
+        group.remove();
+        onFail?.();
+      }
+    });
+  });
   group.addTo(map);
   return group;
 }
@@ -136,7 +161,7 @@ export function MapPicker({
     if (!box.current) return;
     const m = L.map(box.current, { zoomControl: true, attributionControl: true }).setView(pos ? [pos.lat, pos.lon] : SPAIN, pos ? 18 : 6);
     map.current = m;
-    layer.current = applyLayer(m, layerId, null);
+    layer.current = applyLayer(m, layerId, null, () => setLayerId("osm"));
     m.on("click", (e: L.LeafletMouseEvent) => {
       place(e.latlng.lat, e.latlng.lng);
       setFill(null);
@@ -156,7 +181,7 @@ export function MapPicker({
 
   useEffect(() => {
     if (!map.current) return;
-    layer.current = applyLayer(map.current, layerId, layer.current);
+    layer.current = applyLayer(map.current, layerId, layer.current, () => setLayerId("osm"));
     saveLayerId(layerId);
   }, [layerId]);
 
@@ -243,7 +268,7 @@ export function MapPicker({
         </div>
 
         <div className="relative flex-1">
-          <div ref={box} className="absolute inset-0" />
+          <div ref={box} className="absolute inset-0 isolate z-0" />
           {/* Selector de capa */}
           <div className="absolute right-2 top-2 z-[500] flex flex-col gap-1 rounded-xl bg-white/95 p-1 text-xs shadow-md ring-1 ring-slate-200">
             {mapLayers.map((l) => (
@@ -285,11 +310,11 @@ export function MiniMapView({ lat, lon, title }: { lat: number; lon: number; tit
   useEffect(() => {
     if (!box.current) return;
     const m = L.map(box.current, { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false, boxZoom: false, keyboard: false }).setView([lat, lon], 17);
-    applyLayer(m, loadLayerId(), null);
+    applyLayer(m, loadLayerId(), null, () => applyLayer(m, "osm", null));
     L.marker([lat, lon], { icon: pinIcon, interactive: false }).addTo(m);
     return () => { m.remove(); };
   }, [lat, lon]);
-  return <div ref={box} role="img" aria-label={title} className="mt-2 h-44 w-full overflow-hidden rounded-lg border border-slate-200" />;
+  return <div ref={box} role="img" aria-label={title} className="isolate z-0 mt-2 h-44 w-full overflow-hidden rounded-lg border border-slate-200" />;
 }
 
 export default MapPicker;

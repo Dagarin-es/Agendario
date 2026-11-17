@@ -231,7 +231,7 @@ export function GiftsReceived({ contactId, gifts }: { contactId: string; gifts: 
   return (
     <section className="card">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="section-title mb-0">Regalos recibidos</h2>
+        <h2 className="section-title mb-0">🎀 Regalos recibidos</h2>
         {!adding && <button className="btn-ghost" onClick={() => setAdding(true)}>+ Añadir</button>}
       </div>
       {adding && (

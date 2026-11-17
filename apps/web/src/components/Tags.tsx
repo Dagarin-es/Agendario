@@ -100,7 +100,7 @@ export function ColorPicker({ value, onChange }: { value: TagColor; onChange: (c
 }
 
 /** Editor de etiquetas de un contacto (las etiquetas son personales). Se guarda al momento. */
-export function ContactTags({ contactId, tags }: { contactId: string; tags: TagLite[] }) {
+export function ContactTags({ contactId, tags, align = "center" }: { contactId: string; tags: TagLite[]; align?: "center" | "start" }) {
   const qc = useQueryClient();
   const save = useMutation({
     mutationFn: (tagIds: string[]) => api.put(`/contacts/${contactId}/tags`, { tagIds }),
@@ -110,7 +110,7 @@ export function ContactTags({ contactId, tags }: { contactId: string; tags: TagL
       qc.invalidateQueries({ queryKey: ["tags"] });
     },
   });
-  return <TagEditor tags={tags} onChange={(next) => save.mutate(next.map((t) => t.id))} />;
+  return <TagEditor tags={tags} align={align} onChange={(next) => save.mutate(next.map((t) => t.id))} />;
 }
 
 /** Selector de etiquetas controlado: no guarda nada, avisa con onChange (lo usa también el formulario). */

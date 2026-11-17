@@ -3,7 +3,7 @@ export { saintDateFor } from "./santoral";
 
 // ---------- Versión ----------
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
-export const APP_VERSION = "0.10.0-beta";
+export const APP_VERSION = "0.11.0-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------
@@ -60,6 +60,7 @@ export const relationshipTypes = [
   "friend",
   "colleague",
   "boss",
+  "reports_to",
   "other",
 ] as const;
 export type RelationshipType = (typeof relationshipTypes)[number];
@@ -76,7 +77,25 @@ export const relationshipLabels: Record<RelationshipType, string> = {
   friend: "Amigo/a de",
   colleague: "Compañero/a de trabajo de",
   boss: "Jefe/a de",
+  reports_to: "Trabaja para",
   other: "Relacionado con",
+};
+
+/** Relación inversa: si A es «padre/madre de» B, B es «hijo/a de» A. */
+export const relationshipInverse: Record<RelationshipType, RelationshipType> = {
+  partner: "partner",
+  spouse: "spouse",
+  parent: "child",
+  child: "parent",
+  sibling: "sibling",
+  grandparent: "grandchild",
+  grandchild: "grandparent",
+  relative: "relative",
+  friend: "friend",
+  colleague: "colleague",
+  boss: "reports_to",
+  reports_to: "boss",
+  other: "other",
 };
 
 // ---------- Auth ----------
@@ -462,6 +481,8 @@ export interface ContactDetail extends Contact {
   prefs: ContactPrefs;
   /** Número de cambios en el historial */
   historyCount: number;
+  /** Si es una empresa: contactos que la tienen enlazada */
+  employees: { id: string; displayName: string; jobTitle: string; hasPhoto: boolean; updatedAt: string; phone?: string; email?: string }[];
 }
 
 // ---------- Próximas fechas ----------
@@ -646,13 +667,13 @@ export const userPrefsSchema = z.object({
   /** Prefijo que se añade a los números sin prefijo internacional */
   countryCode: z.string().regex(/^\d{1,4}$/).default("34"),
   /** Santos calculados por el nombre en Fechas */
-  autoSaints: z.boolean().default(true),
+  autoSaints: z.boolean().default(false),
   /** Etiquetas de teléfonos, emails y webs que se ofrecen en la lista */
   itemLabels: z
     .object({
-      phones: z.array(z.string().max(40)).max(60).default(["móvil", "casa", "trabajo"]),
-      emails: z.array(z.string().max(40)).max(60).default(["personal", "trabajo"]),
-      urls: z.array(z.string().max(40)).max(60).default(["web", "instagram", "linkedin"]),
+      phones: z.array(z.string().max(40)).max(60).default(["Móvil", "Casa", "Trabajo"]),
+      emails: z.array(z.string().max(40)).max(60).default(["Personal", "Trabajo"]),
+      urls: z.array(z.string().max(40)).max(60).default(["Web", "Instagram", "LinkedIn"]),
     })
     .default({}),
 });

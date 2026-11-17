@@ -19,6 +19,7 @@ import {
   type ContactDetail,
   type ContactSummary,
   type GiftStatus,
+  relationshipInverse,
   type Share,
   type TagLite,
 } from "@agendario/shared";
@@ -233,6 +234,12 @@ export const contactRoutes = new Hono<AppEnv>()
     );
   })
 
+  // Total de contactos visibles (para «Todos · N»)
+  .get("/count", async (ctx) => {
+    const [{ n } = { n: 0 }] = await db.select({ n: sql<number>`count(*)::int` }).from(c).where(visibleContacts(ctx.get("user").id));
+    return ctx.json({ total: n });
+  })
+
   // ---------- CRUD ----------
   .post("/", zValidator("json", contactInputSchema), async (ctx) => {
     const user = ctx.get("user");
@@ -280,16 +287,26 @@ export const contactRoutes = new Hono<AppEnv>()
       tagsForContacts([id], user.id),
     ]);
     const itemTags = (await itemTagsFor([id], user.id)).get(id) ?? {};
-    const [interactions, prefs, [{ n: historyCount }]] = await Promise.all([
+    const [interactions, prefs, [{ n: historyCount }], staff] = await Promise.all([
       interactionsOf(user.id, id),
       contactPrefsOf(user.id, id),
       db.select({ n: sql<number>`count(*)::int` }).from(schema.contactHistory).where(eq(schema.contactHistory.contactId, id)),
+      // Trabajadores: contactos visibles que tienen esta ficha enlazada como empresa
+      db
+        .select({ id: c.id, displayName: c.displayName, jobTitle: c.jobTitle, photoKey: c.photoKey, updatedAt: c.updatedAt, phones: c.phones, emails: c.emails })
+        .from(c)
+        .where(and(eq(c.organizationContactId, id), visibleContacts(user.id)))
+        .orderBy(asc(sql`lower(${c.displayName})`)),
     ]);
 
     const detail: ContactDetail = {
       interactions,
       prefs,
       historyCount,
+      employees: staff.map((e) => ({
+        id: e.id, displayName: e.displayName, jobTitle: e.jobTitle, hasPhoto: !!e.photoKey, updatedAt: e.updatedAt.toISOString(),
+        phone: e.phones[0]?.value, email: e.emails[0]?.value,
+      })),
       ...toContact(row, user.id, tagMap.get(id), await orgContactOf(row, user.id)),
       importantDates: dates.map(({ id, contactId, label, type, date, remindDaysBefore }) => ({
         id, contactId, label, type, date, remindDaysBefore,
@@ -527,10 +544,16 @@ export const contactRoutes = new Hono<AppEnv>()
     if (body.relatedContactId === id) throw new HTTPException(400, { message: "Un contacto no puede relacionarse consigo mismo" });
     await requireEdit(id, user.id);
     await getAccess(body.relatedContactId, user.id); // debe poder ver el otro contacto
-    const [row] = await db
-      .insert(schema.relationships)
-      .values({ contactId: id, relatedContactId: body.relatedContactId, type: body.type })
-      .returning();
+    const rel = schema.relationships;
+    const [row] = await db.insert(rel).values({ contactId: id, relatedContactId: body.relatedContactId, type: body.type }).returning();
+    // Recíproca en el otro contacto (si puedes editarlo y no la tiene ya)
+    const other = await getAccess(body.relatedContactId, user.id).catch(() => null);
+    if (other?.canEdit) {
+      const inverse = relationshipInverse[body.type];
+      const [exists] = await db.select({ id: rel.id }).from(rel).where(and(eq(rel.contactId, body.relatedContactId), eq(rel.relatedContactId, id), eq(rel.type, inverse)));
+      if (!exists) await db.insert(rel).values({ contactId: body.relatedContactId, relatedContactId: id, type: inverse });
+      await touchContact(body.relatedContactId);
+    }
     await touchContact(id);
     return ctx.json(row, 201);
   })
@@ -539,9 +562,16 @@ export const contactRoutes = new Hono<AppEnv>()
     const user = ctx.get("user");
     const { id, subId } = ctx.req.valid("param");
     await requireEdit(id, user.id);
-    await db
-      .delete(schema.relationships)
-      .where(and(eq(schema.relationships.id, subId), eq(schema.relationships.contactId, id)));
+    const rel = schema.relationships;
+    const [gone] = await db.delete(rel).where(and(eq(rel.id, subId), eq(rel.contactId, id))).returning();
+    // Y la recíproca en el otro contacto
+    if (gone) {
+      const other = await getAccess(gone.relatedContactId, user.id).catch(() => null);
+      if (other?.canEdit) {
+        await db.delete(rel).where(and(eq(rel.contactId, gone.relatedContactId), eq(rel.relatedContactId, id), eq(rel.type, relationshipInverse[gone.type])));
+        await touchContact(gone.relatedContactId);
+      }
+    }
     await touchContact(id);
     return ctx.body(null, 204);
   });

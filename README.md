@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> ⚠️ **Versión beta (0.10.0-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
+> ⚠️ **Versión beta (0.11.0-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **contactos compartidos** entre usuarios y **fotos**, pensada para crecer hasta tener apps de escritorio y móvil, sincronización con Google/Outlook/CardDAV y copias cifradas.
 
-Esta es la **versión 0.10.0-beta**: servidor + web app instalable (PWA) en un contenedor Docker.
+Esta es la **versión 0.11.0-beta**: servidor + web app instalable (PWA) en un contenedor Docker.
 
 ---
 
@@ -57,7 +57,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-0.10.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-0.11.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -91,7 +91,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-0.10.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-0.11.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -99,7 +99,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-0.10.0-beta.zip
+unzip agendario-0.11.0-beta.zip
 cd agendario
 ```
 
@@ -143,7 +143,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-0.10.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-0.11.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -339,7 +339,7 @@ La pestaña **Fechas** muestra un calendario mensual. Cada día con algo señala
 
 En la ficha, cada idea pasa por **Comprado** (eliges para qué evento: cumpleaños, santo, Navidad, Reyes u otra fecha) y **Regalado**. Si la fecha pasa y no lo marcas como regalado, la pestaña Fechas muestra un aviso 🛍️.
 
-Los **santos** se calculan solos por el nombre (santoral español). En cada contacto puedes quitarlo o poner otra fecha en «Fechas importantes»; en Ajustes → Fechas se desactivan del todo.
+Los **santos** se pueden añadir a mano en «Fechas importantes». Si quieres que se calculen solos por el nombre (santoral español), actívalo en Ajustes → Fechas.
 
 ## Historial y papelera
 
@@ -425,11 +425,11 @@ La configuración de GitHub va aparte, en **`/opt/agendario/actualizar.conf`**. 
 
 Cómo sube:
 
-- **Betas** (versión con guion, como `0.10.0-beta`): a la rama **`beta`**, con la etiqueta `v0.10.0-beta`. Te recuerda crear la *Release* y marcarla como *pre-release*.
+- **Betas** (versión con guion, como `0.11.0-beta`): a la rama **`beta`**, con la etiqueta `v0.11.0-beta`. Te recuerda crear la *Release* y marcarla como *pre-release*.
 - **Estables** (como `1.0.0`): a **`main`**. Te pregunta qué etiqueta anterior quieres borrar (Enter = ninguna).
 - Al repositorio nunca se suben el `.env`, la carpeta `data/` ni `actualizar.conf`: se copia solo el contenido del zip.
 
-**Docker Hub**: cada etiqueta que sube el script activa **GitHub Actions** (`.github/workflows/docker.yml`), que compila la imagen para Intel/AMD y ARM y la publica en `dagarines/agendario`: las betas como `0.10.0-beta` y `beta`, las estables como `1.0.0` y `latest`. Solo hay que crear dos secretos en el repositorio (Settings → Secrets and variables → Actions): `DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN` (token de Docker Hub con permiso *Read & Write*).
+**Docker Hub**: cada etiqueta que sube el script activa **GitHub Actions** (`.github/workflows/docker.yml`), que compila la imagen para Intel/AMD y ARM y la publica en `dagarines/agendario`: las betas como `0.11.0-beta` y `beta`, las estables como `1.0.0` y `latest`. Solo hay que crear dos secretos en el repositorio (Settings → Secrets and variables → Actions): `DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN` (token de Docker Hub con permiso *Read & Write*).
 
 ---
 

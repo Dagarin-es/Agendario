@@ -144,8 +144,9 @@ export function UpcomingPage() {
         </div>
       )}
 
-      {/* Calendario */}
-      <section className="card p-3 sm:p-4">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+      {/* Calendario (a la derecha en ordenador) */}
+      <section className="card p-3 lg:sticky lg:order-2" style={{ top: "calc(var(--header-h, 68px) + 1rem)" }}>
         <div className="mb-2 flex items-center gap-2">
           <button className="btn-ghost px-3" onClick={() => move(-1)} aria-label="Mes anterior">‹</button>
           <h2 className="flex-1 text-center font-semibold text-indigo-950">{monthNames[cursor.m]} {cursor.y}</h2>
@@ -170,23 +171,25 @@ export function UpcomingPage() {
                 key={k}
                 type="button"
                 onClick={() => setSelected(isSel ? null : k)}
-                className={`flex min-h-14 flex-col items-center gap-0.5 rounded-lg px-0.5 pb-1 pt-1 text-sm transition sm:min-h-16 ${
+                className={`relative flex h-12 flex-col items-center justify-start gap-0.5 rounded-lg pt-0.5 text-sm transition ${
                   isSel ? "bg-indigo-700 text-white" : evs.length ? "bg-indigo-50/60 hover:bg-indigo-100" : "hover:bg-slate-50"
                 } ${inMonth ? "" : "opacity-35"}`}
                 aria-label={`${d.getDate()} ${monthNames[d.getMonth()]}${evs.length ? `: ${evs.length} ${evs.length === 1 ? "evento" : "eventos"}` : ""}`}
               >
-                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[13px] ${isToday && !isSel ? "bg-indigo-700 font-semibold text-white" : ""}`}>{d.getDate()}</span>
+                <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${isToday && !isSel ? "bg-indigo-700 font-semibold text-white" : ""}`}>{d.getDate()}</span>
                 {tones.length > 0 && (
-                  <span className={`flex items-center gap-px ${isSel ? "rounded bg-white/90 px-0.5" : ""}`}>
-                    {tones.slice(0, 3).map((t) => <GiftIcon key={t} tone={t} className="h-3.5 w-3.5" />)}
+                  <span className={`relative ${isSel ? "rounded bg-white/90 px-0.5" : ""}`}>
+                    <GiftIcon tone={tones[0]!} className="h-5 w-5" />
+                    {evs.length > 1 && (
+                      <span className="absolute -right-2.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-700 px-1 text-[9px] font-bold leading-none text-white">{evs.length}</span>
+                    )}
                   </span>
                 )}
-                {evs.length > 1 && <span className={`text-[9px] leading-none ${isSel ? "text-white/80" : "text-slate-400"}`}>{evs.length}</span>}
               </button>
             );
           })}
         </div>
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
           <span className="flex items-center gap-1"><GiftIcon tone="none" className="h-3.5 w-3.5" /> Sin ideas</span>
           <span className="flex items-center gap-1"><GiftIcon tone="ideas" className="h-3.5 w-3.5" /> Con ideas</span>
           <span className="flex items-center gap-1"><GiftIcon tone="bought" className="h-3.5 w-3.5" /> Comprado</span>
@@ -194,6 +197,7 @@ export function UpcomingPage() {
         </div>
       </section>
 
+      <div className="space-y-3 lg:order-1">
       <div className="flex items-center gap-2">
         <h2 className="flex-1 font-semibold text-slate-700">{listTitle}</h2>
         {selected && <button className="btn-ghost px-2.5 text-xs" onClick={() => setSelected(null)}>Ver {isCurrentMonth ? "próximos 30 días" : "todo el mes"}</button>}
@@ -203,6 +207,8 @@ export function UpcomingPage() {
       <ul className="space-y-2">
         {list.map((e, i) => <EventRow key={`${e.contactId}-${e.key}-${e.date}-${i}`} e={e} />)}
       </ul>
+      </div>
+      </div>
     </div>
   );
 }
