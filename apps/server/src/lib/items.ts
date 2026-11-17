@@ -57,8 +57,9 @@ export async function itemTagsFor(contactIds: string[], userId: string) {
  * Regla para filtrar/exportar por una etiqueta: de cada tipo de dato se usan los que tienen esa
  * etiqueta; si no hay ninguno, los que no tienen etiqueta. Los de otras etiquetas nunca.
  */
-export function pickForTag<T extends WithId>(items: T[], tags: Record<string, TagLite> | undefined, tagId: string): T[] {
-  const withTag = items.filter((x) => x.id && tags?.[x.id]?.id === tagId);
+export function pickForTag<T extends WithId>(items: T[], tags: Record<string, TagLite> | undefined, tagId: string | Set<string>): T[] {
+  const match = (id: string | undefined) => !!id && (typeof tagId === "string" ? id === tagId : tagId.has(id));
+  const withTag = items.filter((x) => x.id && match(tags?.[x.id]?.id));
   if (withTag.length) return withTag;
   return items.filter((x) => !x.id || !tags?.[x.id]);
 }

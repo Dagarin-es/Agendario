@@ -1,9 +1,9 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { syncAccountInputSchema, syncConnectSchema, type SyncAccount, type SyncSummary } from "@agendario/shared";
+import { syncAccountInputSchema, syncConnectSchema, type SyncAccount, type SyncLogEntry, type SyncSummary } from "@agendario/shared";
 import { db, schema } from "../db/index.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import { assertOwnTags } from "../lib/tags.js";
@@ -123,6 +123,16 @@ export const syncRoutes = new Hono<AppEnv>()
     await own(id, user.id);
     await db.delete(sa).where(eq(sa.id, id)); // los enlaces se borran en cascada; los contactos no se tocan
     return ctx.body(null, 204);
+  })
+
+  // Historial: lo último primero (60 días)
+  .get("/:id/log", idParam, zValidator("query", z.object({ limit: z.coerce.number().int().min(1).max(5000).default(1000) })), async (ctx) => {
+    const user = ctx.get("user");
+    const { id } = ctx.req.valid("param");
+    await own(id, user.id);
+    const lg = schema.syncLog;
+    const rows = await db.select().from(lg).where(eq(lg.accountId, id)).orderBy(desc(lg.at), lg.action).limit(ctx.req.valid("query").limit);
+    return ctx.json(rows.map((r) => ({ id: r.id, runId: r.runId, action: r.action, contactId: r.contactId, contactName: r.contactName, detail: r.detail, at: r.at.toISOString() })) satisfies SyncLogEntry[]);
   })
 
   .get("/:id/preview", idParam, async (ctx) => {

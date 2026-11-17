@@ -1,18 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Link } from "react-router";
 import {
   syncIntervals,
   syncProviderLabels,
   syncProviders,
   type SyncAccount,
   type SyncAccountInput,
+  type SyncLogEntry,
   type SyncPreview,
   type SyncProvider,
   type SyncSummary,
 } from "@agendario/shared";
 import { api } from "../lib/api";
 import { Modal, useAlert, useConfirm } from "./Dialogs";
-import { TagChip, useTags } from "./Tags";
+import { TagChip, tagTree, useTags } from "./Tags";
 
 const intervalLabel = (n: number) => (n === 0 ? "Solo a mano" : n < 60 ? `Cada ${n} minutos` : n === 60 ? "Cada hora" : `Cada ${n / 60} horas`);
 
@@ -53,6 +55,7 @@ export function SyncSettings({ Section }: { Section: (p: { title: string; icon: 
   });
   const [editing, setEditing] = useState<SyncAccount | "new" | null>(null);
   const [preview, setPreview] = useState<SyncAccount | null>(null);
+  const [logOf, setLogOf] = useState<SyncAccount | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: ["sync"] });
 
   const run = useMutation({
@@ -81,6 +84,7 @@ export function SyncSettings({ Section }: { Section: (p: { title: string; icon: 
                   <p className="font-semibold text-indigo-950">{a.name}</p>
                   <p className="truncate text-xs text-slate-500">{a.username} · {a.addressBookName || "libreta"} · {intervalLabel(a.intervalMin)}{!a.enabled && " · en pausa"}</p>
                 </div>
+                <button className="btn-ghost px-2.5 py-1 text-sm" onClick={() => setLogOf(a)}>Historial</button>
                 <button className="btn-ghost px-2.5 py-1 text-sm" onClick={() => setEditing(a)}>Editar</button>
                 <button
                   className="btn-ghost px-2.5 py-1 text-sm text-red-700"
@@ -138,6 +142,7 @@ export function SyncSettings({ Section }: { Section: (p: { title: string; icon: 
           }}
         />
       )}
+      {logOf && <SyncLogDialog account={logOf} onClose={() => setLogOf(null)} />}
       {preview && (
         <PreviewDialog
           account={preview}
@@ -275,10 +280,10 @@ function AccountEditor({ account, onClose, onSaved }: { account: SyncAccount | n
           <div>
             <span className="label">Etiquetas que se sincronizan</span>
             <div className="flex flex-wrap gap-1.5">
-              {tags?.map((t) => <TagChip key={t.id} tag={t} active={f.tagIds.includes(t.id)} onClick={() => toggleTag(t.id)} />)}
+              {tagTree(tags).map((n) => <TagChip key={n.tag.id} tag={{ ...n.tag, name: n.path }} active={f.tagIds.includes(n.tag.id)} onClick={() => toggleTag(n.tag.id)} />)}
               {tags?.length === 0 && <span className="text-sm text-slate-500">Crea antes alguna etiqueta (en la ficha de un contacto o en Etiquetas).</span>}
             </div>
-            <p className="mt-1 text-xs text-slate-500">De cada contacto se envían los datos de estas etiquetas y los que no tienen etiqueta, nunca los de otras.</p>
+            <p className="mt-1 text-xs text-slate-500">Cada etiqueta incluye sus subetiquetas. De cada contacto se envían los datos de estas etiquetas y los que no tienen etiqueta, nunca los de otras.</p>
           </div>
           {f.tagIds.length > 1 && (
             <label className="block">
@@ -354,6 +359,99 @@ function PreviewDialog({ account, onClose, onStart }: { account: SyncAccount; on
             <p className="text-xs text-slate-500">Las parejas se buscan por email, teléfono o nombre. Si alguna no es correcta, puedes separarlas después con el buscador de duplicados.</p>
           </>
         )}
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+const actionInfo: Record<string, { icon: string; label: string; group: "new" | "change" | "gone" | "error" | "run" }> = {
+  created: { icon: "⬇️", label: "Nuevo en Agendario", group: "new" },
+  uploaded_new: { icon: "⬆️", label: "Nuevo en el servicio", group: "new" },
+  paired: { icon: "🔗", label: "Emparejado", group: "new" },
+  updated: { icon: "✏️", label: "Actualizado en Agendario", group: "change" },
+  uploaded: { icon: "✏️", label: "Actualizado en el servicio", group: "change" },
+  conflict: { icon: "⚖️", label: "Conflicto", group: "change" },
+  deleted_remote: { icon: "🗑️", label: "Borrado del servicio", group: "gone" },
+  deleted_local: { icon: "🗑️", label: "A la papelera de Agendario", group: "gone" },
+  error: { icon: "❌", label: "Error", group: "error" },
+  run: { icon: "🔄", label: "Sincronización", group: "run" },
+};
+const filters = [
+  { id: "all", label: "Todo" },
+  { id: "new", label: "Altas" },
+  { id: "change", label: "Modificaciones" },
+  { id: "gone", label: "Bajas" },
+  { id: "error", label: "Errores" },
+] as const;
+
+function SyncLogDialog({ account, onClose }: { account: SyncAccount; onClose: () => void }) {
+  const { data, isLoading } = useQuery({ queryKey: ["sync-log", account.id], queryFn: () => api.get<SyncLogEntry[]>(`/sync/${account.id}/log`) });
+  const [filter, setFilter] = useState<(typeof filters)[number]["id"]>("all");
+  const [q, setQ] = useState("");
+  const runs = useMemo(() => {
+    const byRun = new Map<string, { run: SyncLogEntry | null; items: SyncLogEntry[]; at: string }>();
+    for (const e of data ?? []) {
+      const r = byRun.get(e.runId) ?? { run: null, items: [], at: e.at };
+      if (e.action === "run") r.run = e;
+      else r.items.push(e);
+      byRun.set(e.runId, r);
+    }
+    const term = q.trim().toLowerCase();
+    return [...byRun.values()]
+      .map((r) => ({ ...r, items: r.items.filter((e) => (filter === "all" || actionInfo[e.action]?.group === filter) && (!term || e.contactName.toLowerCase().includes(term))) }))
+      .filter((r) => r.items.length || (filter === "all" && !term))
+      .sort((a, b) => b.at.localeCompare(a.at));
+  }, [data, filter, q]);
+  const fmt = (iso: string) => new Date(iso).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <Modal title={`Historial de ${account.name}`} onClose={onClose} size="lg" full>
+      <div className="sticky top-0 z-10 space-y-2 border-b border-slate-100 bg-white p-3">
+        <div className="flex flex-wrap gap-1.5">
+          {filters.map((f) => (
+            <button key={f.id} className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ${filter === f.id ? "bg-indigo-700 text-white ring-indigo-700" : "bg-white text-slate-600 ring-slate-200"}`} onClick={() => setFilter(f.id)}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <input className="input" type="search" placeholder="Buscar un contacto…" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+      <div className="space-y-3 p-3">
+        {isLoading && <p className="text-sm text-slate-500">Cargando…</p>}
+        {data && runs.length === 0 && <p className="text-sm text-slate-500">Nada que mostrar. Se guardan los últimos 60 días; las pasadas sin cambios no se apuntan.</p>}
+        {runs.map((r, i) => {
+          let summary: (SyncSummary & { first?: boolean; forced?: boolean }) | null = null;
+          try { summary = r.run ? JSON.parse(r.run.detail) : null; } catch { summary = null; }
+          return (
+            <div key={i} className="rounded-xl border border-slate-200">
+              <div className="flex flex-wrap items-baseline gap-x-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-sm">
+                <span className="font-semibold text-slate-700">{fmt(r.at)}</span>
+                {summary?.first && <span className="text-xs text-indigo-700">primera sincronización</span>}
+                {summary?.forced && <span className="text-xs text-amber-700">aplicada igualmente</span>}
+                {summary && <span className="text-xs text-slate-500">{summaryText(summary)}</span>}
+              </div>
+              <ul className="divide-y divide-slate-100">
+                {r.items.map((e) => {
+                  const info = actionInfo[e.action] ?? { icon: "•", label: e.action, group: "change" };
+                  return (
+                    <li key={e.id} className="flex items-start gap-2 px-3 py-2 text-sm">
+                      <span aria-hidden="true">{info.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <div>
+                          {e.contactId ? <Link className="font-medium text-indigo-800 hover:underline" to={`/contacts/${e.contactId}`}>{e.contactName || "Contacto"}</Link> : <span className="font-medium">{e.contactName || info.label}</span>}
+                          <span className="text-slate-500"> · {info.label}</span>
+                        </div>
+                        {e.detail && <div className="text-xs text-slate-500">{e.detail}</div>}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     </Modal>
   );

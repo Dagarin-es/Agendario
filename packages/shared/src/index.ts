@@ -1,8 +1,9 @@
 import { z } from "zod";
+export { saintDateFor } from "./santoral";
 
 // ---------- Versión ----------
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
-export const APP_VERSION = "0.9.0-beta";
+export const APP_VERSION = "0.10.0-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------
@@ -221,6 +222,11 @@ export type TagColor = (typeof tagColors)[number];
 export const tagInputSchema = z.object({
   name: z.string().trim().min(1).max(50),
   color: z.enum(tagColors).default("teal"),
+  parentId: z.string().uuid().nullable().optional(),
+});
+/** Nuevo orden y anidado de todas las etiquetas. */
+export const tagOrderSchema = z.object({
+  items: z.array(z.object({ id: z.string().uuid(), parentId: z.string().uuid().nullable(), position: z.number().int().min(0) })).max(1000),
 });
 export const tagPatchSchema = tagInputSchema.partial();
 export type TagInput = z.infer<typeof tagInputSchema>;
@@ -232,6 +238,10 @@ export interface TagLite {
 }
 export interface Tag extends TagLite {
   contactCount: number;
+  parentId: string | null;
+  position: number;
+  /** Contactos con esta etiqueta o alguna de sus subetiquetas */
+  totalCount: number;
 }
 
 export const contactTagsSchema = z.object({ tagIds: z.array(z.string().uuid()).max(100) });
@@ -351,14 +361,25 @@ export interface Share {
 
 // ---------- Regalos (siempre personales de cada usuario) ----------
 
+/** Estado de una idea: pendiente → comprada (para un evento) → regalada. */
+export const giftStatuses = ["idea", "bought", "given"] as const;
+export type GiftStatus = (typeof giftStatuses)[number];
+
 export const giftIdeaInputSchema = z.object({
   title: z.string().min(1).max(200),
   url: z.string().url().max(2000).nullable().default(null),
   notes: z.string().max(2000).default(""),
   priceCents: z.number().int().nonnegative().nullable().default(null),
+  status: z.enum(giftStatuses).default("idea"),
+  /** Compatibilidad: true = regalada */
   given: z.boolean().default(false),
+  /** Fecha en que se regala o se va a regalar (la del evento elegido) */
   givenAt: z.string().date().nullable().default(null),
   occasion: z.enum(occasions).nullable().default(null),
+  /** Evento para el que es: birthday · saint · date:<id> · custom */
+  eventKey: z.string().max(80).nullable().default(null),
+  /** Texto del evento («Cumpleaños 2027»…) */
+  eventLabel: z.string().max(120).default(""),
 });
 export type GiftIdeaInput = z.infer<typeof giftIdeaInputSchema>;
 export const giftIdeaPatchSchema = giftIdeaInputSchema.partial();
@@ -451,11 +472,39 @@ export interface UpcomingEvent {
   hasPhoto: boolean;
   label: string;
   kind: "birthday" | DateType;
-  date: string; // próxima ocurrencia YYYY-MM-DD
-  daysLeft: number;
+  /** birthday · saint (automático) · date:<id> */
+  key: string;
+  date: string; // ocurrencia YYYY-MM-DD
+  daysLeft: number; // negativo si ya pasó
   turning: number | null; // años que cumple, si se conoce el año
   openGiftIdeas: number;
+  /** Solo en cumpleaños, aniversarios y santos: none (rojo) · ideas (amarillo) · bought (verde) · given (verde, ya regalado) */
+  gift: "none" | "ideas" | "bought" | "given" | null;
+  /** Santo calculado por el nombre */
+  auto?: boolean;
+  /** Ideas compradas o regaladas para esta ocurrencia */
+  gifts?: { id: string; title: string; status: GiftStatus }[];
 }
+
+/** Regalos comprados, sin marcar como regalados, cuyo evento ya pasó. */
+export interface PendingGift {
+  id: string;
+  title: string;
+  contactId: string;
+  contactName: string;
+  eventLabel: string;
+  givenAt: string | null;
+}
+
+/** Ocasión elegible al marcar un regalo como comprado. */
+export interface GiftOccasion {
+  key: string;
+  label: string;
+  date: string;
+  occasion: Occasion;
+}
+
+export const giftEventKinds = ["birthday", "anniversary", "saint_day"] as const;
 
 // ---------- Nombre de la app ----------
 
@@ -596,6 +645,16 @@ export const userPrefsSchema = z.object({
   messagingApp: z.enum(messagingApps).default("whatsapp"),
   /** Prefijo que se añade a los números sin prefijo internacional */
   countryCode: z.string().regex(/^\d{1,4}$/).default("34"),
+  /** Santos calculados por el nombre en Fechas */
+  autoSaints: z.boolean().default(true),
+  /** Etiquetas de teléfonos, emails y webs que se ofrecen en la lista */
+  itemLabels: z
+    .object({
+      phones: z.array(z.string().max(40)).max(60).default(["móvil", "casa", "trabajo"]),
+      emails: z.array(z.string().max(40)).max(60).default(["personal", "trabajo"]),
+      urls: z.array(z.string().max(40)).max(60).default(["web", "instagram", "linkedin"]),
+    })
+    .default({}),
 });
 export type UserPrefs = z.infer<typeof userPrefsSchema>;
 
@@ -605,6 +664,8 @@ export const contactPrefsSchema = z.object({
   messagePhoneId: z.string().max(64).nullable().default(null),
   emailId: z.string().max(64).nullable().default(null),
   messagingApp: z.enum(messagingApps).nullable().default(null),
+  /** false = sin santo automático para este contacto */
+  autoSaint: z.boolean().default(true),
 });
 export type ContactPrefs = z.infer<typeof contactPrefsSchema>;
 
@@ -770,4 +831,14 @@ export interface SyncPreview {
   pairs: { localId: string; localName: string; remoteName: string; addsTag: boolean }[];
   toUpload: string[];
   toDownload: string[];
+}
+
+export interface SyncLogEntry {
+  id: string;
+  runId: string;
+  action: string;
+  contactId: string | null;
+  contactName: string;
+  detail: string;
+  at: string;
 }

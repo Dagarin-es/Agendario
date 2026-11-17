@@ -64,6 +64,27 @@
       "when": 1794932961361,
       "tag": "0008_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794937767055,
+      "tag": "0009_gifts_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794938050933,
+      "tag": "0010_tags_tree",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794938251472,
+      "tag": "0011_sync_log",
+      "breakpoints": true
     }
   ]
 }

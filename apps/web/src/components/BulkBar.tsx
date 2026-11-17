@@ -13,8 +13,8 @@ type Panel = null | "export" | "add" | "remove";
  * `notMine` = cuántos de los seleccionados te los han compartido (no se pueden borrar).
  */
 export function useBulkActions({
-  ids, notMine, onClear, onMessage, filterTag,
-}: { ids: string[]; notMine: number; onClear: () => void; onMessage: (t: string) => void; filterTag?: TagLite }) {
+  ids, notMine, onClear, onMessage, filterTag, onCombine,
+}: { ids: string[]; notMine: number; onClear: () => void; onMessage: (t: string) => void; filterTag?: TagLite; onCombine?: () => void }) {
   const qc = useQueryClient();
   const confirm = useConfirm();
   const { data: tags } = useTags();
@@ -91,6 +91,16 @@ export function useBulkActions({
 
   const buttons = (
     <div className="flex items-center gap-0.5 sm:gap-1">
+      {n === 2 && onCombine && (
+        <button
+          className={`${btn(false)} text-indigo-800`}
+          disabled={busy || notMine > 0}
+          onClick={onCombine}
+          title={notMine > 0 ? "Solo se pueden combinar contactos que son tuyos" : "Combinar estos dos contactos eligiendo qué se queda"}
+        >
+          <span className="text-base leading-none">🔗</span>Combinar
+        </button>
+      )}
       <button className={btn(panel === "export")} disabled={busy} onClick={() => toggle("export")}><span className="text-base leading-none">⤒</span>Exportar</button>
       <button className={btn(panel === "add")} disabled={busy} onClick={() => toggle("add")}><span className="text-base leading-none">🏷️</span>+ Etiqueta</button>
       <button className={btn(panel === "remove")} disabled={busy} onClick={() => toggle("remove")}><span className="text-base leading-none">🏷️</span>− Etiqueta</button>

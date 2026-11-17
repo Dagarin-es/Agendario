@@ -1,5 +1,16 @@
 # Historial de cambios
 
+## 0.10.0-beta
+- **Fechas con calendario mensual**: navegas mes a mes; cada día con eventos lleva un icono de regalo **rojo** (sin ideas), **amarillo** (con ideas) o **verde** (comprado o regalado). Recuerdos y otras fechas, punto gris. Debajo, los próximos 30 días, el mes elegido o el día que toques.
+- **Regalos: idea → comprado → regalado**. Al marcar una idea como comprada eliges para qué es (Cumpleaños 2027, Santo, Navidad, Reyes u otra fecha). Si pasa la fecha sin marcarlo como regalado, aviso en la pestaña **Fechas** (🛍️) y en el calendario.
+- **Santos automáticos** por el nombre (santoral español). Se pueden quitar en cada contacto o desactivar en Ajustes → Fechas. Si pones un santo a mano, manda ese.
+- **Subetiquetas**: una etiqueta puede ir dentro de otra y se pueden **reordenar** (Etiquetas: ▲▼ y «Mover a…»). Filtrar, exportar o sincronizar una etiqueta incluye sus subetiquetas. La fila de etiquetas de la lista ya no se corta y muestra las subetiquetas de la elegida.
+- **Abecedario arriba**, a todo el ancho, como las pestañas de una agenda.
+- **Combinar** desde la lista: marca dos contactos y pulsa «Combinar» para abrir la combinación manual.
+- **Reordenar teléfonos, emails y webs** en el formulario (▲▼).
+- **Etiquetas de teléfonos y emails** (móvil, casa…): la lista crece con las tuyas; si escribes una nueva, pregunta si la crea.
+- **Historial de sincronizaciones**: en Ajustes → Sincronización → Historial, qué se dio de alta, se modificó o se borró en cada pasada, con filtros y buscador (60 días).
+
 ## 0.9.0-beta
 - **Sincronización con Fastmail** (o cualquier servidor CardDAV), en ⚙️ Ajustes → Sincronización:
   - Bidireccional y con fotos. Solo los contactos con las **etiquetas que elijas** para ese servicio; de cada uno, los datos de esas etiquetas y los que no tienen etiqueta.

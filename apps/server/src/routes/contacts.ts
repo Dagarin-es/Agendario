@@ -18,6 +18,7 @@ import {
   type Contact,
   type ContactDetail,
   type ContactSummary,
+  type GiftStatus,
   type Share,
   type TagLite,
 } from "@agendario/shared";
@@ -32,7 +33,7 @@ import {
 } from "../lib/access.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import { cleanupItemTags, ensureItemIds, itemIdsOf, itemTagsFor, pickForTag } from "../lib/items.js";
-import { addTags, assertOwnTags, tagsForContacts } from "../lib/tags.js";
+import { addTags, assertOwnTags, expandTagIds, tagsForContacts } from "../lib/tags.js";
 import { deleteContacts, syncOrgName } from "../lib/merge.js";
 import { idsWithHistory, rawContact, recordHistory } from "../lib/history.js";
 import { contactPrefsOf, interactionsOf } from "../lib/personal.js";
@@ -190,9 +191,11 @@ export const contactRoutes = new Hono<AppEnv>()
   .get("/", zValidator("query", z.object({ q: z.string().optional(), tag: z.string().uuid().optional() })), async (ctx) => {
     const user = ctx.get("user");
     const { q, tag } = ctx.req.valid("query");
+    // La etiqueta incluye sus subetiquetas (como carpetas)
+    const tagSet = tag ? await expandTagIds(user.id, [tag]) : [];
     const byTag = tag
       ? sql`EXISTS (SELECT 1 FROM contact_tags x JOIN tags tg ON tg.id = x.tag_id
-               WHERE x.contact_id = ${c.id} AND x.tag_id = ${tag} AND tg.user_id = ${user.id})`
+               WHERE x.contact_id = ${c.id} AND x.tag_id IN (${sql.join(tagSet.map((id) => sql`${id}::uuid`), sql`, `)}) AND tg.user_id = ${user.id})`
       : undefined;
     // Búsqueda sin distinguir acentos ni mayúsculas; en teléfonos se ignoran espacios y guiones.
     const term = q?.trim() ? `%${fold(q.trim())}%` : "";
@@ -221,8 +224,8 @@ export const contactRoutes = new Hono<AppEnv>()
       rows.map((r) => {
         const shown = itemTags
           ? {
-              phone: pickForTag(r.contact.phones, itemTags.get(r.contact.id), tag!)[0]?.value,
-              email: pickForTag(r.contact.emails, itemTags.get(r.contact.id), tag!)[0]?.value,
+              phone: pickForTag(r.contact.phones, itemTags.get(r.contact.id), new Set(tagSet))[0]?.value,
+              email: pickForTag(r.contact.emails, itemTags.get(r.contact.id), new Set(tagSet))[0]?.value,
             }
           : undefined;
         return { ...toSummary(r, user.id, tags.get(r.contact.id), shown), hasHistory: withHistory.has(r.contact.id) };
@@ -302,6 +305,9 @@ export const contactRoutes = new Hono<AppEnv>()
         given: g.given,
         givenAt: g.givenAt,
         occasion: g.occasion,
+        status: g.status as GiftStatus,
+        eventKey: g.eventKey,
+        eventLabel: g.eventLabel,
         createdAt: g.createdAt.toISOString(),
       })),
       giftsReceived: received.map((g) => ({

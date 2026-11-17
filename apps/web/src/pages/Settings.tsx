@@ -93,6 +93,31 @@ function Communication() {
   );
 }
 
+// ---------- Fechas ----------
+
+function DatesSettings() {
+  const qc = useQueryClient();
+  const { data } = useUserPrefs();
+  const save = useMutation({
+    mutationFn: (v: UserPrefs) => api.put("/prefs", v),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["prefs"] });
+      qc.invalidateQueries({ queryKey: ["upcoming"] });
+    },
+  });
+  if (!data) return null;
+  return (
+    <Section icon="📅" title="Fechas" desc="Lo que aparece en el calendario de la pestaña Fechas.">
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" className="mt-0.5" checked={data.autoSaints} onChange={(e) => save.mutate({ ...data, autoSaints: e.target.checked })} />
+        <span>
+          <strong>Santos automáticos por el nombre</strong> (santoral español). En cada contacto puedes quitarlo o poner otra fecha en «Fechas importantes».
+        </span>
+      </label>
+    </Section>
+  );
+}
+
 // ---------- Copias de seguridad ----------
 
 function Help({ children }: { children: ReactNode }) {
@@ -554,6 +579,7 @@ export function SettingsPage() {
       <h1 className="text-xl font-semibold">⚙️ Ajustes</h1>
       <Appearance />
       <Communication />
+      <DatesSettings />
       <SyncSettings Section={Section} />
       {me?.isAdmin && <Backups />}
       <Section icon="📒" title={`Acerca de ${APP_NAME}`}>

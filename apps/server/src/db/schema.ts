@@ -191,6 +191,11 @@ export const giftIdeas = pgTable(
     given: boolean("given").notNull().default(false),
     givenAt: date("given_at"),
     occasion: occasionEnum("occasion"),
+    /** idea · bought · given */
+    status: text("status").notNull().default("idea"),
+    /** Evento para el que es (birthday · saint · date:<id> · custom) */
+    eventKey: text("event_key"),
+    eventLabel: text("event_label").notNull().default(""),
     ...timestamps,
   },
   (t) => [index("gift_ideas_contact_user_idx").on(t.contactId, t.userId)],
@@ -226,6 +231,10 @@ export const tags = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     color: tagColorEnum("color").notNull().default("teal"),
+    /** Etiqueta madre (subetiquetas, como carpetas) */
+    parentId: uuid("parent_id").references((): AnyPgColumn => tags.id, { onDelete: "set null" }),
+    /** Orden dentro de su nivel */
+    position: integer("position").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("tags_user_name_idx").on(t.userId, sql`lower(${t.name})`)],
@@ -437,4 +446,23 @@ export const syncLinks = pgTable(
     syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.accountId, t.contactId] }), uniqueIndex("sync_links_href_idx").on(t.accountId, t.href)],
+);
+
+/** Historial de sincronizaciones: qué se hizo con cada contacto en cada pasada. */
+export const syncLog = pgTable(
+  "sync_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => syncAccounts.id, { onDelete: "cascade" }),
+    runId: uuid("run_id").notNull(),
+    /** run · created · updated · paired · uploaded_new · uploaded · deleted_remote · deleted_local · conflict · error */
+    action: text("action").notNull(),
+    contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
+    contactName: text("contact_name").notNull().default(""),
+    detail: text("detail").notNull().default(""),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("sync_log_account_at_idx").on(t.accountId, t.at)],
 );

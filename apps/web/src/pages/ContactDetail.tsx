@@ -7,6 +7,7 @@ import {
   dateTypes,
   relationshipLabels,
   relationshipTypes,
+  saintDateFor,
   type ContactDetail,
   type ContactSummary,
   type DateType,
@@ -19,7 +20,7 @@ import { ContactTags } from "../components/Tags";
 import { ItemTag } from "../components/ItemTag";
 import { addressLine, MapLinks, MiniMap } from "../components/MapLinks";
 import { VisibilityBadge } from "../components/VisibilityBadge";
-import { QuickActions } from "../components/QuickActions";
+import { QuickActions, useUserPrefs } from "../components/QuickActions";
 import { Interactions, type InteractionPrefill } from "../components/Interactions";
 import { HistoryIcon } from "../components/HistoryIcon";
 import { telLink } from "../lib/links";
@@ -263,6 +264,15 @@ export function ContactDetailPage() {
 
 function ImportantDates({ c, onChange }: { c: ContactDetail; onChange: () => void }) {
   const showAlert = useAlert();
+  const { data: userPrefs } = useUserPrefs();
+  const qc = useQueryClient();
+  const saint = c.givenName ? saintDateFor(c.givenName) : null;
+  const hasManualSaint = c.importantDates.some((d) => d.type === "saint_day");
+  const showAuto = !!saint && !!userPrefs?.autoSaints && !hasManualSaint;
+  const toggleAuto = useMutation({
+    mutationFn: (autoSaint: boolean) => api.put(`/contacts/${c.id}/prefs`, { ...c.prefs, autoSaint }),
+    onSuccess: () => { onChange(); qc.invalidateQueries({ queryKey: ["upcoming"] }); },
+  });
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<{ label: string; type: DateType; date: string }>({ label: "", type: "anniversary", date: "" });
   const add = useMutation({
@@ -292,7 +302,15 @@ function ImportantDates({ c, onChange }: { c: ContactDetail; onChange: () => voi
           </div>
         </form>
       )}
-      {c.importantDates.length === 0 && !adding && <p className="text-sm text-slate-500">Ninguna. El cumpleaños va en los datos del contacto.</p>}
+      {showAuto && (
+        <div className="mb-2 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+          <span className={`flex-1 ${c.prefs.autoSaint ? "" : "text-slate-400 line-through"}`}>
+            Santo <span className="text-slate-500">· {formatPartialDate(saint)} (por el nombre)</span>
+          </span>
+          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => toggleAuto.mutate(!c.prefs.autoSaint)}>{c.prefs.autoSaint ? "Quitar" : "Volver a poner"}</button>
+        </div>
+      )}
+      {c.importantDates.length === 0 && !adding && !showAuto && <p className="text-sm text-slate-500">Ninguna. El cumpleaños va en los datos del contacto.</p>}
       <ul className="space-y-1">
         {c.importantDates.map((d) => (
           <li key={d.id} className="flex items-center gap-2 text-sm">

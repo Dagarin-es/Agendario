@@ -7,6 +7,8 @@ import { ContactPicker } from "../components/ContactPicker";
 import { AddressSearch, MapPickerButton, useGeocoder } from "../components/AddressSearch";
 import { TagEditor } from "../components/Tags";
 import { Avatar } from "../components/Avatar";
+import { useConfirm } from "../components/Dialogs";
+import { useUserPrefs } from "../components/QuickActions";
 
 const empty: ContactInput = {
   givenName: "", familyName: "", displayName: "", nickname: "", organization: "", organizationContactId: null, jobTitle: "",
@@ -27,36 +29,79 @@ function joinBirthday(day: string, month: string, year: string): string | null {
   return year ? `${year.padStart(4, "0")}-${p(month)}-${p(day)}` : `--${p(month)}-${p(day)}`;
 }
 
+type LabelKind = "phones" | "emails" | "urls";
+const kindNames: Record<LabelKind, string> = { phones: "teléfonos", emails: "emails", urls: "webs" };
+
 function ListEditor({
-  title, items, onChange, placeholder, type = "text", labels,
+  title, kind, items, onChange, placeholder, type = "text",
 }: {
-  title: string; items: LabeledValue[]; onChange: (v: LabeledValue[]) => void;
-  placeholder: string; type?: string; labels: string[];
+  title: string; kind: LabelKind; items: LabeledValue[]; onChange: (v: LabeledValue[]) => void;
+  placeholder: string; type?: string;
 }) {
+  const qc = useQueryClient();
+  const confirm = useConfirm();
+  const { data: prefs } = useUserPrefs();
+  const labels = prefs?.itemLabels[kind] ?? [];
+  const before = useRef<string>("");
+  const saveLabels = useMutation({
+    mutationFn: (next: string[]) => api.put("/prefs", { ...prefs!, itemLabels: { ...prefs!.itemLabels, [kind]: next } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["prefs"] }),
+  });
+  const setAt = (i: number, patch: Partial<LabeledValue>) => onChange(items.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const move = (i: number, d: number) => {
+    const j = i + d;
+    if (j < 0 || j >= items.length) return;
+    const next = [...items];
+    [next[i], next[j]] = [next[j]!, next[i]!];
+    onChange(next);
+  };
+
+  /** Al salir del campo: si la etiqueta no existe, se pregunta si se crea (se crea una sola vez). */
+  async function checkLabel(i: number, value: string) {
+    const v = value.trim();
+    if (!v || !prefs || labels.some((l) => l.toLowerCase() === v.toLowerCase())) return;
+    const ok = await confirm({
+      title: `¿Crear la etiqueta «${v}»?`,
+      message: `Se añade a tu lista de etiquetas de ${kindNames[kind]} y la podrás elegir siempre.`,
+      confirmText: "Crear",
+      cancelText: "No",
+    });
+    if (ok) saveLabels.mutate([...labels, v]);
+    else setAt(i, { label: before.current });
+  }
+
   return (
     <div>
       <label className="label">{title}</label>
       <div className="space-y-2">
         {items.map((it, i) => (
           <div key={i} className="flex gap-2">
+            {items.length > 1 && (
+              <div className="flex shrink-0 flex-col justify-center">
+                <button type="button" className="px-1 text-[10px] leading-tight text-slate-400 hover:text-indigo-700 disabled:opacity-20" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Subir">▲</button>
+                <button type="button" className="px-1 text-[10px] leading-tight text-slate-400 hover:text-indigo-700 disabled:opacity-20" disabled={i === items.length - 1} onClick={() => move(i, 1)} aria-label="Bajar">▼</button>
+              </div>
+            )}
             <input
               className="input w-28 shrink-0"
-              list={`labels-${title}`}
+              list={`labels-${kind}`}
               placeholder="Etiqueta"
               value={it.label}
-              onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))}
+              onFocus={() => { before.current = it.label; }}
+              onChange={(e) => setAt(i, { label: e.target.value })}
+              onBlur={(e) => void checkLabel(i, e.target.value)}
             />
             <input
               className="input"
               type={type}
               placeholder={placeholder}
               value={it.value}
-              onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))}
+              onChange={(e) => setAt(i, { value: e.target.value })}
             />
             <button type="button" className="btn-danger" onClick={() => onChange(items.filter((_, j) => j !== i))}>✕</button>
           </div>
         ))}
-        <datalist id={`labels-${title}`}>{labels.map((l) => <option key={l} value={l} />)}</datalist>
+        <datalist id={`labels-${kind}`}>{labels.map((l) => <option key={l} value={l} />)}</datalist>
         <button type="button" className="btn-ghost" onClick={() => onChange([...items, { label: labels[0] ?? "", value: "" }])}>
           + Añadir
         </button>
@@ -229,9 +274,9 @@ export function ContactFormPage() {
       </div>
 
       <div className="card space-y-4">
-        <ListEditor title="Teléfonos" items={form.phones} onChange={(v) => set("phones", v)} placeholder="+34 600 000 000" type="tel" labels={["móvil", "casa", "trabajo"]} />
-        <ListEditor title="Emails" items={form.emails} onChange={(v) => set("emails", v)} placeholder="nombre@ejemplo.com" type="email" labels={["personal", "trabajo"]} />
-        <ListEditor title="Webs y redes" items={form.urls} onChange={(v) => set("urls", v)} placeholder="https://…" type="url" labels={["web", "instagram", "linkedin"]} />
+        <ListEditor title="Teléfonos" kind="phones" items={form.phones} onChange={(v) => set("phones", v)} placeholder="+34 600 000 000" type="tel" />
+        <ListEditor title="Emails" kind="emails" items={form.emails} onChange={(v) => set("emails", v)} placeholder="nombre@ejemplo.com" type="email" />
+        <ListEditor title="Webs y redes" kind="urls" items={form.urls} onChange={(v) => set("urls", v)} placeholder="https://…" type="url" />
       </div>
 
       <div className="card space-y-3">

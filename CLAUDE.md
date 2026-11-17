@@ -72,9 +72,9 @@ Nunca tocar `/opt/agendario/.env` ni `/opt/agendario/data` sin preguntar. El scr
 
 ## Pendiente (en orden)
 
+> Hecho en 0.10.0-beta: calendario de Fechas con estado de regalos (`lib/events.ts`, `pages/Upcoming.tsx`), idea → comprado → regalado, santos automáticos (`packages/shared/src/santoral.ts`), subetiquetas (`tags.parent_id/position`, `expandTagIds`), abecedario arriba, Combinar desde la lista, reordenar datos, etiquetas de datos en `user_prefs.itemLabels`, historial de sincronizaciones (`sync_log`).
 > Hecho en 0.9.0-beta: sincronización CardDAV/Fastmail (`lib/carddav.ts`, `lib/sync.ts`, `routes/sync.ts`, tablas `sync_accounts`/`sync_links`), mapa con chincheta (`components/MapPicker.tsx`, Leaflet), abecedario y orden de la lista, etiquetas y foto en el formulario, botón Editar con lápiz.
 
-1. **Etiquetas de teléfonos y emails** (móvil, casa, trabajo…): lista predefinida que crece con las que mete el usuario; si escribe una que no existe, preguntar si se crea (se crea una vez).
 2. **Google Contactos**: primero importar contactos y fotos; después, quizá bidireccional (API People con OAuth web; el permiso de contactos no vale con código de dispositivo).
 3. **Agendario como servidor CardDAV** (una libreta por etiqueta o grupo de etiquetas) para sincronizar el móvil directamente (DAVx⁵).
 4. **App Android** con Capacitor reutilizando la web; registro automático de llamadas (solo Android), notificaciones de cumpleaños, cuenta de contactos del teléfono.

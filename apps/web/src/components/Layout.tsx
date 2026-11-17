@@ -5,6 +5,7 @@ import { APP_NAME, APP_VERSION, type DuplicateGroup } from "@agendario/shared";
 import { api } from "../lib/api";
 import { useLogout, useMe } from "../lib/auth";
 import { BetaBadge } from "./BetaBadge";
+import { usePendingGifts } from "../lib/gifts";
 
 const link = ({ isActive }: { isActive: boolean }) =>
   `relative whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium sm:px-3 ${isActive ? "bg-indigo-50 text-indigo-800" : "text-slate-600 hover:bg-slate-100"}`;
@@ -61,6 +62,7 @@ function MoreMenu() {
 
 export function Layout() {
   const dupCount = useDuplicateCount();
+  const pendingGifts = usePendingGifts().data?.length ?? 0;
   return (
     <div className="mx-auto flex min-h-dvh max-w-5xl flex-col">
       <header className="sticky top-0 z-10 flex items-center gap-1 border-b border-slate-200 bg-white/90 px-3 py-3 backdrop-blur sm:gap-2 sm:px-4">
@@ -74,7 +76,10 @@ export function Layout() {
         </Link>
         <nav className="flex flex-1 gap-0.5 overflow-x-auto sm:gap-1">
           <NavLink to="/" end className={link}>Contactos</NavLink>
-          <NavLink to="/upcoming" className={link}>Fechas</NavLink>
+          <NavLink to="/upcoming" className={link} title={pendingGifts ? "Hay regalos comprados sin marcar como regalados" : undefined}>
+            Fechas
+            {pendingGifts > 0 && <span className="ml-1 rounded-full bg-rose-500 px-1.5 py-px text-[10px] font-semibold text-white">🛍️{pendingGifts}</span>}
+          </NavLink>
           <NavLink to="/duplicates" className={link} title="Buscar y combinar duplicados">
             Duplicados
             {dupCount > 0 && (

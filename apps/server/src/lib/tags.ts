@@ -74,3 +74,20 @@ export async function addTags(contactId: string, tagIds: string[]) {
     .values(tagIds.map((tagId) => ({ contactId, tagId })))
     .onConflictDoNothing();
 }
+
+/** Las etiquetas indicadas más todas sus subetiquetas (a cualquier profundidad). */
+export async function expandTagIds(userId: string, ids: string[]): Promise<string[]> {
+  if (!ids.length) return [];
+  const all = await db.select({ id: t.id, parentId: t.parentId }).from(t).where(eq(t.userId, userId));
+  const children = new Map<string, string[]>();
+  for (const r of all) if (r.parentId) children.set(r.parentId, [...(children.get(r.parentId) ?? []), r.id]);
+  const out = new Set<string>();
+  const stack = [...ids];
+  while (stack.length) {
+    const id = stack.pop()!;
+    if (out.has(id)) continue;
+    out.add(id);
+    stack.push(...(children.get(id) ?? []));
+  }
+  return [...out];
+}

@@ -46,6 +46,43 @@ export function useTags() {
   return useQuery({ queryKey: ["tags"], queryFn: () => api.get<Tag[]>("/tags") });
 }
 
+export type TagNode = { tag: Tag; depth: number; path: string; childCount: number };
+
+/** Etiquetas en árbol, aplanadas en orden (madre seguida de sus subetiquetas). */
+export function tagTree(tags: Tag[] | undefined): TagNode[] {
+  if (!tags) return [];
+  const ids = new Set(tags.map((t) => t.id));
+  const kids = new Map<string | null, Tag[]>();
+  for (const t of tags) {
+    const p = t.parentId && ids.has(t.parentId) ? t.parentId : null;
+    kids.set(p, [...(kids.get(p) ?? []), t]);
+  }
+  for (const list of kids.values()) list.sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, "es"));
+  const out: TagNode[] = [];
+  const walk = (parent: string | null, depth: number, prefix: string, seen: Set<string>) => {
+    for (const t of kids.get(parent) ?? []) {
+      if (seen.has(t.id)) continue;
+      seen.add(t.id);
+      const path = prefix ? `${prefix} › ${t.name}` : t.name;
+      out.push({ tag: t, depth, path, childCount: kids.get(t.id)?.length ?? 0 });
+      walk(t.id, depth + 1, path, seen);
+    }
+  };
+  walk(null, 0, "", new Set());
+  return out;
+}
+
+/** Ids de una etiqueta y todas sus subetiquetas. */
+export function descendantIds(tags: Tag[] | undefined, id: string): Set<string> {
+  const out = new Set<string>([id]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const t of tags ?? []) if (t.parentId && out.has(t.parentId) && !out.has(t.id)) { out.add(t.id); grew = true; }
+  }
+  return out;
+}
+
 export function ColorPicker({ value, onChange }: { value: TagColor; onChange: (c: TagColor) => void }) {
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -95,12 +132,14 @@ export function TagEditor({ tags, onChange, align = "center" }: { tags: TagLite[
   });
 
   const current = new Set(tags.map((t) => t.id));
-  const available = (all ?? []).filter((t) => !current.has(t.id));
+  const tree = tagTree(all);
+  const pathOf = new Map(tree.map((n) => [n.tag.id, n.path]));
+  const available = tree.filter((n) => !current.has(n.tag.id)).map((n) => ({ ...n.tag, name: n.path }));
 
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${align === "center" ? "justify-center" : "justify-start"}`}>
       {tags.map((t) => (
-        <TagChip key={t.id} tag={t} onRemove={() => onChange(tags.filter((x) => x.id !== t.id))} />
+        <TagChip key={t.id} tag={{ ...t, name: pathOf.get(t.id) ?? t.name }} onRemove={() => onChange(tags.filter((x) => x.id !== t.id))} />
       ))}
       {!adding ? (
         <button type="button" className="rounded-full border border-dashed border-slate-300 px-2.5 py-1 text-xs text-slate-500 hover:border-indigo-500 hover:text-indigo-700" onClick={() => setAdding(true)}>
@@ -111,7 +150,7 @@ export function TagEditor({ tags, onChange, align = "center" }: { tags: TagLite[
           {available.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {available.map((t) => (
-                <TagChip key={t.id} tag={t} onClick={() => onChange([...tags, t])} />
+                <TagChip key={t.id} tag={t} onClick={() => onChange([...tags, (all ?? []).find((x) => x.id === t.id)!])} />
               ))}
             </div>
           )}

@@ -20,7 +20,7 @@ import { recordHistory } from "./history.js";
 import { cleanupItemTags, ensureItemIds, itemIdsOf, itemTagsFor } from "./items.js";
 import { deleteContacts } from "./merge.js";
 import { deletePhoto, readPhoto, savePhoto } from "./photos.js";
-import { addTags, tagsForContacts } from "./tags.js";
+import { addTags, expandTagIds, tagsForContacts } from "./tags.js";
 import { logicalLines, parseProp, parseVCard, type ParsedContact } from "./vcard-parse.js";
 import { nameTokens, normalizeEmail, normalizePhone } from "./duplicates.js";
 
@@ -255,6 +255,18 @@ function buildMatcher(rows: ContactRow[]) {
 
 const running = new Set<string>();
 
+type LogEntry = { action: string; contactId?: string | null; contactName?: string; detail?: string };
+const sl_log = schema.syncLog;
+
+/** Guarda las entradas de una pasada (y borra las de más de 60 días). */
+async function saveLog(accountId: string, runId: string, entries: LogEntry[]) {
+  const at = new Date();
+  for (let i = 0; i < entries.length; i += 500) {
+    await db.insert(sl_log).values(entries.slice(i, i + 500).map((e) => ({ accountId, runId, at, action: e.action, contactId: e.contactId ?? null, contactName: e.contactName ?? "", detail: (e.detail ?? "").slice(0, 500) })));
+  }
+  await db.delete(sl_log).where(and(eq(sl_log.accountId, accountId), sql`${sl_log.at} < now() - interval '60 days'`));
+}
+
 export class SyncBlocked extends Error {
   constructor(message: string, public code: "mass_remote" | "mass_local") {
     super(message);
@@ -266,7 +278,7 @@ async function loadState(account: Account) {
   const ids = rows.map((r) => r.id);
   const tagMap = await tagsForContacts(ids, account.userId);
   const itemTags = await itemTagsFor(ids, account.userId);
-  const tagIds = new Set(account.tagIds);
+  const tagIds = new Set(await expandTagIds(account.userId, account.tagIds)); // con sus subetiquetas
   const inScope = new Set(rows.filter((r) => (tagMap.get(r.id) ?? []).some((t) => tagIds.has(t.id))).map((r) => r.id));
   const links = await db.select().from(sl).where(eq(sl.accountId, account.id));
   return { rows, byId: new Map(rows.map((r) => [r.id, r])), itemTags, tagIds, inScope, links };
@@ -312,13 +324,19 @@ export async function runSync(accountId: string, opts: { force?: boolean } = {})
     throw new Error("No existe esa sincronización");
   }
   await db.update(sa).set({ lastStatus: "running" }).where(eq(sa.id, accountId));
+  const runId = crypto.randomUUID();
+  const log: LogEntry[] = [];
   try {
-    const summary = await doSync(account, !!opts.force);
+    const summary = await doSync(account, !!opts.force, log);
+    const changed = log.length > 0;
+    // Las pasadas sin cambios no se apuntan una a una (serían cientos al día)
+    if (changed || !account.initialized) await saveLog(accountId, runId, [{ action: "run", detail: JSON.stringify({ ...summary, first: !account.initialized, forced: !!opts.force }) }, ...log]);
     await db.update(sa).set({ lastStatus: "ok", lastError: "", lastSyncAt: new Date(), lastSummary: summary as unknown as Record<string, number>, initialized: true }).where(eq(sa.id, accountId));
     return summary;
   } catch (e) {
     const msg = e instanceof DavError || e instanceof SyncBlocked ? e.message : `Error: ${(e as Error).message}`;
     if (!(e instanceof DavError || e instanceof SyncBlocked)) console.error("[sync]", e);
+    await saveLog(accountId, runId, [...log, { action: "error", detail: msg }]).catch(() => undefined);
     await db.update(sa).set({ lastStatus: e instanceof SyncBlocked ? `blocked:${e.code}` : "error", lastError: msg, lastSyncAt: new Date() }).where(eq(sa.id, accountId));
     throw e;
   } finally {
@@ -326,7 +344,7 @@ export async function runSync(accountId: string, opts: { force?: boolean } = {})
   }
 }
 
-async function doSync(account: Account, force: boolean): Promise<SyncSummary> {
+async function doSync(account: Account, force: boolean, log: LogEntry[]): Promise<SyncSummary> {
   const auth = authOf(account);
   const source = `Sincronización con ${account.name}`;
   const sum: SyncSummary = { uploaded: 0, downloaded: 0, created: 0, updatedLocal: 0, deletedRemote: 0, deletedLocal: 0, paired: 0, conflicts: 0, errors: 0 };
@@ -363,6 +381,7 @@ async function doSync(account: Account, force: boolean): Promise<SyncSummary> {
       if (row) {
         await deleteContacts(account.userId, [row.id], { [row.id]: { source } });
         sum.deletedLocal++;
+        log.push({ action: "deleted_local", contactId: row.id, contactName: row.displayName, detail: `Borrado en ${account.name}: enviado a la papelera` });
       }
       await db.delete(sl).where(and(eq(sl.accountId, account.id), eq(sl.contactId, link.contactId)));
       continue;
@@ -372,6 +391,8 @@ async function doSync(account: Account, force: boolean): Promise<SyncSummary> {
       try {
         await deleteCard(link.href, auth, link.etag || undefined);
         sum.deletedRemote++;
+        const gone = row ?? (await db.select().from(c).where(eq(c.id, link.contactId)))[0];
+        log.push({ action: "deleted_remote", contactId: link.contactId, contactName: gone?.displayName ?? "", detail: row ? "Ya no tiene la etiqueta" : "Borrado en Agendario" });
         await db.delete(sl).where(and(eq(sl.accountId, account.id), eq(sl.contactId, link.contactId)));
       } catch (e) {
         if ((e as DavError).status === 412) sum.conflicts++;
@@ -388,10 +409,14 @@ async function doSync(account: Account, force: boolean): Promise<SyncSummary> {
     if (remoteChanged && localChanged) {
       sum.conflicts++;
       useRemote = !!remote!.rev && remote!.rev > row.updatedAt; // gana lo más reciente
+      log.push({ action: "conflict", contactId: row.id, contactName: row.displayName, detail: useRemote ? `Cambió en los dos sitios: gana ${account.name} (más reciente)` : "Cambió en los dos sitios: gana Agendario (más reciente)" });
     }
     if (useRemote && remote) {
       const updated = await applyRemote(account, row, exported, remote, link, source);
-      if (updated) sum.updatedLocal++;
+      if (updated) {
+        sum.updatedLocal++;
+        log.push({ action: "updated", contactId: row.id, contactName: updated.displayName, detail: `Cambios desde ${account.name}: ${changedFields(row, updated)}` });
+      }
       const fresh = updated ?? row;
       const freshExported = exportedItems(fresh, st.itemTags.get(row.id), st.tagIds);
       // Si Agendario tiene foto y el servicio nunca la tuvo, se envía
@@ -423,6 +448,7 @@ async function doSync(account: Account, force: boolean): Promise<SyncSummary> {
       await db.insert(sl).values(link).onConflictDoNothing();
       uploads.push({ row: merged, link, href: link.href, uid: link.uid, extra: link.extra, etag: link.etag });
       sum.paired++;
+      log.push({ action: "paired", contactId: local.id, contactName: local.displayName, detail: `Emparejado con «${remote.parsed.displayName}» de ${account.name}` });
     } else {
       const created = await createFromRemote(account, remote, source);
       const exported = exportedItems(created, undefined, st.tagIds);
@@ -430,6 +456,7 @@ async function doSync(account: Account, force: boolean): Promise<SyncSummary> {
       st.inScope.add(created.id);
       taken.add(created.id);
       sum.created++;
+      log.push({ action: "created", contactId: created.id, contactName: created.displayName, detail: `Nuevo desde ${account.name}` });
     }
   }
 
@@ -452,11 +479,14 @@ async function doSync(account: Account, force: boolean): Promise<SyncSummary> {
       await db.insert(sl).values({ ...values, etag: "" }).onConflictDoUpdate({ target: [sl.accountId, sl.contactId], set: values });
       sent.push(u.href);
       sum.uploaded++;
+      if (!u.link) log.push({ action: "uploaded_new", contactId: fresh.id, contactName: fresh.displayName, detail: `Enviado a ${account.name}` });
+      else if (!log.some((e) => e.contactId === fresh.id)) log.push({ action: "uploaded", contactId: fresh.id, contactName: fresh.displayName, detail: `Cambios enviados a ${account.name}` });
     } catch (e) {
       if ((e as DavError).status === 412) sum.conflicts++; // cambió a la vez: se resuelve en la próxima pasada
       else {
         sum.errors++;
         console.error("[sync] envío", fresh.displayName, (e as Error).message);
+        log.push({ action: "error", contactId: fresh.id, contactName: fresh.displayName, detail: (e as Error).message });
       }
     }
   }
@@ -476,6 +506,16 @@ async function doSync(account: Account, force: boolean): Promise<SyncSummary> {
     }
   }
   return sum;
+}
+
+const fieldNames: Record<string, string> = {
+  givenName: "nombre", familyName: "apellidos", displayName: "nombre a mostrar", nickname: "apodo", organization: "empresa",
+  jobTitle: "cargo", birthday: "cumpleaños", notes: "notas", phones: "teléfonos", emails: "emails", urls: "webs", addresses: "direcciones", photoKey: "foto",
+};
+function changedFields(a: ContactRow, b: ContactRow) {
+  const strip = (v: unknown) => JSON.stringify(Array.isArray(v) ? v.map((x) => ({ ...(x as object), id: undefined })) : v ?? null);
+  const list = Object.keys(fieldNames).filter((k) => strip((a as Record<string, unknown>)[k]) !== strip((b as Record<string, unknown>)[k]));
+  return list.map((k) => fieldNames[k]).join(", ") || "sin cambios visibles";
 }
 
 async function replacePhoto(row: ContactRow, photo: Buffer | null): Promise<string | null> {

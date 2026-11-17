@@ -1,13 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { geoStatusLabels, geoStatuses, type ContactSummary } from "@agendario/shared";
 import { GeoIcon } from "../components/MapLinks";
 import { HistoryIcon } from "../components/HistoryIcon";
 import { Avatar } from "../components/Avatar";
 import { useBulkActions } from "../components/BulkBar";
 import { useDuplicateCount } from "../components/Layout";
-import { TagChip, useTags } from "../components/Tags";
+import { TagChip, tagTree, useTags } from "../components/Tags";
 import { VisibilityBadge } from "../components/VisibilityBadge";
 import { api } from "../lib/api";
 
@@ -57,35 +57,29 @@ function letterOf(text: string): string {
   return /^[A-Z]$/.test(base) ? base : "#";
 }
 
-/** Barra vertical con el abecedario: toca o desliza el dedo para saltar a esa letra. */
-function AlphabetBar({ present, onPick }: { present: Set<string>; onPick: (l: string) => void }) {
-  const last = useRef("");
-  const pickAt = (x: number, y: number) => {
-    const el = document.elementFromPoint(x, y) as HTMLElement | null;
-    const l = el?.dataset.letter;
-    if (l && l !== last.current && present.has(l)) {
-      last.current = l;
-      onPick(l);
-    }
-  };
+/** Pestañas del abecedario, a todo el ancho, como las de una agenda. Las letras sin contactos, apagadas. */
+const tabColors = ["bg-indigo-600", "bg-amber-500", "bg-violet-500", "bg-pink-500"];
+function AlphabetTabs({ present, active, onPick }: { present: Set<string>; active: string | null; onPick: (l: string) => void }) {
   return (
-    <nav
-      className="fixed right-0.5 top-1/2 z-20 flex -translate-y-1/2 touch-none select-none flex-col items-center rounded-full bg-white/80 px-0.5 py-1.5 shadow-sm ring-1 ring-slate-200 backdrop-blur sm:right-2"
-      aria-label="Saltar a la letra"
-      onTouchStart={(e) => { last.current = ""; pickAt(e.touches[0]!.clientX, e.touches[0]!.clientY); }}
-      onTouchMove={(e) => pickAt(e.touches[0]!.clientX, e.touches[0]!.clientY)}
-    >
-      {ALPHABET.map((l) => {
+    <nav className="grid grid-cols-14 gap-px pt-1 sm:grid-cols-28" aria-label="Saltar a la letra">
+      {ALPHABET.map((l, i) => {
         const has = present.has(l);
+        const on = active === l;
         return (
           <button
             key={l}
             type="button"
-            data-letter={l}
             disabled={!has}
             onClick={() => onPick(l)}
-            className={`w-5 text-center text-[10px] font-semibold leading-[1.35] sm:w-6 sm:text-[11px] ${has ? "text-indigo-700 hover:text-indigo-950" : "text-slate-300"}`}
+            className={`relative h-7 rounded-t-md text-[11px] font-bold transition sm:h-8 sm:text-xs ${
+              on
+                ? "z-10 -mb-px translate-y-px bg-white text-indigo-900 ring-1 ring-slate-200"
+                : has
+                  ? `${tabColors[i % 4]} text-white shadow-[inset_0_-3px_0_rgba(0,0,0,0.12)] hover:-translate-y-0.5`
+                  : "bg-slate-100 text-slate-300"
+            }`}
             aria-label={`Letra ${l}`}
+            aria-current={on ? "true" : undefined}
           >
             {l}
           </button>
@@ -131,6 +125,7 @@ function Pager({ page, pages, onPage }: { page: number; pages: number; onPage: (
 
 export function ContactListPage() {
   const [params, setParams] = useSearchParams();
+  const nav = useNavigate();
   const tag = params.get("tag") ?? "";
   const page = Math.max(1, Number(params.get("page")) || 1);
   const [sort, setSortState] = useState<SortId>(loadSort);
@@ -184,7 +179,7 @@ export function ContactListPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deferred]);
 
-  const setTag = (id: string) => update({ tag: id && id !== tag ? id : "", page: 1 });
+  const setTag = (id: string) => update({ tag: id, page: 1 });
   const changePageSize = (n: number) => {
     setPageSize(n);
     try {
@@ -244,7 +239,9 @@ export function ContactListPage() {
   const showAlphabet = sort !== "geo" && total > 15 && !deferred;
 
   /** Salta a la primera persona de esa letra (cambiando de página si hace falta). */
+  const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const jumpLetter = (l: string) => {
+    setActiveLetter(l);
     const idx = firstIndex.get(l);
     if (idx === undefined) return;
     const p = pageSize ? Math.floor(idx / pageSize) + 1 : 1;
@@ -291,7 +288,13 @@ export function ContactListPage() {
     setSelMenu(false);
   }
   const notMine = [...selected.values()].filter((mine) => !mine).length;
-  const bulk = useBulkActions({ ids: [...selected.keys()], notMine, onClear: () => setSelected(new Map()), onMessage: showToast, filterTag: activeTag });
+  const bulk = useBulkActions({
+    ids: [...selected.keys()], notMine, onClear: () => setSelected(new Map()), onMessage: showToast, filterTag: activeTag,
+    onCombine: () => {
+      const [a, b] = [...selected.keys()];
+      nav(`/duplicates/merge?a=${a}&b=${b}&p=${a}&from=list`);
+    },
+  });
 
   return (
     <div className="space-y-4" ref={topRef}>
@@ -310,15 +313,40 @@ export function ContactListPage() {
         </Link>
       )}
 
-      {/* Filtro por etiquetas */}
-      <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-1 empty:hidden">
-        {tags && tags.length > 0 && (
-          <TagChip tag={{ id: "", name: "Todos", color: "slate" }} active={!tag} onClick={() => setTag("")} />
-        )}
-        {tags?.map((t) => (
-          <TagChip key={t.id} tag={{ ...t, name: `${t.name} · ${t.contactCount}` }} active={t.id === tag} onClick={() => setTag(t.id)} />
-        ))}
-      </div>
+      {/* Filtro por etiquetas: las principales y, debajo, las subetiquetas de la elegida */}
+      {tags && tags.length > 0 && (() => {
+        const tree = tagTree(tags);
+        const byId = new Map(tags.map((t) => [t.id, t]));
+        // Cadena desde la raíz hasta la etiqueta activa
+        const chain: string[] = [];
+        for (let cur = tag ? byId.get(tag) : undefined; cur; cur = cur.parentId ? byId.get(cur.parentId) : undefined) chain.unshift(cur.id);
+        const levels: { parent: string | null; items: typeof tree }[] = [{ parent: null, items: tree.filter((n) => n.depth === 0) }];
+        for (const id of chain) {
+          const kids = tree.filter((n) => n.tag.parentId === id);
+          if (kids.length) levels.push({ parent: id, items: kids });
+        }
+        return (
+          <div className="space-y-1">
+            {levels.map((lv, i) => (
+              <div key={lv.parent ?? "root"} className={`-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 py-1 ${i > 0 ? "border-l-2 border-indigo-200" : ""}`}>
+                {i === 0 ? (
+                  <TagChip tag={{ id: "", name: "Todos", color: "slate" }} active={!tag} onClick={() => setTag("")} />
+                ) : (
+                  <span className="shrink-0 text-xs text-slate-400">↳ {byId.get(lv.parent!)?.name}:</span>
+                )}
+                {lv.items.map((n) => (
+                  <TagChip
+                    key={n.tag.id}
+                    tag={{ ...n.tag, name: `${n.tag.name} · ${n.tag.totalCount}${n.childCount ? " ▸" : ""}` }}
+                    active={chain.includes(n.tag.id)}
+                    onClick={() => setTag(n.tag.id === tag ? (n.tag.parentId ?? "") : n.tag.id)}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {isLoading && <p className="text-slate-500">Cargando…</p>}
       {error && <p className="text-red-600">{(error as Error).message}</p>}
@@ -407,6 +435,7 @@ export function ContactListPage() {
             )}
           </div>
           {selected.size > 0 && bulk.panelView}
+          {showAlphabet && selected.size === 0 && <AlphabetTabs present={new Set(firstIndex.keys())} active={activeLetter} onPick={jumpLetter} />}
           {selected.size === 0 && sort === "geo" && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pb-1 text-[11px] text-slate-500">
               {geoStatuses.map((g) => (
@@ -417,7 +446,7 @@ export function ContactListPage() {
         </div>
       )}
 
-      <ul className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden ${showAlphabet ? "mr-5 sm:mr-6 lg:mr-0" : ""}`}>
+      <ul className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden ${showAlphabet ? "rounded-t-none" : ""}`}>
         {visible.map((c, i) => {
           const l = letters.get(c.id);
           const header = l && (i === 0 || letters.get(visible[i - 1]!.id) !== l);
@@ -459,7 +488,7 @@ export function ContactListPage() {
         })}
       </ul>
 
-      {showAlphabet && <AlphabetBar present={new Set(firstIndex.keys())} onPick={jumpLetter} />}
+
 
       <Pager page={current} pages={pages} onPage={goPage} />
 

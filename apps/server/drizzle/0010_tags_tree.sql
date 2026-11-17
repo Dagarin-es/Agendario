@@ -1,0 +1,3 @@
+ALTER TABLE "tags" ADD COLUMN "parent_id" uuid;--> statement-breakpoint
+ALTER TABLE "tags" ADD COLUMN "position" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "tags" ADD CONSTRAINT "tags_parent_id_tags_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."tags"("id") ON DELETE set null ON UPDATE no action;

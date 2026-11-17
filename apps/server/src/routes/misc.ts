@@ -14,7 +14,8 @@ import {
 import { db, schema } from "../db/index.js";
 import { visibleContacts } from "../lib/access.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
-import { nextOccurrence } from "../lib/dates.js";
+import { eventsBetween, pendingGifts } from "../lib/events.js";
+import { expandTagIds } from "../lib/tags.js";
 import { buildVcf, vcfHeaders } from "../lib/export.js";
 
 const g = schema.groups;
@@ -82,50 +83,24 @@ export const groupRoutes = new Hono<AppEnv>()
 
 export const upcomingRoutes = new Hono<AppEnv>()
   .use(requireAuth)
+  // Próximos N días (lista)
   .get("/", zValidator("query", z.object({ days: z.coerce.number().int().min(1).max(366).default(30) })), async (c) => {
-    const user = c.get("user");
     const { days } = c.req.valid("query");
-    const today = new Date();
-    const ct = schema.contacts;
-
-    const [people, dates, ideas] = await Promise.all([
-      db
-        .select({ id: ct.id, name: ct.displayName, birthday: ct.birthday, photoKey: ct.photoKey })
-        .from(ct)
-        .where(visibleContacts(user.id)),
-      db
-        .select({ contactId: schema.importantDates.contactId, label: schema.importantDates.label, type: schema.importantDates.type, date: schema.importantDates.date })
-        .from(schema.importantDates)
-        .innerJoin(ct, eq(ct.id, schema.importantDates.contactId))
-        .where(visibleContacts(user.id)),
-      db
-        .select({ contactId: schema.giftIdeas.contactId, n: count() })
-        .from(schema.giftIdeas)
-        .where(and(eq(schema.giftIdeas.userId, user.id), eq(schema.giftIdeas.given, false)))
-        .groupBy(schema.giftIdeas.contactId),
-    ]);
-
-    const byId = new Map(people.map((p) => [p.id, p]));
-    const openIdeas = new Map(ideas.map((i) => [i.contactId, i.n]));
-    const events: UpcomingEvent[] = [];
-
-    for (const p of people) {
-      if (!p.birthday) continue;
-      const n = nextOccurrence(p.birthday, today);
-      if (n.daysLeft <= days) {
-        events.push({ contactId: p.id, contactName: p.name, hasPhoto: !!p.photoKey, label: "Cumpleaños", kind: "birthday", ...n, openGiftIdeas: openIdeas.get(p.id) ?? 0 });
-      }
-    }
-    for (const d of dates) {
-      const n = nextOccurrence(d.date, today);
-      const p = byId.get(d.contactId);
-      if (p && n.daysLeft <= days) {
-        events.push({ contactId: p.id, contactName: p.name, hasPhoto: !!p.photoKey, label: d.label || dateTypeLabels[d.type], kind: d.type, ...n, openGiftIdeas: openIdeas.get(p.id) ?? 0 });
-      }
-    }
-    events.sort((a, b) => a.daysLeft - b.daysLeft || a.contactName.localeCompare(b.contactName));
-    return c.json(events);
-  });
+    const now = new Date();
+    const from = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const to = new Date(from.getTime() + days * 86_400_000);
+    return c.json(await eventsBetween(c.get("user").id, from, to));
+  })
+  // Un intervalo cualquiera (calendario mensual)
+  .get("/range", zValidator("query", z.object({ from: z.string().date(), to: z.string().date() })), async (c) => {
+    const { from, to } = c.req.valid("query");
+    const f = new Date(`${from}T00:00:00Z`);
+    const t = new Date(`${to}T00:00:00Z`);
+    if (t < f || t.getTime() - f.getTime() > 400 * 86_400_000) throw new HTTPException(400, { message: "Intervalo no válido" });
+    return c.json(await eventsBetween(c.get("user").id, f, t));
+  })
+  // Comprados sin regalar cuya fecha ya pasó
+  .get("/pending-gifts", async (c) => c.json(await pendingGifts(c.get("user").id)));
 
 // ---------- Exportación vCard ----------
 
@@ -145,7 +120,8 @@ export const exportRoutes = new Hono<AppEnv>()
       // ?tag=… → los contactos con esa etiqueta, cada uno con los datos de esa etiqueta
       const [t] = await db.select().from(schema.tags).where(and(eq(schema.tags.id, tag), eq(schema.tags.userId, user.id)));
       if (!t) throw new HTTPException(404, { message: "Etiqueta no encontrada" });
-      const ids = (await db.select({ id: schema.contactTags.contactId }).from(schema.contactTags).where(eq(schema.contactTags.tagId, tag))).map((r) => r.id);
+      const all = await expandTagIds(user.id, [tag]); // con sus subetiquetas
+      const ids = [...new Set((await db.select({ id: schema.contactTags.contactId }).from(schema.contactTags).where(inArray(schema.contactTags.tagId, all))).map((r) => r.id))];
       const { vcf } = ids.length ? await buildVcf(user.id, ids, gifts === "true", tag) : { vcf: "" };
       const slug = t.name.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase();
       return c.body(vcf, 200, vcfHeaders(`contactos-${slug || "etiqueta"}`));

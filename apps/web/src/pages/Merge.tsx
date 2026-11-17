@@ -305,7 +305,8 @@ export function MergePage() {
       qc.invalidateQueries({ queryKey: ["duplicates"] });
       qc.invalidateQueries({ queryKey: ["contacts"] });
       qc.invalidateQueries({ queryKey: ["tags"] });
-      nav("/duplicates", { replace: true, state: { flash: `Combinados en «${C[principal]!.displayName}».` } });
+      if (params.get("from") === "list") nav(`/contacts/${C[principal]!.id}`, { replace: true });
+      else nav("/duplicates", { replace: true, state: { flash: `Combinados en «${C[principal]!.displayName}».` } });
     },
     onError: (e) => setError((e as Error).message),
   });
@@ -591,7 +592,7 @@ export function MergePage() {
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-end gap-2 px-4 py-3">
           <button className="btn-ghost" onClick={() => applyDefaults(principal, ca, cb)}>Restablecer</button>
-          <button className="btn-ghost" onClick={() => nav("/duplicates")}>Cancelar</button>
+          <button className="btn-ghost" onClick={() => (params.get("from") === "list" ? nav(-1) : nav("/duplicates"))}>Cancelar</button>
           <button className="btn-primary px-5" disabled={merge.isPending} onClick={() => merge.mutate()}>
             {merge.isPending ? "Combinando…" : "Combinar"}
           </button>

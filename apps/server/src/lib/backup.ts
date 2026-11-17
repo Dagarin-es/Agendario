@@ -42,6 +42,7 @@ const TABLES = [
   "contact_prefs",
   "sync_accounts",
   "sync_links",
+  "sync_log",
   "settings",
 ] as const;
 
@@ -485,12 +486,19 @@ export async function restoreArchive(work: string) {
     for (const t of TABLES) {
       const rows = dump[t] ?? [];
       // Los contactos se enlazan entre sí (empresa): primero sin enlace y después se enlazan
-      const prepared = t === "contacts" ? rows.map((r) => ({ ...(r as object), organization_contact_id: null })) : rows;
+      const prepared =
+        t === "contacts" ? rows.map((r) => ({ ...(r as object), organization_contact_id: null }))
+        : t === "tags" ? rows.map((r) => ({ ...(r as object), parent_id: null }))
+        : rows;
       for (let i = 0; i < prepared.length; i += 2000) {
         const chunk = JSON.stringify(prepared.slice(i, i + 2000));
         await tx.execute(
           sql`INSERT INTO ${sql.identifier(t)} SELECT * FROM json_populate_recordset(NULL::${sql.identifier(t)}, ${chunk}::json) ON CONFLICT DO NOTHING`,
         );
+      }
+      if (t === "tags") {
+        const parents = JSON.stringify((rows as { id: string; parent_id?: string | null }[]).filter((r) => r.parent_id).map((r) => ({ id: r.id, p: r.parent_id })));
+        await tx.execute(sql`UPDATE tags SET parent_id = l.p::uuid FROM json_to_recordset(${parents}::json) AS l(id text, p text) WHERE tags.id = l.id::uuid`);
       }
       if (t === "contacts") {
         const links = JSON.stringify(
