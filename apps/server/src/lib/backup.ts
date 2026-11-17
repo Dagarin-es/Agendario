@@ -40,6 +40,8 @@ const TABLES = [
   "interactions",
   "user_prefs",
   "contact_prefs",
+  "sync_accounts",
+  "sync_links",
   "settings",
 ] as const;
 

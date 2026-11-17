@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { geoStatusLabels, geoStatuses, type ContactSummary } from "@agendario/shared";
 import { GeoIcon } from "../components/MapLinks";
@@ -13,6 +13,87 @@ import { api } from "../lib/api";
 
 const PAGE_SIZES = [25, 50, 75, 100, 0] as const; // 0 = todos
 const PAGE_SIZE_KEY = "contactos.pageSize";
+const SORT_KEY = "agendario.sort";
+
+/** Campos por los que se puede ordenar la lista (se recuerda en cada dispositivo). */
+const sortOptions = [
+  { id: "display", label: "Nombre a mostrar" },
+  { id: "given", label: "Nombre" },
+  { id: "family", label: "Apellidos" },
+  { id: "company", label: "Empresa" },
+  { id: "nickname", label: "Apodo" },
+  { id: "geo", label: "📍 Sin geolocalizar" },
+] as const;
+type SortId = (typeof sortOptions)[number]["id"];
+
+function loadSort(): SortId {
+  try {
+    const v = localStorage.getItem(SORT_KEY);
+    return sortOptions.some((o) => o.id === v) ? (v as SortId) : "display";
+  } catch {
+    return "display";
+  }
+}
+
+/** Texto por el que se ordena cada contacto ("" = no tiene ese dato: va al final). */
+function sortText(c: ContactSummary, sort: SortId): string {
+  switch (sort) {
+    case "given": return [c.givenName, c.familyName].filter(Boolean).join(" ").trim();
+    case "family": return c.familyName.trim() ? `${c.familyName} ${c.givenName}`.trim() : "";
+    case "company": return c.organization.trim();
+    case "nickname": return c.nickname.trim();
+    default: return c.displayName.trim();
+  }
+}
+
+const collator = new Intl.Collator("es", { sensitivity: "base", numeric: true });
+export const ALPHABET = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "Ñ", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "#"];
+
+/** Letra del índice: A-Z y Ñ (sin tildes); lo demás, «#». */
+function letterOf(text: string): string {
+  const first = text.trim().charAt(0).toUpperCase();
+  if (first === "Ñ") return "Ñ";
+  const base = first.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return /^[A-Z]$/.test(base) ? base : "#";
+}
+
+/** Barra vertical con el abecedario: toca o desliza el dedo para saltar a esa letra. */
+function AlphabetBar({ present, onPick }: { present: Set<string>; onPick: (l: string) => void }) {
+  const last = useRef("");
+  const pickAt = (x: number, y: number) => {
+    const el = document.elementFromPoint(x, y) as HTMLElement | null;
+    const l = el?.dataset.letter;
+    if (l && l !== last.current && present.has(l)) {
+      last.current = l;
+      onPick(l);
+    }
+  };
+  return (
+    <nav
+      className="fixed right-0.5 top-1/2 z-20 flex -translate-y-1/2 touch-none select-none flex-col items-center rounded-full bg-white/80 px-0.5 py-1.5 shadow-sm ring-1 ring-slate-200 backdrop-blur sm:right-2"
+      aria-label="Saltar a la letra"
+      onTouchStart={(e) => { last.current = ""; pickAt(e.touches[0]!.clientX, e.touches[0]!.clientY); }}
+      onTouchMove={(e) => pickAt(e.touches[0]!.clientX, e.touches[0]!.clientY)}
+    >
+      {ALPHABET.map((l) => {
+        const has = present.has(l);
+        return (
+          <button
+            key={l}
+            type="button"
+            data-letter={l}
+            disabled={!has}
+            onClick={() => onPick(l)}
+            className={`w-5 text-center text-[10px] font-semibold leading-[1.35] sm:w-6 sm:text-[11px] ${has ? "text-indigo-700 hover:text-indigo-950" : "text-slate-300"}`}
+            aria-label={`Letra ${l}`}
+          >
+            {l}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
 
 function loadPageSize(): number {
   try {
@@ -52,7 +133,8 @@ export function ContactListPage() {
   const [params, setParams] = useSearchParams();
   const tag = params.get("tag") ?? "";
   const page = Math.max(1, Number(params.get("page")) || 1);
-  const sort = params.get("sort") === "geo" ? "geo" : "";
+  const [sort, setSortState] = useState<SortId>(loadSort);
+  const [jumpTo, setJumpTo] = useState<string | null>(null);
   const [q, setQ] = useState(params.get("q") ?? "");
   const deferred = useDeferredValue(q);
   const [pageSize, setPageSize] = useState(loadPageSize);
@@ -81,14 +163,13 @@ export function ContactListPage() {
   });
 
   /** Actualiza la URL (así al volver de una ficha sigues en la misma página). */
-  function update(changes: { tag?: string; page?: number; q?: string; sort?: string }) {
+  function update(changes: { tag?: string; page?: number; q?: string }) {
     const next = new URLSearchParams(params);
     const set = (k: string, v: string | number | undefined, empty: string | number) =>
       v === undefined ? null : v === empty || v === "" ? next.delete(k) : next.set(k, String(v));
     set("tag", changes.tag, "");
     set("page", changes.page, 1);
     set("q", changes.q, "");
-    set("sort", changes.sort, "");
     setParams(next, { replace: true });
   }
 
@@ -113,15 +194,45 @@ export function ContactListPage() {
     }
     update({ page: 1 });
   };
+  const changeSort = (v: SortId) => {
+    setSortState(v);
+    try {
+      localStorage.setItem(SORT_KEY, v);
+    } catch {
+      /* solo en esta sesión */
+    }
+    update({ page: 1 });
+  };
   const goPage = (p: number) => {
     update({ page: p });
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const activeTag = tags?.find((t) => t.id === tag);
-  // Orden «sin geolocalizar primero»: con dirección sin localizar, a medias, sin dirección y localizados (dentro, por nombre)
-  const sorted =
-    data && sort === "geo" ? [...data].sort((a, b) => geoStatuses.indexOf(a.geo) - geoStatuses.indexOf(b.geo)) : data;
+  // Orden «sin geolocalizar primero»: con dirección sin localizar, a medias, sin dirección y localizados (dentro, por nombre).
+  // El resto: por el campo elegido; los que no lo tienen, al final (ordenados por nombre a mostrar).
+  const sorted = useMemo(() => {
+    if (!data) return data;
+    if (sort === "geo") return [...data].sort((a, b) => geoStatuses.indexOf(a.geo) - geoStatuses.indexOf(b.geo) || collator.compare(a.displayName, b.displayName));
+    return [...data]
+      .map((c) => ({ c, k: sortText(c, sort) }))
+      .sort((a, b) => (a.k ? 0 : 1) - (b.k ? 0 : 1) || collator.compare(a.k || a.c.displayName, b.k || b.c.displayName))
+      .map((x) => x.c);
+  }, [data, sort]);
+  // Letra de cada contacto según el orden (los que no tienen el campo van a «#»)
+  const letters = useMemo(() => {
+    const m = new Map<string, string>();
+    if (sorted && sort !== "geo") sorted.forEach((c) => m.set(c.id, sortText(c, sort) ? letterOf(sortText(c, sort)) : "#"));
+    return m;
+  }, [sorted, sort]);
+  const firstIndex = useMemo(() => {
+    const m = new Map<string, number>();
+    sorted?.forEach((c, i) => {
+      const l = letters.get(c.id);
+      if (l && !m.has(l)) m.set(l, i);
+    });
+    return m;
+  }, [sorted, letters]);
   const total = data?.length ?? 0;
   const pages = pageSize ? Math.max(1, Math.ceil(total / pageSize)) : 1;
   const current = Math.min(page, pages);
@@ -130,6 +241,24 @@ export function ContactListPage() {
   const to = pageSize ? Math.min(current * pageSize, total) : total;
 
   const filtered = !!(deferred || tag);
+  const showAlphabet = sort !== "geo" && total > 15 && !deferred;
+
+  /** Salta a la primera persona de esa letra (cambiando de página si hace falta). */
+  const jumpLetter = (l: string) => {
+    const idx = firstIndex.get(l);
+    if (idx === undefined) return;
+    const p = pageSize ? Math.floor(idx / pageSize) + 1 : 1;
+    if (p !== current) update({ page: p });
+    setJumpTo(l);
+  };
+  useEffect(() => {
+    if (!jumpTo) return;
+    const el = document.getElementById(`letra-${jumpTo}`);
+    if (el) {
+      el.scrollIntoView({ block: "start" });
+      setJumpTo(null);
+    }
+  }, [jumpTo, visible]);
   const pageAllSelected = visible.length > 0 && visible.every((c) => selected.has(c.id));
   const addToSelection = (list: ContactSummary[]) =>
     setSelected((prev) => {
@@ -264,13 +393,12 @@ export function ContactListPage() {
                 </p>
                 <label className="flex shrink-0 items-center gap-1.5 text-xs text-slate-500">
                   <span className="hidden sm:inline">Ordenar</span>
-                  <select className="input w-auto py-1 text-xs" value={sort} onChange={(e) => update({ sort: e.target.value, page: 1 })} aria-label="Ordenar">
-                    <option value="">Por nombre</option>
-                    <option value="geo">📍 Sin geolocalizar primero</option>
+                  <select className="input w-auto max-w-[10rem] py-1 text-xs" value={sort} onChange={(e) => changeSort(e.target.value as SortId)} aria-label="Ordenar por">
+                    {sortOptions.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                   </select>
                 </label>
                 <label className="flex shrink-0 items-center gap-1.5 text-xs text-slate-500">
-                  Mostrar
+                  <span className="hidden sm:inline">Mostrar</span>
                   <select className="input w-auto py-1 text-xs" value={pageSize} onChange={(e) => changePageSize(Number(e.target.value))}>
                     {PAGE_SIZES.map((n) => <option key={n} value={n}>{n || "Todos"}</option>)}
                   </select>
@@ -289,9 +417,18 @@ export function ContactListPage() {
         </div>
       )}
 
-      <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden">
-        {visible.map((c) => (
-          <li key={c.id} className={`flex items-center ${selected.has(c.id) ? "bg-indigo-50/70" : ""}`}>
+      <ul className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden ${showAlphabet ? "mr-5 sm:mr-6 lg:mr-0" : ""}`}>
+        {visible.map((c, i) => {
+          const l = letters.get(c.id);
+          const header = l && (i === 0 || letters.get(visible[i - 1]!.id) !== l);
+          return (
+          <Fragment key={c.id}>
+          {header && (
+            <li id={firstIndex.get(l) !== undefined && sorted![firstIndex.get(l)!]!.id === c.id ? `letra-${l}` : undefined} className="scroll-mt-32 bg-slate-50 px-4 py-1 text-xs font-bold text-indigo-800">
+              {l === "#" && sort !== "display" ? `# · sin ${sortOptions.find((o) => o.id === sort)!.label.toLowerCase()} o con otros signos` : l}
+            </li>
+          )}
+          <li className={`flex items-center ${selected.has(c.id) ? "bg-indigo-50/70" : ""}`}>
             <label className="flex cursor-pointer items-center self-stretch pl-4 pr-1" aria-label={`Seleccionar ${c.displayName}`}>
               <input type="checkbox" className="h-4 w-4 cursor-pointer" checked={selected.has(c.id)} onChange={() => toggleOne(c)} />
             </label>
@@ -299,6 +436,9 @@ export function ContactListPage() {
               <Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} version={c.updatedAt} />
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium">{c.displayName}</div>
+                {(sort === "family" || sort === "given" || sort === "nickname") && sortText(c, sort) && sortText(c, sort) !== c.displayName && (
+                  <div className="truncate text-xs text-indigo-700/80">{sort === "nickname" ? `«${c.nickname}»` : sort === "family" ? `${c.familyName}, ${c.givenName}`.replace(/, $/, "") : sortText(c, sort)}</div>
+                )}
                 <div className="truncate text-sm text-slate-500">
                   {(tag ? [c.phone, c.email] : [c.organization]).filter(Boolean).join(" · ")}
                   {!c.isMine && <span>{(tag ? c.phone || c.email : c.organization) ? " · " : ""}de {c.ownerName}</span>}
@@ -314,8 +454,12 @@ export function ContactListPage() {
               <GeoIcon status={c.geo} />
             </Link>
           </li>
-        ))}
+          </Fragment>
+          );
+        })}
       </ul>
+
+      {showAlphabet && <AlphabetBar present={new Set(firstIndex.keys())} onPick={jumpLetter} />}
 
       <Pager page={current} pages={pages} onPage={goPage} />
 

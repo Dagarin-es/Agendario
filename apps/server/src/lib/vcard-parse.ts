@@ -36,7 +36,7 @@ export interface ParsedContact {
   gifts: ParsedGift[];
 }
 
-interface Prop {
+export interface Prop {
   group: string | null;
   name: string;
   params: Record<string, string[]>;
@@ -121,7 +121,7 @@ function decodeCharset(bytes: Uint8Array, charset: string | undefined): string {
 
 // ---------- Líneas y propiedades ----------
 
-function logicalLines(text: string): string[] {
+export function logicalLines(text: string): string[] {
   const raw = text.replace(/\r\n?/g, "\n").split("\n");
   const lines: string[] = [];
   for (const line of raw) {
@@ -141,7 +141,7 @@ function logicalLines(text: string): string[] {
   return lines.filter((l) => l.trim() !== "");
 }
 
-function parseProp(line: string): Prop | null {
+export function parseProp(line: string): Prop | null {
   const nv = splitNameValue(line);
   if (!nv) return null;
   const [left, rawValue] = nv;

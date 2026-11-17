@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // ---------- Versión ----------
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
-export const APP_VERSION = "0.8.3-beta";
+export const APP_VERSION = "0.9.0-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------
@@ -185,6 +185,9 @@ export const contactPatchSchema = contactInputSchema.partial();
 export interface ContactSummary {
   id: string;
   displayName: string;
+  givenName: string;
+  familyName: string;
+  nickname: string;
   organization: string;
   hasPhoto: boolean;
   visibility: Visibility;
@@ -696,4 +699,75 @@ export interface BackupFile {
   name: string;
   size: number;
   modTime: string;
+}
+
+// ---------- Sincronización (CardDAV: Fastmail…) ----------
+
+export const syncProviders = ["fastmail", "carddav"] as const;
+export type SyncProvider = (typeof syncProviders)[number];
+export const syncProviderLabels: Record<SyncProvider, string> = { fastmail: "Fastmail", carddav: "Otro servidor CardDAV" };
+export const syncIntervals = [0, 5, 15, 30, 60, 180, 720] as const;
+
+/** Datos para conectar (buscar libretas). */
+export const syncConnectSchema = z.object({
+  provider: z.enum(syncProviders),
+  serverUrl: z.string().trim().max(500).default(""),
+  username: z.string().trim().min(1, "Falta el usuario").max(300),
+  /** Vacía al editar = se mantiene la guardada */
+  password: z.string().max(300).default(""),
+  accountId: z.string().uuid().optional(),
+});
+
+export const syncAccountInputSchema = syncConnectSchema.extend({
+  name: z.string().trim().min(1).max(100),
+  addressBookUrl: z.string().url(),
+  addressBookName: z.string().max(200).default(""),
+  tagIds: z.array(z.string().uuid()).min(1, "Elige al menos una etiqueta"),
+  newTagId: z.string().uuid().nullable().default(null),
+  intervalMin: z.number().int().min(0).max(1440).default(15),
+  enabled: z.boolean().default(true),
+});
+export type SyncAccountInput = z.infer<typeof syncAccountInputSchema>;
+
+export interface SyncSummary {
+  uploaded: number;
+  downloaded: number;
+  created: number;
+  updatedLocal: number;
+  deletedRemote: number;
+  deletedLocal: number;
+  paired: number;
+  conflicts: number;
+  errors: number;
+}
+
+export interface SyncAccount {
+  id: string;
+  provider: SyncProvider;
+  name: string;
+  serverUrl: string;
+  username: string;
+  hasPassword: boolean;
+  addressBookUrl: string;
+  addressBookName: string;
+  tagIds: string[];
+  newTagId: string | null;
+  intervalMin: number;
+  enabled: boolean;
+  initialized: boolean;
+  running: boolean;
+  lastSyncAt: string | null;
+  /** ok · error · running · blocked:mass_remote · blocked:mass_local */
+  lastStatus: string;
+  lastError: string;
+  lastSummary: SyncSummary | null;
+  linkedCount: number;
+}
+
+export interface SyncPreview {
+  remoteCount: number;
+  localCount: number;
+  pairs: { localId: string; localName: string; remoteName: string; addsTag: boolean }[];
+  toUpload: string[];
+  toDownload: string[];
 }

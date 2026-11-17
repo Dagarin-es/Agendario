@@ -67,7 +67,7 @@ export function FullCardsModal({
       title: `¿Borrar «${c.displayName}»?`,
       message: (
         <>
-          Se conservará «{keepName}». <strong>No se puede deshacer.</strong>
+          Se conservará «{keepName}». <strong>Irá a la papelera: podrás restaurarlo durante 60 días.</strong>
           {extras > 0 && (
             <span className="mt-2 block rounded-lg bg-amber-50 p-2 text-amber-900">
               Tiene {extras} ideas de regalo, regalos o fechas que se perderán. Si quieres conservarlas, usa «Combinar».

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { copyText } from "../lib/clipboard";
 import { geoStatusLabels, isGeolocated, type Address, type GeoStatus } from "@agendario/shared";
 
@@ -89,18 +89,14 @@ export function MapLinks({ address }: { address: Address }) {
 }
 
 /** Mapa pequeño de OpenStreetMap con la chincheta de la dirección. */
+const MiniMapView = lazy(() => import("./MapPicker").then((m) => ({ default: m.MiniMapView })));
+
 export function MiniMap({ address }: { address: Address }) {
   if (!isGeolocated(address)) return null;
-  const lat = address.lat!;
-  const lon = address.lon!;
-  const bbox = [lon - 0.006, lat - 0.0035, lon + 0.006, lat + 0.0035].map((n) => n.toFixed(6)).join(",");
   return (
-    <iframe
-      title={`Mapa de ${addressLine(address)}`}
-      className="mt-2 h-44 w-full rounded-lg border border-slate-200"
-      loading="lazy"
-      src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`}
-    />
+    <Suspense fallback={<div className="mt-2 h-44 w-full rounded-lg border border-slate-200 bg-slate-100" />}>
+      <MiniMapView lat={address.lat!} lon={address.lon!} title={`Mapa de ${addressLine(address)}`} />
+    </Suspense>
   );
 }
 

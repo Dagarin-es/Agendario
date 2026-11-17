@@ -57,6 +57,9 @@ async function computeGroups(userId: string, userName: string): Promise<Duplicat
         .map((r) => ({
           id: r.id,
           displayName: r.displayName,
+          givenName: r.givenName,
+          familyName: r.familyName,
+          nickname: r.nickname,
           organization: r.organization,
           jobTitle: r.jobTitle,
           birthday: r.birthday,

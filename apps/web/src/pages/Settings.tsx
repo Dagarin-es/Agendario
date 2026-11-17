@@ -22,6 +22,7 @@ import { useUserPrefs } from "../components/QuickActions";
 import { api } from "../lib/api";
 import { useMe } from "../lib/auth";
 import { copyText } from "../lib/clipboard";
+import { SyncSettings } from "../components/SyncSettings";
 import { getTheme, setTheme, type ThemeMode } from "../lib/theme";
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
@@ -553,6 +554,7 @@ export function SettingsPage() {
       <h1 className="text-xl font-semibold">⚙️ Ajustes</h1>
       <Appearance />
       <Communication />
+      <SyncSettings Section={Section} />
       {me?.isAdmin && <Backups />}
       <Section icon="📒" title={`Acerca de ${APP_NAME}`}>
         <div className="flex items-center gap-3">

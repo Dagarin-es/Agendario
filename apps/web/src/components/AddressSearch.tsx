@@ -1,8 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { isGeolocated, type Address, type GeoSuggestion } from "@agendario/shared";
 import { api } from "../lib/api";
 import { addressLine } from "./MapLinks";
+
+const MapPicker = lazy(() => import("./MapPicker"));
+
+/** Botón «Ubicar en el mapa» con su ventana (se carga el mapa solo al abrirla). */
+export function MapPickerButton({ address, onChange, className = "" }: { address: Address; onChange: (patch: Partial<Address>) => void; className?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" className={`btn shrink-0 rounded-lg border border-indigo-300 bg-white px-3 text-indigo-800 hover:bg-indigo-50 ${className}`} onClick={() => setOpen(true)} title="Abrir un mapa para colocar la chincheta en el sitio exacto">
+        🗺️ <span className="hidden sm:inline">Ubicar en el mapa</span><span className="sm:hidden">Mapa</span>
+      </button>
+      {open && (
+        <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 text-white">Abriendo el mapa…</div>}>
+          <MapPicker address={address} onClose={() => setOpen(false)} onPick={(p) => { onChange(p); setOpen(false); }} />
+        </Suspense>
+      )}
+    </>
+  );
+}
 
 /** ¿Está activado el buscador de direcciones en el servidor? */
 export function useGeocoder() {
@@ -112,9 +131,10 @@ export function AddressSearch({ address, onChange }: { address: Address; onChang
         {hasText && (
           <button type="button" className="btn shrink-0 rounded-lg border border-indigo-300 bg-white px-3 text-indigo-800 hover:bg-indigo-50" onClick={locate}
             title="Buscar las coordenadas de la dirección escrita">
-            📍 {geo ? "Volver a geolocalizar" : "Geolocalizar"}
+            📍 <span className="hidden sm:inline">{geo ? "Volver a geolocalizar" : "Geolocalizar"}</span>
           </button>
         )}
+        <MapPickerButton address={address} onChange={onChange} />
       </div>
 
       <div className="mt-1.5 flex items-center gap-2 text-xs">

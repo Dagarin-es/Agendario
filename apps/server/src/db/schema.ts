@@ -379,3 +379,62 @@ export const backupRuns = pgTable(
   },
   (t) => [index("backup_runs_started_idx").on(t.startedAt)],
 );
+
+// ---------- Sincronización con servicios externos (CardDAV: Fastmail…) ----------
+
+export const syncAccounts = pgTable(
+  "sync_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** fastmail · carddav */
+    provider: text("provider").notNull(),
+    name: text("name").notNull(),
+    serverUrl: text("server_url").notNull(),
+    username: text("username").notNull(),
+    password: text("password").notNull(),
+    addressBookUrl: text("address_book_url").notNull(),
+    addressBookName: text("address_book_name").notNull().default(""),
+    /** Etiquetas que se sincronizan con este servicio */
+    tagIds: jsonb("tag_ids").$type<string[]>().notNull().default([]),
+    /** Etiqueta que reciben los contactos creados en el servicio */
+    newTagId: uuid("new_tag_id").references(() => tags.id, { onDelete: "set null" }),
+    /** Minutos entre sincronizaciones automáticas (0 = solo a mano) */
+    intervalMin: integer("interval_min").notNull().default(15),
+    enabled: boolean("enabled").notNull().default(true),
+    /** ¿Se hizo ya la primera sincronización (con su vista previa)? */
+    initialized: boolean("initialized").notNull().default(false),
+    lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+    /** ok · error · running */
+    lastStatus: text("last_status").notNull().default(""),
+    lastError: text("last_error").notNull().default(""),
+    lastSummary: jsonb("last_summary").$type<Record<string, number>>(),
+    ...timestamps,
+  },
+  (t) => [index("sync_accounts_user_idx").on(t.userId)],
+);
+
+export const syncLinks = pgTable(
+  "sync_links",
+  {
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => syncAccounts.id, { onDelete: "cascade" }),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "cascade" }),
+    href: text("href").notNull(),
+    etag: text("etag").notNull().default(""),
+    uid: text("uid").notNull(),
+    /** Huella de lo que se envió/recibió la última vez desde Agendario */
+    localHash: text("local_hash").notNull().default(""),
+    /** Huella de la foto del servicio (para no volver a guardarla si no cambia) */
+    remotePhotoHash: text("remote_photo_hash").notNull().default(""),
+    /** Propiedades del vCard que Agendario no maneja (se conservan al reenviarlo) */
+    extra: text("extra").notNull().default(""),
+    syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.accountId, t.contactId] }), uniqueIndex("sync_links_href_idx").on(t.accountId, t.href)],
+);

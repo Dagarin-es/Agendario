@@ -74,7 +74,7 @@ export function useBulkActions({
       title: `¿Borrar ${mine} ${mine === 1 ? "contacto" : "contactos"}?`,
       message: (
         <>
-          Se borrarán con sus fotos, ideas de regalo y fechas. <strong>No se puede deshacer.</strong>
+          Irán a la papelera con sus fotos, ideas de regalo y fechas: <strong>podrás restaurarlos durante 60 días.</strong>
           {notMine > 0 && <span className="mt-2 block text-slate-500">{notMine} de los seleccionados te los han compartido y no se borrarán.</span>}
         </>
       ),

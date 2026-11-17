@@ -72,12 +72,9 @@ Nunca tocar `/opt/agendario/.env` ni `/opt/agendario/data` sin preguntar. El scr
 
 ## Pendiente (en orden)
 
-1. **Sincronización con Fastmail por CardDAV**, bidireccional y con fotos (contraseña de aplicación de Fastmail; servidor `carddav.fastmail.com`). Cada servicio sincroniza **solo las etiquetas que elija el usuario**. Reglas aprobadas:
-   - quitar la etiqueta a un contacto → se borra del servicio, no de Agendario;
-   - lo que se crea en el servicio llega a Agendario con la etiqueta de esa sincronización;
-   - se envían los datos de las etiquetas elegidas más los que no tienen etiqueta;
-   - la primera vez, resumen previo (subir / bajar / coincidencias) y emparejar coincidencias en vez de duplicar;
-   - conflictos: gana el cambio más reciente (el historial permite deshacer).
+> Hecho en 0.9.0-beta: sincronización CardDAV/Fastmail (`lib/carddav.ts`, `lib/sync.ts`, `routes/sync.ts`, tablas `sync_accounts`/`sync_links`), mapa con chincheta (`components/MapPicker.tsx`, Leaflet), abecedario y orden de la lista, etiquetas y foto en el formulario, botón Editar con lápiz.
+
+1. **Etiquetas de teléfonos y emails** (móvil, casa, trabajo…): lista predefinida que crece con las que mete el usuario; si escribe una que no existe, preguntar si se crea (se crea una vez).
 2. **Google Contactos**: primero importar contactos y fotos; después, quizá bidireccional (API People con OAuth web; el permiso de contactos no vale con código de dispositivo).
 3. **Agendario como servidor CardDAV** (una libreta por etiqueta o grupo de etiquetas) para sincronizar el móvil directamente (DAVx⁵).
 4. **App Android** con Capacitor reutilizando la web; registro automático de llamadas (solo Android), notificaciones de cumpleaños, cuenta de contactos del teléfono.

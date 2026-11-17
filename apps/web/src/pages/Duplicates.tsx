@@ -118,7 +118,7 @@ function GroupCard({ g, onDone }: { g: DuplicateGroup; onDone: (msg: string) => 
       title: `¿Borrar «${c.displayName}»?`,
       message: (
         <>
-          Se conservará «{pair.find((x) => x.id !== c.id)!.displayName}». <strong>No se puede deshacer.</strong>
+          Se conservará «{pair.find((x) => x.id !== c.id)!.displayName}». <strong>Irá a la papelera: podrás restaurarlo durante 60 días.</strong>
           {c.extras > 0 && (
             <span className="mt-2 block rounded-lg bg-amber-50 p-2 text-amber-900">
               Tiene {c.extras} ideas de regalo, regalos o fechas que se perderán. Si quieres conservarlas, usa «Combinar».

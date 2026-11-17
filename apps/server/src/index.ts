@@ -22,6 +22,8 @@ import { geoRoutes } from "./routes/geo.js";
 import { historyRoutes } from "./routes/history.js";
 import { personalRoutes } from "./routes/personal.js";
 import { backupRoutes } from "./routes/backup.js";
+import { syncRoutes } from "./routes/sync.js";
+import { startSyncScheduler } from "./lib/sync.js";
 import { startPurgeJob } from "./lib/history.js";
 import { startBackupScheduler } from "./lib/backup.js";
 import { exportRoutes, groupRoutes, upcomingRoutes } from "./routes/misc.js";
@@ -46,6 +48,7 @@ const api = new Hono()
   .route("/duplicates", duplicateRoutes)
   .route("/geo", geoRoutes)
   .route("/backup", backupRoutes)
+  .route("/sync", syncRoutes)
   .route("/", historyRoutes)
   .route("/", personalRoutes)
   .route("/", giftRoutes);
@@ -80,6 +83,7 @@ const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
 });
 startPurgeJob();
 startBackupScheduler();
+startSyncScheduler();
 
 const shutdown = async () => {
   console.log("Cerrando…");

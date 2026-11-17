@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> ⚠️ **Versión beta (0.8.3-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
+> ⚠️ **Versión beta (0.9.0-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **contactos compartidos** entre usuarios y **fotos**, pensada para crecer hasta tener apps de escritorio y móvil, sincronización con Google/Outlook/CardDAV y copias cifradas.
 
-Esta es la **versión 0.8.3-beta**: servidor + web app instalable (PWA) en un contenedor Docker.
+Esta es la **versión 0.9.0-beta**: servidor + web app instalable (PWA) en un contenedor Docker.
 
 ---
 
@@ -57,7 +57,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-0.8.3-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-0.9.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -91,7 +91,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-0.8.3-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-0.9.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -99,7 +99,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-0.8.3-beta.zip
+unzip agendario-0.9.0-beta.zip
 cd agendario
 ```
 
@@ -143,7 +143,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-0.8.3-beta.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-0.9.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -317,6 +317,19 @@ En cualquier combinación, las etiquetas, ideas de regalo, regalos recibidos, fe
 
 ---
 
+## Sincronizar con Fastmail (u otro CardDAV)
+
+En **⚙️ Ajustes → Sincronización → Añadir sincronización**:
+
+1. En Fastmail crea una **contraseña de app**: Settings → Privacy & Security → Connected apps & API tokens → Manage app passwords and access → New app password (acceso «Mail, Contacts & Calendars» o solo contactos).
+2. En Agendario elige Fastmail, pon tu email y esa contraseña y pulsa **Conectar**.
+3. Elige las **etiquetas** que quieres en Fastmail (p. ej. «Personal») y cada cuánto sincronizar.
+4. Verás una **vista previa** (qué se empareja, qué se envía y qué llega). Pulsa **Empezar a sincronizar**.
+
+Reglas: solo van los contactos con esas etiquetas y, de cada uno, los datos de esas etiquetas y los que no tienen etiqueta. Quitar la etiqueta lo borra de Fastmail (no de Agendario). Lo creado en Fastmail llega con la etiqueta. Lo borrado en Fastmail va a la papelera de Agendario. Si cambia en los dos sitios, gana lo más reciente y lo otro queda en el historial. Si de golpe se fuese a borrar más de la mitad, se para y te pregunta.
+
+Para otro servidor (Nextcloud, Radicale, iCloud con contraseña de app…) elige «Otro servidor CardDAV» y pon su dirección.
+
 ## Historial y papelera
 
 - Cada vez que se **crea, modifica o borra** un contacto queda apuntado: qué campo cambió, el valor anterior y el nuevo, quién y cuándo. También los cambios automáticos (importar, combinar, renombrar la empresa enlazada). Se conserva **60 días**.
@@ -401,11 +414,11 @@ La configuración de GitHub va aparte, en **`/opt/agendario/actualizar.conf`**. 
 
 Cómo sube:
 
-- **Betas** (versión con guion, como `0.8.3-beta`): a la rama **`beta`**, con la etiqueta `v0.8.3-beta`. Te recuerda crear la *Release* y marcarla como *pre-release*.
+- **Betas** (versión con guion, como `0.9.0-beta`): a la rama **`beta`**, con la etiqueta `v0.9.0-beta`. Te recuerda crear la *Release* y marcarla como *pre-release*.
 - **Estables** (como `1.0.0`): a **`main`**. Te pregunta qué etiqueta anterior quieres borrar (Enter = ninguna).
 - Al repositorio nunca se suben el `.env`, la carpeta `data/` ni `actualizar.conf`: se copia solo el contenido del zip.
 
-**Docker Hub**: cada etiqueta que sube el script activa **GitHub Actions** (`.github/workflows/docker.yml`), que compila la imagen para Intel/AMD y ARM y la publica en `dagarines/agendario`: las betas como `0.8.3-beta` y `beta`, las estables como `1.0.0` y `latest`. Solo hay que crear dos secretos en el repositorio (Settings → Secrets and variables → Actions): `DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN` (token de Docker Hub con permiso *Read & Write*).
+**Docker Hub**: cada etiqueta que sube el script activa **GitHub Actions** (`.github/workflows/docker.yml`), que compila la imagen para Intel/AMD y ARM y la publica en `dagarines/agendario`: las betas como `0.9.0-beta` y `beta`, las estables como `1.0.0` y `latest`. Solo hay que crear dos secretos en el repositorio (Settings → Secrets and variables → Actions): `DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN` (token de Docker Hub con permiso *Read & Write*).
 
 ---
 

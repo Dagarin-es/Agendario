@@ -62,6 +62,9 @@ function toSummary(r: Row, userId: string, tags: TagLite[] = [], shown?: { phone
   return {
     id: r.contact.id,
     displayName: r.contact.displayName,
+    givenName: r.contact.givenName,
+    familyName: r.contact.familyName,
+    nickname: r.contact.nickname,
     organization: r.contact.organization,
     hasPhoto: !!r.contact.photoKey,
     visibility: r.contact.visibility,

@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import type { Address, Contact, ContactDetail, ContactInput, LabeledValue, Visibility } from "@agendario/shared";
+import type { Address, Contact, ContactDetail, ContactInput, LabeledValue, TagLite, Visibility } from "@agendario/shared";
 import { api } from "../lib/api";
 import { ContactPicker } from "../components/ContactPicker";
-import { AddressSearch, useGeocoder } from "../components/AddressSearch";
+import { AddressSearch, MapPickerButton, useGeocoder } from "../components/AddressSearch";
+import { TagEditor } from "../components/Tags";
+import { Avatar } from "../components/Avatar";
 
 const empty: ContactInput = {
   givenName: "", familyName: "", displayName: "", nickname: "", organization: "", organizationContactId: null, jobTitle: "",
@@ -80,6 +82,16 @@ export function ContactFormPage() {
   const [picking, setPicking] = useState(false);
   const geocoder = useGeocoder();
   const [orgName, setOrgName] = useState(""); // nombre del contacto enlazado como empresa
+  const [tags, setTags] = useState<TagLite[]>([]);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!photo) return setPhotoUrl(null);
+    const u = URL.createObjectURL(photo);
+    setPhotoUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [photo]);
 
   const { data: existing } = useQuery({
     queryKey: ["contact", id],
@@ -92,13 +104,26 @@ export function ContactFormPage() {
     const { givenName, familyName, displayName, nickname, organization, organizationContactId, jobTitle, birthday, emails, phones, urls, addresses, notes, visibility } = existing;
     setForm({ givenName, familyName, displayName, nickname, organization, organizationContactId, jobTitle, birthday, emails, phones, urls, addresses, notes, visibility });
     setOrgName(existing.organizationContact?.displayName ?? "");
+    setTags(existing.tags);
     setBday(splitBirthday(birthday));
   }, [existing]);
 
   const save = useMutation({
-    mutationFn: (body: ContactInput) =>
-      editing ? api.patch<Contact>(`/contacts/${id}`, body) : api.post<Contact>("/contacts", body),
+    mutationFn: async (body: ContactInput) => {
+      const c = editing ? await api.patch<Contact>(`/contacts/${id}`, body) : await api.post<Contact>("/contacts", body);
+      // Etiquetas (personales): solo si han cambiado o es nuevo y tiene alguna
+      const before = (existing?.tags ?? []).map((t) => t.id).sort().join(",");
+      const after = tags.map((t) => t.id).sort().join(",");
+      if (before !== after) await api.put(`/contacts/${c.id}/tags`, { tagIds: tags.map((t) => t.id) });
+      if (photo) {
+        const fd = new FormData();
+        fd.append("photo", photo);
+        try { await api.put(`/contacts/${c.id}/photo`, fd); } catch (e) { setError(`Contacto guardado, pero la foto no: ${(e as Error).message}`); }
+      }
+      return c;
+    },
     onSuccess: (c) => {
+      qc.invalidateQueries({ queryKey: ["tags"] });
       qc.invalidateQueries({ queryKey: ["contacts"] });
       qc.invalidateQueries({ queryKey: ["contact", c.id] });
       qc.invalidateQueries({ queryKey: ["upcoming"] });
@@ -137,8 +162,33 @@ export function ContactFormPage() {
     <form onSubmit={submit} className="space-y-4">
       <h1 className="text-lg font-semibold">{editing ? "Editar contacto" : "Nuevo contacto"}</h1>
 
+      <div className="card flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+        <div className="flex flex-col items-center gap-1.5">
+          <button type="button" className="group relative rounded-full" onClick={() => photoRef.current?.click()} title="Elegir foto">
+            {photoUrl ? (
+              <img src={photoUrl} alt="" className="h-24 w-24 rounded-full object-cover" />
+            ) : editing && existing ? (
+              <Avatar id={existing.id} name={existing.displayName} hasPhoto={existing.hasPhoto} size={96} version={existing.updatedAt} />
+            ) : (
+              <span className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-slate-50 text-3xl text-slate-400">📷</span>
+            )}
+            <span className="absolute inset-0 hidden items-center justify-center rounded-full bg-black/40 text-xs text-white group-hover:flex">Cambiar</span>
+          </button>
+          <input ref={photoRef} type="file" accept="image/*" hidden onChange={(e) => { setPhoto(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+          {photo ? (
+            <button type="button" className="text-xs text-slate-500 hover:text-red-600" onClick={() => setPhoto(null)}>Quitar foto nueva</button>
+          ) : (
+            <button type="button" className="text-xs text-indigo-700 hover:underline" onClick={() => photoRef.current?.click()}>{editing && existing?.hasPhoto ? "Cambiar foto" : "Añadir foto"}</button>
+          )}
+        </div>
+        <div className="w-full flex-1">
+          <label className="label">Etiquetas</label>
+          <TagEditor tags={tags} onChange={setTags} align="start" />
+        </div>
+      </div>
+
       <div className="card grid gap-3 sm:grid-cols-2">
-        <div><label className="label">Nombre</label><input className="input" {...text("givenName")} autoFocus /></div>
+        <div><label className="label">Nombre <span className="font-normal text-slate-400">(o nombre de empresa)</span></label><input className="input" {...text("givenName")} autoFocus /></div>
         <div><label className="label">Apellidos</label><input className="input" {...text("familyName")} /></div>
         <div className="sm:col-span-2">
           <label className="label">Nombre a mostrar (si lo dejas vacío: nombre + apellidos)</label>
@@ -212,7 +262,14 @@ export function ContactFormPage() {
               />
             </div>
             <div className="grid gap-2 p-3 sm:grid-cols-2">
-              {geocoder && <AddressSearch address={a} onChange={(patch) => setAddr(i, patch)} />}
+              {geocoder ? (
+                <AddressSearch address={a} onChange={(patch) => setAddr(i, patch)} />
+              ) : (
+                <div className="flex items-center gap-2 text-xs sm:col-span-2">
+                  <MapPickerButton address={a} onChange={(patch) => setAddr(i, patch)} />
+                  <span className="text-slate-500">{a.lat != null ? `📍 ${a.lat.toFixed(5)}, ${a.lon!.toFixed(5)}` : "Sin geolocalizar"}</span>
+                </div>
+              )}
               <label className="block sm:col-span-2"><span className="label">Calle y número</span><input className="input" value={a.street} onChange={(e) => setAddr(i, { street: e.target.value })} /></label>
               <label className="block"><span className="label">Código postal</span><input className="input" value={a.postalCode} onChange={(e) => setAddr(i, { postalCode: e.target.value })} /></label>
               <label className="block"><span className="label">Ciudad</span><input className="input" value={a.city} onChange={(e) => setAddr(i, { city: e.target.value })} /></label>

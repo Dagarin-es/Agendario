@@ -47,7 +47,7 @@ export function TagsPage() {
   async function askDeleteWithContacts(t: Tag) {
     const ok = await confirm({
       title: `¿Borrar «${t.name}» y sus ${t.contactCount} contactos?`,
-      message: <>Solo se borran los contactos que son tuyos (no los que te han compartido). <strong>No se puede deshacer.</strong></>,
+      message: <>Solo se borran los contactos que son tuyos (no los que te han compartido). <strong>Irán a la papelera: podrás restaurarlos durante 60 días.</strong></>,
       confirmText: `Borrar ${t.contactCount} contactos`,
       danger: true,
     });

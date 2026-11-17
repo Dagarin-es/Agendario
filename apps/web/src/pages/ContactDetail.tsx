@@ -27,6 +27,15 @@ import { api } from "../lib/api";
 import { useAlert, useConfirm } from "../components/Dialogs";
 import { formatPartialDate } from "../lib/format";
 
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex gap-3 py-1.5 text-sm">
@@ -100,7 +109,17 @@ export function ContactDetailPage() {
   return (
     <div className="space-y-4">
       {/* Cabecera */}
-      <section className="card flex flex-col items-center gap-3 text-center">
+      <section className="card relative flex flex-col items-center gap-3 text-center">
+        {c.canEdit && (
+          <Link
+            to={`/contacts/${c.id}/edit`}
+            className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-indigo-800 shadow-sm hover:border-indigo-400 hover:bg-indigo-50"
+            title="Editar contacto"
+            aria-label="Editar contacto"
+          >
+            <PencilIcon className="h-4 w-4" /> <span className="hidden sm:inline">Editar</span>
+          </Link>
+        )}
         <button
           className="group relative rounded-full"
           disabled={!c.canEdit}
@@ -155,7 +174,6 @@ export function ContactDetailPage() {
           </div>
         )}
         <div className="flex flex-wrap justify-center gap-2">
-          {c.canEdit && <Link to={`/contacts/${c.id}/edit`} className="btn-primary">Editar</Link>}
           <Link to={`/contacts/${c.id}/history`} className="btn-ghost" title="Historial de cambios">
             <HistoryIcon className="h-4 w-4" /> Historial{c.historyCount > 0 && <span className="text-slate-400">({c.historyCount})</span>}
           </Link>

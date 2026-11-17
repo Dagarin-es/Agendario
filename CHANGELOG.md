@@ -1,5 +1,19 @@
 # Historial de cambios
 
+## 0.9.0-beta
+- **Sincronización con Fastmail** (o cualquier servidor CardDAV), en ⚙️ Ajustes → Sincronización:
+  - Bidireccional y con fotos. Solo los contactos con las **etiquetas que elijas** para ese servicio; de cada uno, los datos de esas etiquetas y los que no tienen etiqueta.
+  - Quitar la etiqueta lo borra del servicio (no de Agendario); lo creado en el servicio llega con su etiqueta; lo borrado en el servicio va a la papelera; si cambia en los dos sitios gana lo más reciente (el otro queda en el historial).
+  - La primera vez, **vista previa**: qué se empareja, qué se envía y qué llega. Las parejas se combinan sin perder datos.
+  - Se conservan los datos del servicio que Agendario no maneja (Skype, redes…). Los grupos de Fastmail se respetan.
+  - Freno de seguridad: si de golpe se fuera a borrar más de la mitad, se para y pregunta.
+  - Automática cada 5 min a 12 h, o a mano.
+- **Mapa para ubicar direcciones**: «🗺️ Ubicar en el mapa» abre un mapa grande con buscador y una **chincheta que se arrastra** al portal exacto. Capas: Callejero, OpenStreetMap, Satélite y Ortofoto PNOA del IGN (España). El mapa de la ficha usa la capa que elijas.
+- **Lista**: barra con el **abecedario** a la derecha (toca o desliza) y **ordenar por** nombre a mostrar, nombre, apellidos, empresa o apodo (se recuerda en cada dispositivo; los que no tienen ese dato van al final).
+- **Ficha**: el botón **Editar** pasa arriba a la derecha, con su lápiz.
+- **Formulario**: foto y **etiquetas** también al crear o editar; el campo «Nombre (o nombre de empresa)».
+- Los avisos al borrar dicen que va a la papelera (antes decían «No se puede deshacer»).
+
 ## 0.8.3-beta
 - El botón **Copiar** (código de Google Drive y «Copiar dirección» del mapa) funciona también entrando por `http://IP:3002`, sin HTTPS, y confirma «✓ Copiado».
 - Nueva descripción de la app en Ajustes → Acerca de.

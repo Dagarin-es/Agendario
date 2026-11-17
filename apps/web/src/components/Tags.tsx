@@ -62,14 +62,9 @@ export function ColorPicker({ value, onChange }: { value: TagColor; onChange: (c
   );
 }
 
-/** Editor de etiquetas de un contacto (las etiquetas son personales). */
+/** Editor de etiquetas de un contacto (las etiquetas son personales). Se guarda al momento. */
 export function ContactTags({ contactId, tags }: { contactId: string; tags: TagLite[] }) {
   const qc = useQueryClient();
-  const { data: all } = useTags();
-  const [adding, setAdding] = useState(false);
-  const [newName, setNewName] = useState("");
-  const showAlert = useAlert();
-
   const save = useMutation({
     mutationFn: (tagIds: string[]) => api.put(`/contacts/${contactId}/tags`, { tagIds }),
     onSuccess: () => {
@@ -78,11 +73,23 @@ export function ContactTags({ contactId, tags }: { contactId: string; tags: TagL
       qc.invalidateQueries({ queryKey: ["tags"] });
     },
   });
+  return <TagEditor tags={tags} onChange={(next) => save.mutate(next.map((t) => t.id))} />;
+}
+
+/** Selector de etiquetas controlado: no guarda nada, avisa con onChange (lo usa también el formulario). */
+export function TagEditor({ tags, onChange, align = "center" }: { tags: TagLite[]; onChange: (tags: TagLite[]) => void; align?: "center" | "start" }) {
+  const qc = useQueryClient();
+  const { data: all } = useTags();
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const showAlert = useAlert();
+
   const create = useMutation({
     mutationFn: (name: string) => api.post<Tag>("/tags", { name }),
     onSuccess: (t) => {
       setNewName("");
-      save.mutate([...tags.map((x) => x.id), t.id]);
+      qc.invalidateQueries({ queryKey: ["tags"] });
+      onChange([...tags, t]);
     },
     onError: (e) => showAlert("No se ha podido crear", (e as Error).message),
   });
@@ -91,12 +98,12 @@ export function ContactTags({ contactId, tags }: { contactId: string; tags: TagL
   const available = (all ?? []).filter((t) => !current.has(t.id));
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-1.5">
+    <div className={`flex flex-wrap items-center gap-1.5 ${align === "center" ? "justify-center" : "justify-start"}`}>
       {tags.map((t) => (
-        <TagChip key={t.id} tag={t} onRemove={() => save.mutate(tags.filter((x) => x.id !== t.id).map((x) => x.id))} />
+        <TagChip key={t.id} tag={t} onRemove={() => onChange(tags.filter((x) => x.id !== t.id))} />
       ))}
       {!adding ? (
-        <button className="rounded-full border border-dashed border-slate-300 px-2.5 py-1 text-xs text-slate-500 hover:border-indigo-500 hover:text-indigo-700" onClick={() => setAdding(true)}>
+        <button type="button" className="rounded-full border border-dashed border-slate-300 px-2.5 py-1 text-xs text-slate-500 hover:border-indigo-500 hover:text-indigo-700" onClick={() => setAdding(true)}>
           + Etiqueta
         </button>
       ) : (
@@ -104,15 +111,21 @@ export function ContactTags({ contactId, tags }: { contactId: string; tags: TagL
           {available.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {available.map((t) => (
-                <TagChip key={t.id} tag={t} onClick={() => save.mutate([...current, t.id])} />
+                <TagChip key={t.id} tag={t} onClick={() => onChange([...tags, t])} />
               ))}
             </div>
           )}
-          <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (newName.trim()) create.mutate(newName.trim()); }}>
-            <input className="input" placeholder="Nueva etiqueta…" value={newName} onChange={(e) => setNewName(e.target.value)} />
-            <button className="btn-primary shrink-0" disabled={!newName.trim()}>Crear</button>
+          <div className="flex gap-2">
+            <input
+              className="input"
+              placeholder="Nueva etiqueta…"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (newName.trim()) create.mutate(newName.trim()); } }}
+            />
+            <button type="button" className="btn-primary shrink-0" disabled={!newName.trim()} onClick={() => create.mutate(newName.trim())}>Crear</button>
             <button type="button" className="btn-ghost shrink-0" onClick={() => setAdding(false)}>Listo</button>
-          </form>
+          </div>
           <p className="text-[11px] text-slate-400">Tus etiquetas son personales: nadie más las ve.</p>
         </div>
       )}
