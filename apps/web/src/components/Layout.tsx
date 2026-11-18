@@ -6,6 +6,8 @@ import { api, apiUrl } from "../lib/api";
 import { useLogout, useMe } from "../lib/auth";
 import { BetaBadge } from "./BetaBadge";
 import { useGiftsToBuy, usePendingGifts } from "../lib/gifts";
+import { ModeSelector, useColorThemeFromPrefs, useThemeIcon } from "./Personalize";
+import { UserAvatar } from "./UserAvatar";
 
 /** Cada sección con su tono: Contactos índigo, Fechas ámbar, Duplicados lila. */
 const tones = {
@@ -45,18 +47,28 @@ function MoreMenu() {
   return (
     <div ref={ref} className="relative shrink-0">
       <button
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm hover:border-indigo-300 hover:bg-indigo-50"
+        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 text-sm font-medium text-slate-700 shadow-sm hover:border-indigo-300 hover:bg-indigo-50"
         onClick={() => setOpen(!open)}
         aria-label="Menú"
         aria-expanded={open}
       >
+        <UserAvatar me={me} size={30} />
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
           <path d="M4 7h16M4 12h16M4 17h16" />
         </svg>
         <span className="hidden sm:inline">Menú</span>
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+        <div className="absolute right-0 top-full z-20 mt-1 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-lg">
+          <Link to="/settings" className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
+            <UserAvatar me={me} size={40} />
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-slate-800">{me?.name}</span>
+              <span className="block truncate text-xs text-slate-500">{me?.email}</span>
+            </span>
+          </Link>
+          <div className="px-3 pb-2"><ModeSelector compact /></div>
+          <div className="my-1 border-t border-slate-100" />
           <Link to="/groups" className={item}>👪 Grupos</Link>
           <Link to="/tags" className={item}>🏷️ Etiquetas</Link>
           <Link to="/trash" className={item}>🗑️ Papelera</Link>
@@ -66,7 +78,6 @@ function MoreMenu() {
           <a href={apiUrl("/export/contacts.vcf")} className={item}>📤 Exportar .vcf</a>
           <a href={apiUrl("/export/contacts.vcf?gifts=true")} className={item}>🎁 Exportar .vcf con regalos</a>
           <div className="my-1 border-t border-slate-100" />
-          <div className="truncate px-4 pt-1 text-[11px] text-slate-400">{me?.email}</div>
           <button className={`${item} text-red-700`} onClick={logout}>🚪 Salir</button>
         </div>
       )}
@@ -76,6 +87,8 @@ function MoreMenu() {
 
 export function Layout() {
   const dupCount = useDuplicateCount();
+  useColorThemeFromPrefs();
+  const icon = useThemeIcon();
   // Altura real de la cabecera: las barras fijas de cada página se pegan justo debajo
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -94,7 +107,7 @@ export function Layout() {
     <div className="mx-auto flex min-h-dvh max-w-5xl flex-col">
       <header ref={headerRef} className="sticky top-0 z-10 flex items-center gap-1 border-b border-slate-200 bg-white px-3 py-3 sm:gap-2 sm:px-4">
         <Link to="/" className="mr-1 flex shrink-0 items-center gap-2" title={`${APP_NAME} · versión beta`}>
-          <img src="/favicon.svg" alt="" className="h-9 w-9" />
+          <img src={icon} alt="" className="h-9 w-9" />
           <span className="hidden flex-col items-start leading-none md:flex">
             <span className="text-[17px] font-semibold tracking-tight text-indigo-900">{APP_NAME}</span>
             <BetaBadge size="xs" />

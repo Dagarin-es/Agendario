@@ -39,7 +39,7 @@ export function LoginPage() {
     setForm({ ...form, [k]: e.target.value });
 
   return (
-    <div className={`flex min-h-dvh items-center justify-center p-4 ${isApp ? "m3" : ""}`}>
+    <div className={`flex min-h-dvh items-center justify-center p-4 ${isApp ? "m3 app-safe-top" : ""}`}>
       <form onSubmit={submit} className="card w-full max-w-sm space-y-4">
         <div className="flex flex-col items-center gap-2 pb-2">
           <img src="/favicon.svg" alt="" className="h-14 w-14" />

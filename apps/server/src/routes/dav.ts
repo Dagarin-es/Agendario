@@ -73,8 +73,15 @@ async function booksOf(userId: string): Promise<Book[]> {
   const out: Book[] = [];
   if (cfg.all) out.push({ id: "all", name: "Agendario", tagIds: null, newTag: null });
   if (cfg.tagIds.length) {
-    const tags = await db.select().from(schema.tags).where(and(eq(schema.tags.userId, userId), inArray(schema.tags.id, cfg.tagIds)));
-    for (const t of tags) out.push({ id: t.id, name: `Agendario · ${t.name}`, tagIds: new Set(await expandTagIds(userId, [t.id])), newTag: t.id });
+    // Nombre con la ruta completa de la etiqueta (Familia › Primos), como en la web
+    const all = await db.select().from(schema.tags).where(eq(schema.tags.userId, userId));
+    const byId = new Map(all.map((t) => [t.id, t]));
+    const path = (id: string) => {
+      const parts: string[] = [];
+      for (let t = byId.get(id), n = 0; t && n < 10; t = t.parentId ? byId.get(t.parentId) : undefined, n++) parts.unshift(t.name);
+      return parts.join(" › ");
+    };
+    for (const t of all.filter((t) => cfg.tagIds.includes(t.id))) out.push({ id: t.id, name: `Agendario · ${path(t.id)}`, tagIds: new Set(await expandTagIds(userId, [t.id])), newTag: t.id });
   }
   return out;
 }

@@ -3,7 +3,9 @@ export { saintDateFor } from "./santoral";
 
 // ---------- Versión ----------
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
-export const APP_VERSION = "0.12.0-beta";
+export * from "./themes";
+
+export const APP_VERSION = "0.13.0-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------
@@ -119,6 +121,12 @@ export interface User {
   name: string;
   isAdmin: boolean;
   mustChangePassword?: boolean;
+  /** Versión de la foto de perfil (propia o de «mi ficha»); null = sin foto */
+  avatar?: string | null;
+  /** true si la foto es la subida por el usuario (no la de «mi ficha») */
+  avatarOwn?: boolean;
+  /** Contacto marcado como «mi ficha» */
+  meContactId?: string | null;
 }
 
 export const registrationModes = ["closed", "first", "open"] as const;
@@ -691,7 +699,23 @@ export const messagingAppLabels: Record<MessagingApp, string> = {
 };
 
 /** Preferencias generales de cada usuario. */
+/** Temas de color (el principal sustituye al índigo) */
+/** «dynamic» = colores del fondo de pantalla (Material You, solo en la app de Android; en la web, índigo) */
+export const colorThemes = ["indigo", "ocean", "lagoon", "lavender", "clay", "graphite", "dynamic"] as const;
+export type ColorTheme = (typeof colorThemes)[number];
+export const colorThemeLabels: Record<ColorTheme, string> = {
+  indigo: "Índigo", ocean: "Océano", lagoon: "Laguna", lavender: "Lavanda", clay: "Arcilla", graphite: "Grafito", dynamic: "Tu fondo de pantalla",
+};
+/** App con la que se escribe un correo */
+export const emailApps = ["system", "gmail", "outlook", "fastmail", "proton"] as const;
+export type EmailApp = (typeof emailApps)[number];
+export const emailAppLabels: Record<EmailApp, string> = {
+  system: "App de correo del sistema", gmail: "Gmail", outlook: "Outlook", fastmail: "Fastmail", proton: "Proton Mail",
+};
+
 export const userPrefsSchema = z.object({
+  colorTheme: z.enum(colorThemes).default("indigo"),
+  emailApp: z.enum(emailApps).default("system"),
   messagingApp: z.enum(messagingApps).default("whatsapp"),
   /** Prefijo que se añade a los números sin prefijo internacional */
   countryCode: z.string().regex(/^\d{1,4}$/).default("34"),

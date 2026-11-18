@@ -242,7 +242,7 @@ export function MapPicker({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Ubicar en el mapa">
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 pt-[var(--sat)] pb-[var(--sab)] sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Ubicar en el mapa">
       <div className="flex h-full w-full max-w-3xl flex-col overflow-hidden bg-white shadow-xl sm:h-[85vh] sm:rounded-2xl">
         <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2.5">
           <h2 className="flex-1 font-semibold text-indigo-950">🗺️ Ubicar en el mapa</h2>

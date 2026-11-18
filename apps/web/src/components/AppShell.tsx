@@ -1,6 +1,6 @@
 /**
- * Marco de la app de Android con Material 3 (Material You): barra superior, barra de navegación
- * inferior (los destinos al alcance del pulgar), botón flotante y hoja inferior «Más».
+ * Marco de la app de Android con Material 3 (Material You): barra superior, píldora de navegación
+ * inferior flotante (los destinos al alcance del pulgar; tu foto abre la hoja con el resto), botón flotante.
  * La web (PWA) sigue usando Layout; las páginas son las mismas.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -12,6 +12,8 @@ import { useGiftsToBuy, usePendingGifts } from "../lib/gifts";
 import { apiUrl } from "../lib/api";
 import { getServer, setServer } from "../lib/platform";
 import { haptic } from "../lib/native";
+import { ModeSelector, useColorThemeFromPrefs, useThemeIcon } from "./Personalize";
+import { UserAvatar } from "./UserAvatar";
 
 // ---------- Iconos (24 px, trazo, estilo Material Symbols) ----------
 const I = ({ d, filled, className = "h-6 w-6" }: { d: ReactNode; filled?: boolean; className?: string }) => (
@@ -64,6 +66,8 @@ export function AppShell() {
   const gifts = useGiftsToBuy();
   const pending = usePendingGifts().data?.length ?? 0;
   const [sheet, setSheet] = useState(false);
+  useColorThemeFromPrefs();
+  const icon = useThemeIcon();
   const headerRef = useRef<HTMLElement>(null);
   const isTab = tabs.some((t) => location.pathname === t.to);
   const title = titles.find(([re]) => re.test(location.pathname))?.[1] ?? APP_NAME;
@@ -91,36 +95,34 @@ export function AppShell() {
 
   return (
     <div className="m3 flex min-h-dvh flex-col">
-      {/* Barra superior */}
-      <header ref={headerRef} className={`sticky top-0 z-20 flex h-16 items-center gap-1 px-1 transition-colors ${scrolled ? "m3-surface-2" : "m3-surface"}`}>
+      {/* Barra superior: baja y siempre «Agendario» (la sección ya se ve en la barra de abajo) */}
+      <header ref={headerRef} className={`sticky top-0 z-20 flex h-[calc(3.25rem+var(--sat))] items-center gap-1 px-1 pt-[var(--sat)] transition-colors ${scrolled ? "m3-surface-2" : "m3-surface"}`}>
         {isTab ? (
-          <img src="/favicon.svg" alt="" className="mx-2 h-8 w-8" />
+          <img src={icon} alt="" className="mx-2.5 h-7 w-7" />
         ) : (
           <button className="m3-icon-btn" onClick={() => nav(-1)} aria-label="Atrás">{icons.back()}</button>
         )}
-        <h1 className="min-w-0 flex-1 truncate text-[22px] font-normal leading-7">{title}</h1>
-        <Link to="/settings" className="m3-icon-btn" aria-label="Ajustes y cuenta">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-700 text-sm font-medium text-white">{me?.name?.[0]?.toUpperCase() ?? "?"}</span>
-        </Link>
+        <span className="min-w-0 flex-1 truncate text-[20px] font-medium tracking-tight text-indigo-950">{APP_NAME}</span>
+        <h1 className="sr-only">{title}</h1>
       </header>
 
       {me?.mustChangePassword && (
         <Link to="/settings" className="mx-4 mt-2 rounded-2xl bg-amber-100 px-4 py-3 text-sm text-amber-900">🔑 Estás usando una contraseña provisional: cámbiala en Ajustes.</Link>
       )}
 
-      <main className="flex-1 px-4 pb-32 pt-2">
+      <main className="flex-1 px-4 pb-[calc(104px+var(--sab))] pt-1">
         <Outlet />
       </main>
 
       {/* Botón flotante: nuevo contacto */}
       {location.pathname === "/" && (
-        <Link to="/contacts/new" onClick={() => void haptic()} className="m3-fab fixed bottom-[calc(96px+env(safe-area-inset-bottom))] right-4 z-20" aria-label="Nuevo contacto">
+        <Link to="/contacts/new" onClick={() => void haptic()} className="m3-fab fixed bottom-[calc(92px+var(--sab))] right-4 z-20" aria-label="Nuevo contacto">
           {icons.add()} <span className="pr-1 text-sm font-medium">Nuevo</span>
         </Link>
       )}
 
-      {/* Barra de navegación */}
-      <nav className="m3-navbar fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 pb-[env(safe-area-inset-bottom)]" aria-label="Navegación principal">
+      {/* Barra de navegación: píldora flotante translúcida */}
+      <nav className="m3-pill fixed bottom-[calc(12px+var(--sab))] left-1/2 z-20 grid w-[min(calc(100vw-24px),420px)] -translate-x-1/2 grid-cols-4" aria-label="Navegación principal">
         {tabs.map((t) => (
           <NavLink key={t.to} to={t.to} end={"end" in t} onClick={() => void haptic()} className="m3-nav-item">
             {({ isActive }) => (
@@ -129,14 +131,16 @@ export function AppShell() {
                   {t.icon(isActive)}
                   {badge(t.to) && <span className={`m3-badge ${t.to === "/upcoming" && gifts.red ? "bg-red-600" : t.to === "/upcoming" ? "bg-amber-600" : "bg-red-600"}`}>{badge(t.to)}</span>}
                 </span>
-                <span className={`text-xs ${isActive ? "font-bold" : "font-medium"}`}>{t.label}</span>
+                <span className={`text-[11px] leading-none ${isActive ? "font-bold" : "font-medium"}`}>{t.label}</span>
               </>
             )}
           </NavLink>
         ))}
-        <button className="m3-nav-item" onClick={() => { void haptic(); setSheet(true); }} aria-haspopup="dialog">
-          <span className={`m3-nav-indicator ${sheet ? "is-active" : ""}`}>{icons.more(sheet)}</span>
-          <span className="text-xs font-medium">Más</span>
+        <button className="m3-nav-item" onClick={() => { void haptic(); setSheet(true); }} aria-haspopup="dialog" aria-label="Tu cuenta y más opciones">
+          <span className={`m3-nav-indicator ${sheet || location.pathname.startsWith("/settings") ? "is-active" : ""}`}>
+            <UserAvatar me={me} size={26} className="ring-2 ring-white/70" />
+          </span>
+          <span className="max-w-full truncate px-1 text-[11px] font-medium leading-none">{me?.name?.split(" ")[0] ?? "Tú"}</span>
         </button>
       </nav>
 
@@ -157,12 +161,16 @@ function MoreSheet({ onClose }: { onClose: () => void }) {
   const item = "flex h-14 w-full items-center gap-4 rounded-full px-4 text-left text-base active:bg-indigo-100";
   return (
     <div className="fixed inset-0 z-40 flex items-end bg-black/35" onClick={onClose} role="dialog" aria-modal="true" aria-label="Más opciones">
-      <div className="m3-sheet w-full rounded-t-[28px] px-3 pb-[calc(16px+env(safe-area-inset-bottom))] pt-3" onClick={(e) => e.stopPropagation()}>
+      <div className="m3-sheet w-full rounded-t-[28px] px-3 pb-[calc(16px+var(--sab))] pt-3" onClick={(e) => e.stopPropagation()}>
         <div className="mx-auto mb-3 h-1 w-8 rounded-full bg-slate-400/60" />
-        <div className="mb-2 px-4">
-          <p className="text-base font-medium">{me?.name}</p>
-          <p className="truncate text-sm text-slate-500">{me?.email} · {getServer().replace(/^https?:\/\//, "")}</p>
-        </div>
+        <Link to="/settings" className="mb-3 flex items-center gap-3 rounded-3xl px-3 py-2 active:bg-indigo-100">
+          <UserAvatar me={me} size={48} />
+          <span className="min-w-0">
+            <span className="block text-base font-medium">{me?.name}</span>
+            <span className="block truncate text-sm text-slate-500">{me?.email} · {getServer().replace(/^https?:\/\//, "")}</span>
+          </span>
+        </Link>
+        <div className="mb-2 px-2"><ModeSelector /></div>
         <Link to="/tags" className={item}>🏷️ Etiquetas</Link>
         <Link to="/groups" className={item}>👪 Grupos</Link>
         <Link to="/trash" className={item}>🗑️ Papelera</Link>

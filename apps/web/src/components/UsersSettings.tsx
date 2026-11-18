@@ -3,6 +3,11 @@ import { useState, type ReactNode } from "react";
 import type { AdminUser, RegistrationMode, User } from "@agendario/shared";
 import { api } from "../lib/api";
 import { Modal, useAlert, useConfirm } from "./Dialogs";
+import { ContactPicker } from "./ContactPicker";
+import { UserAvatar } from "./UserAvatar";
+import { Link } from "react-router";
+import { useQuery as useQ } from "@tanstack/react-query";
+import type { Contact } from "@agendario/shared";
 
 type SectionT = (p: { title: string; icon: string; desc?: string; children: ReactNode }) => ReactNode;
 
@@ -18,6 +23,7 @@ export function AccountSettings({ Section, me }: { Section: SectionT; me: User }
   });
   return (
     <Section icon="👤" title="Mi cuenta" desc={`${me.name} · ${me.email}`}>
+      <Profile me={me} />
       {me.mustChangePassword && <p className="rounded-lg bg-amber-50 p-2.5 text-sm text-amber-900 ring-1 ring-amber-200">Estás usando una contraseña provisional: cámbiala ahora.</p>}
       <form className="grid gap-2 sm:grid-cols-3" onSubmit={(e) => { e.preventDefault(); setMsg(null); if (f.password !== f.repeat) return setMsg({ ok: false, text: "Las contraseñas nuevas no coinciden" }); save.mutate(); }}>
         <input className="input" type="password" autoComplete="current-password" placeholder="Contraseña actual" value={f.current} onChange={(e) => setF({ ...f, current: e.target.value })} />
@@ -29,6 +35,44 @@ export function AccountSettings({ Section, me }: { Section: SectionT; me: User }
         </div>
       </form>
     </Section>
+  );
+}
+
+/** Foto de perfil y «mi ficha» (uno de mis contactos: si no subo foto, se usa la suya). */
+function Profile({ me }: { me: User }) {
+  const qc = useQueryClient();
+  const showAlert = useAlert();
+  const [picking, setPicking] = useState(false);
+  const done = (u: User) => qc.setQueryData(["me"], u);
+  const fail = (e: unknown) => showAlert("No se ha podido guardar", (e as Error).message);
+  const upload = useMutation({
+    mutationFn: (f: File) => { const fd = new FormData(); fd.append("photo", f); return api.put<User>("/auth/avatar", fd); },
+    onSuccess: done, onError: fail,
+  });
+  const remove = useMutation({ mutationFn: () => api.del<User>("/auth/avatar"), onSuccess: done, onError: fail });
+  const setCard = useMutation({ mutationFn: (contactId: string | null) => api.put<User>("/auth/me-contact", { contactId }), onSuccess: done, onError: fail });
+  const { data: card } = useQ({ queryKey: ["contact", me.meContactId], enabled: !!me.meContactId, queryFn: () => api.get<Contact>(`/contacts/${me.meContactId}`) });
+  return (
+    <div className="flex flex-wrap items-center gap-4 rounded-xl bg-slate-50 p-3">
+      <UserAvatar me={me} size={72} />
+      <div className="min-w-0 flex-1 space-y-2 text-sm">
+        <div className="flex flex-wrap gap-2">
+          <label className="btn-ghost cursor-pointer border border-slate-200 bg-white text-sm">
+            {upload.isPending ? "Subiendo…" : me.avatarOwn ? "Cambiar foto" : "Subir foto"}
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); e.target.value = ""; }} />
+          </label>
+          {me.avatarOwn && <button className="btn-ghost text-sm text-red-700" onClick={() => remove.mutate()}>Quitar foto</button>}
+        </div>
+        <p className="text-slate-600">
+          <span className="text-slate-500">Mi ficha:</span>{" "}
+          {me.meContactId ? <Link className="font-medium text-indigo-700 hover:underline" to={`/contacts/${me.meContactId}`}>{card?.displayName ?? "…"}</Link> : <span className="text-slate-400">ninguna</span>}{" "}
+          <button className="ml-1 text-xs text-indigo-700 hover:underline" onClick={() => setPicking(true)}>{me.meContactId ? "Cambiar" : "Elegir contacto"}</button>
+          {me.meContactId && <button className="ml-2 text-xs text-slate-500 hover:underline" onClick={() => setCard.mutate(null)}>Quitar</button>}
+        </p>
+        <p className="text-xs text-slate-500">Si marcas tu propia ficha y no subes foto, se usa la de esa ficha.</p>
+      </div>
+      {picking && <ContactPicker title="¿Cuál es tu ficha?" initial={me.name} onClose={() => setPicking(false)} onPick={(c) => { setPicking(false); setCard.mutate(c.id); }} />}
+    </div>
   );
 }
 

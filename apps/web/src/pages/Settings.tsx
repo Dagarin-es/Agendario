@@ -6,6 +6,9 @@ import {
   backupDestLabels,
   backupDestTypes,
   messagingAppLabels,
+  emailAppLabels,
+  emailApps,
+  type EmailApp,
   messagingApps,
   folderRequiredTypes,
   oauthDestTypes,
@@ -25,7 +28,9 @@ import { copyText } from "../lib/clipboard";
 import { SyncSettings } from "../components/SyncSettings";
 import { CardDavSettings } from "../components/CardDavSettings";
 import { AccountSettings, UsersSettings } from "../components/UsersSettings";
-import { getTheme, setTheme, type ThemeMode } from "../lib/theme";
+import { ColorThemePicker, ModeSelector, useThemeIcon } from "../components/Personalize";
+import { isApp } from "../lib/platform";
+import { useSearchParams } from "react-router";
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
 const size = (n: number | null) => (n == null ? "" : n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
@@ -70,8 +75,14 @@ function Communication() {
     save.mutate(n);
   };
   return (
-    <Section icon="💬" title="Llamadas y mensajes" desc="Lo que se usa por defecto en los botones de cada contacto. En cada ficha puedes elegir otro teléfono, email o app para ese contacto (☆ en el menú ▾).">
+    <Section icon="💬" title="Llamadas, mensajes y correo" desc="Lo que se usa por defecto en los botones de cada contacto. En cada ficha puedes elegir otro teléfono, email o app para ese contacto (☆ en el menú ▾).">
       <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="label">App de correo</span>
+          <select className="input" value={p.emailApp} onChange={(e) => set({ emailApp: e.target.value as EmailApp })}>
+            {emailApps.map((a) => <option key={a} value={a}>{emailAppLabels[a]}</option>)}
+          </select>
+        </label>
         <label className="block">
           <span className="label">App de mensajería por defecto</span>
           <select className="input" value={p.messagingApp} onChange={(e) => set({ messagingApp: e.target.value as MessagingApp })}>
@@ -109,7 +120,7 @@ function DatesSettings() {
   });
   if (!data) return null;
   return (
-    <Section icon="📅" title="Fechas" desc="Lo que aparece en el calendario de la pestaña Fechas.">
+    <Section icon="📅" title="Calendario" desc="Lo que aparece en el calendario de la pestaña Fechas.">
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" className="mt-0.5" checked={data.autoSaints} onChange={(e) => save.mutate({ ...data, autoSaints: e.target.checked })} />
         <span>
@@ -388,6 +399,7 @@ function Restore({ status }: { status: BackupStatus }) {
 function Backups() {
   const qc = useQueryClient();
   const showAlert = useAlert();
+  const confirm = useConfirm();
   const { data: status } = useQuery({
     queryKey: ["backup"],
     queryFn: () => api.get<BackupStatus & { running: boolean }>("/backup"),
@@ -413,6 +425,11 @@ function Backups() {
     mutationFn: () => api.post<{ file: string; size: number }>("/backup/run"),
     onSuccess: refresh,
     onError: (e) => { refresh(); showAlert("La copia ha fallado", (e as Error).message); },
+  });
+  const clearLog = useMutation({
+    mutationFn: () => api.del("/backup/runs"),
+    onSuccess: refresh,
+    onError: (e) => showAlert("No se ha podido limpiar", (e as Error).message),
   });
   if (!status || !cfg) return <Section icon="🛟" title="Copias de seguridad"><p className="text-sm text-slate-500">Cargando…</p></Section>;
 
@@ -529,6 +546,11 @@ function Backups() {
       </div>
 
       <Sub title="Registro">
+        {status.runs.length > 0 && (
+          <div className="-mt-8 flex justify-end">
+            <button className="btn-ghost px-2 py-1 text-xs text-slate-600" disabled={clearLog.isPending} onClick={async () => { if (await confirm({ title: "¿Limpiar el registro?", message: "Se vacía la lista de copias hechas. Las copias guardadas no se borran.", confirmText: "Limpiar" })) clearLog.mutate(); }}>🧹 Limpiar registro</button>
+          </div>
+        )}
         {!status.runs.length && <p className="text-sm text-slate-500">Todavía no se ha hecho ninguna copia.</p>}
         <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto text-sm">
           {status.runs.map((r) => (
@@ -549,47 +571,76 @@ function Backups() {
 }
 
 function Appearance() {
-  const [mode, setMode] = useState<ThemeMode>(getTheme());
-  const opts: { v: ThemeMode; label: string; icon: string }[] = [
-    { v: "auto", label: "Automático", icon: "🌗" },
-    { v: "light", label: "Claro", icon: "☀️" },
-    { v: "dark", label: "Oscuro", icon: "🌙" },
-  ];
   return (
-    <Section icon="🎨" title="Apariencia" desc="Automático sigue el modo del sistema. Se guarda en este dispositivo.">
-      <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1" role="radiogroup" aria-label="Modo de color">
-        {opts.map((o) => (
-          <button
-            key={o.v}
-            role="radio"
-            aria-checked={mode === o.v}
-            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium ${mode === o.v ? "bg-indigo-700 text-white shadow" : "text-slate-600 hover:bg-white"}`}
-            onClick={() => { setMode(o.v); setTheme(o.v); }}
-          >
-            <span aria-hidden="true">{o.icon}</span> {o.label}
-          </button>
-        ))}
+    <Section icon="🎨" title="Apariencia" desc="El tema de color se guarda en tu cuenta y te sigue en todos tus dispositivos; el modo claro u oscuro, en cada dispositivo.">
+      <div className="space-y-1.5">
+        <span className="label">Modo</span>
+        <div className="max-w-sm"><ModeSelector /></div>
+      </div>
+      <div className="space-y-1.5">
+        <span className="label">Tema de color</span>
+        <ColorThemePicker />
+        {isApp && <p className="text-xs text-slate-500">El icono de Agendario en el móvil cambia al tono del tema (el lanzador puede tardar unos segundos en actualizarlo).</p>}
       </div>
     </Section>
   );
 }
 
+const TABS = [
+  { id: "cuentas", label: "Cuentas", icon: "👤" },
+  { id: "apps", label: "Aplicaciones externas", icon: "💬" },
+  { id: "sync", label: "Sincronización", icon: "🔄" },
+  { id: "apariencia", label: "Apariencia", icon: "🎨" },
+  { id: "copias", label: "Copias", icon: "🛟", admin: true },
+] as const;
+type TabId = (typeof TABS)[number]["id"];
+
 export function SettingsPage() {
   const { data: me } = useMe();
+  const icon = useThemeIcon();
+  const [params, setParams] = useSearchParams();
+  const tabs = TABS.filter((t) => !("admin" in t) || me?.isAdmin);
+  const tab: TabId = (tabs.find((t) => t.id === params.get("tab"))?.id ?? "cuentas") as TabId;
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">⚙️ Ajustes</h1>
-      {me && <AccountSettings Section={Section} me={me} />}
-      <Appearance />
-      <Communication />
-      <DatesSettings />
-      <SyncSettings Section={Section} />
-      {me && <CardDavSettings Section={Section} me={me} />}
-      {me?.isAdmin && <UsersSettings Section={Section} me={me} />}
-      {me?.isAdmin && <Backups />}
+      <nav className="sticky top-[var(--header-h,0px)] z-[5] -mx-4 flex gap-1.5 overflow-x-auto bg-slate-50 px-4 py-2 sm:mx-0 sm:px-0" role="tablist" aria-label="Secciones de ajustes">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            ref={(el) => { if (el && tab === t.id) el.scrollIntoView({ inline: "center", block: "nearest" }); }}
+            onClick={() => setParams(t.id === "cuentas" ? {} : { tab: t.id }, { replace: true })}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${tab === t.id ? "bg-indigo-700 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+          >
+            <span aria-hidden="true">{t.icon}</span> {t.label}
+          </button>
+        ))}
+      </nav>
+      {tab === "cuentas" && me && (
+        <>
+          <AccountSettings Section={Section} me={me} />
+          {me.isAdmin && <UsersSettings Section={Section} me={me} />}
+        </>
+      )}
+      {tab === "apps" && <Communication />}
+      {tab === "sync" && (
+        <>
+          <SyncSettings Section={Section} />
+          {me && <CardDavSettings Section={Section} me={me} />}
+        </>
+      )}
+      {tab === "apariencia" && (
+        <>
+          <Appearance />
+          <DatesSettings />
+        </>
+      )}
+      {tab === "copias" && me?.isAdmin && <Backups />}
       <Section icon="📒" title={`Acerca de ${APP_NAME}`}>
         <div className="flex items-center gap-3">
-          <img src="/favicon.svg" alt="" className="h-12 w-12" />
+          <img src={icon} alt="" className="h-12 w-12" />
           <div className="text-sm">
             <p className="font-semibold">{APP_NAME} <span className="font-normal text-slate-500">v{APP_VERSION}</span></p>
             <p className="text-slate-500">Agenda de contactos vitaminada, sincronizada, con recordatorios de regalos, copias automáticas, búsqueda de duplicados… Todo lo que siempre has echado de menos en tu gestor de contactos y más aún.</p>

@@ -29,7 +29,7 @@ export function Modal({
 
   const width = { sm: "sm:max-w-sm", md: "sm:max-w-lg", lg: "sm:max-w-2xl", xl: "sm:max-w-5xl" }[size];
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-[2px] sm:items-center sm:p-4" onMouseDown={onClose} role="presentation">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-[2px] pt-[var(--sat)] pb-[var(--sab)] sm:items-center sm:p-4" onMouseDown={onClose} role="presentation">
       <div
         role="dialog"
         aria-modal="true"

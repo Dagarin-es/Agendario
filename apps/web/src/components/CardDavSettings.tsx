@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import type { User, UserPrefs } from "@agendario/shared";
 import { api } from "../lib/api";
+import { getServer, isApp } from "../lib/platform";
 import { copyText } from "../lib/clipboard";
 import { useUserPrefs } from "./QuickActions";
 import { TagChip, tagTree, useTags } from "./Tags";
@@ -20,8 +21,13 @@ export function CardDavSettings({ Section, me }: { Section: SectionT; me: User }
   if (!prefs) return null;
   const cfg = prefs.carddav;
   const set = (patch: Partial<UserPrefs["carddav"]>) => save.mutate({ ...prefs, carddav: { ...cfg, ...patch } });
-  const url = `${window.location.origin}/dav/`;
-  const https = window.location.protocol === "https:";
+  const tree = tagTree(tags);
+  const books = [
+    ...(cfg.all ? [{ id: "all", name: "Agendario", count: "todos tus contactos" }] : []),
+    ...tree.filter((n) => cfg.tagIds.includes(n.tag.id)).map((n) => ({ id: n.tag.id, name: `Agendario · ${n.path}`, count: `${n.tag.totalCount} ${n.tag.totalCount === 1 ? "contacto" : "contactos"}${n.childCount ? " (con sus subetiquetas)" : ""}` })),
+  ];
+  const url = `${isApp ? getServer() : window.location.origin}/dav/`;
+  const https = url.startsWith("https:");
   return (
     <Section icon="📱" title="Contactos en el móvil (CardDAV)" desc="El móvil se conecta a Agendario y ve tus contactos en su app de Contactos, con fotos, en los dos sentidos.">
       <div className="space-y-2">
@@ -39,6 +45,22 @@ export function CardDavSettings({ Section, me }: { Section: SectionT; me: User }
               onClick={() => set({ tagIds: cfg.tagIds.includes(n.tag.id) ? cfg.tagIds.filter((x) => x !== n.tag.id) : [...cfg.tagIds, n.tag.id] })}
             />
           ))}
+        </div>
+        <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-900">Libretas que verá el móvil ({books.length})</p>
+          {books.length === 0 ? (
+            <p className="text-sm text-slate-500">Ninguna: marca «Agendario» o alguna etiqueta.</p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {books.map((b) => (
+                <li key={b.id} className="flex items-center gap-2">
+                  <span aria-hidden="true">📒</span>
+                  <span className="font-medium text-slate-800">{b.name}</span>
+                  <span className="text-xs text-slate-500">· {b.count}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <p className="text-xs text-slate-500">
           Cada etiqueta incluye sus subetiquetas. En una libreta de etiqueta van los datos de esa etiqueta y los que no tienen etiqueta. Lo que crees en esa libreta desde el

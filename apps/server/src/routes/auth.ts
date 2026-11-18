@@ -3,8 +3,9 @@ import { and, count, eq, isNull, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { adminUserCreateSchema, adminUserPatchSchema, changePasswordSchema, loginSchema, registerSchema, registrationModes, type AdminUser, type RegistrationMode } from "@agendario/shared";
+import { adminUserCreateSchema, adminUserPatchSchema, changePasswordSchema, loginSchema, registerSchema, registrationModes, type AdminUser, type RegistrationMode, type User } from "@agendario/shared";
 import { getSetting, setSetting } from "../lib/settings.js";
+import { deletePhoto, MAX_UPLOAD_BYTES, readPhoto, savePhoto } from "../lib/photos.js";
 import { config } from "../config.js";
 import { db, schema } from "../db/index.js";
 import {
@@ -18,6 +19,22 @@ import {
 } from "../lib/auth.js";
 
 const u = schema.users;
+
+/** Clave de la foto de perfil: la propia o la de «mi ficha» (si sigue siendo mía y no está en la papelera). */
+async function avatarKey(userId: string): Promise<string | null> {
+  const [row] = await db.select({ photoKey: u.photoKey, meContactId: u.meContactId }).from(u).where(eq(u.id, userId));
+  if (!row) return null;
+  if (row.photoKey) return row.photoKey;
+  if (!row.meContactId) return null;
+  const [ct] = await db.select({ photoKey: schema.contacts.photoKey }).from(schema.contacts)
+    .where(and(eq(schema.contacts.id, row.meContactId), eq(schema.contacts.ownerId, userId), isNull(schema.contacts.deletedAt)));
+  return ct?.photoKey ?? null;
+}
+
+async function profileOf(user: User): Promise<User> {
+  const [row] = await db.select({ meContactId: u.meContactId, photoKey: u.photoKey }).from(u).where(eq(u.id, user.id));
+  return { ...user, avatar: await avatarKey(user.id), avatarOwn: !!row?.photoKey, meContactId: row?.meContactId ?? null };
+}
 
 async function userCount() {
   const [{ n }] = await db.select({ n: count() }).from(u);
@@ -70,7 +87,7 @@ export const authRoutes = new Hono<AppEnv>()
     if (user.disabled) throw new HTTPException(403, { message: "Tu usuario está desactivado. Habla con el administrador." });
     const token = await createSession(c, user.id);
     return c.json({
-      id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, mustChangePassword: user.mustChangePassword,
+      ...(await profileOf({ id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, mustChangePassword: user.mustChangePassword })),
       ...(wantsToken(c.req.header("x-agendario-client")) ? { token } : {}),
     });
   })
@@ -80,7 +97,51 @@ export const authRoutes = new Hono<AppEnv>()
     return c.body(null, 204);
   })
 
-  .get("/me", requireAuth, (c) => c.json(c.get("user")))
+  .get("/me", requireAuth, async (c) => c.json(await profileOf(c.get("user"))))
+
+  // Foto de perfil: la propia o, si no hay, la de «mi ficha»
+  .get("/avatar", requireAuth, zValidator("query", z.object({ size: z.enum(["full", "thumb"]).default("thumb") })), async (c) => {
+    const key = await avatarKey(c.get("user").id);
+    if (!key) throw new HTTPException(404, { message: "Sin foto" });
+    const data = await readPhoto(key, c.req.valid("query").size);
+    return c.body(new Uint8Array(data), 200, { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=86400", ETag: `"${key}"` });
+  })
+  .put("/avatar", requireAuth, async (c) => {
+    const me = c.get("user");
+    const form = await c.req.parseBody();
+    const file = form["photo"];
+    if (!(file instanceof File)) throw new HTTPException(400, { message: "Falta el campo 'photo'" });
+    if (file.size > MAX_UPLOAD_BYTES) throw new HTTPException(413, { message: "La imagen es demasiado grande" });
+    let key: string;
+    try {
+      key = await savePhoto(Buffer.from(await file.arrayBuffer()));
+    } catch {
+      throw new HTTPException(400, { message: "No es una imagen válida" });
+    }
+    const [old] = await db.select({ photoKey: u.photoKey }).from(u).where(eq(u.id, me.id));
+    await db.update(u).set({ photoKey: key, updatedAt: new Date() }).where(eq(u.id, me.id));
+    if (old?.photoKey) await deletePhoto(old.photoKey);
+    return c.json(await profileOf(me));
+  })
+  .delete("/avatar", requireAuth, async (c) => {
+    const me = c.get("user");
+    const [old] = await db.select({ photoKey: u.photoKey }).from(u).where(eq(u.id, me.id));
+    await db.update(u).set({ photoKey: null, updatedAt: new Date() }).where(eq(u.id, me.id));
+    if (old?.photoKey) await deletePhoto(old.photoKey);
+    return c.json(await profileOf(me));
+  })
+  // «Mi ficha»: uno de mis contactos
+  .put("/me-contact", requireAuth, zValidator("json", z.object({ contactId: z.string().uuid().nullable() })), async (c) => {
+    const me = c.get("user");
+    const { contactId } = c.req.valid("json");
+    if (contactId) {
+      const [ct] = await db.select({ id: schema.contacts.id }).from(schema.contacts)
+        .where(and(eq(schema.contacts.id, contactId), eq(schema.contacts.ownerId, me.id), isNull(schema.contacts.deletedAt)));
+      if (!ct) throw new HTTPException(404, { message: "Ese contacto no es tuyo" });
+    }
+    await db.update(u).set({ meContactId: contactId, updatedAt: new Date() }).where(eq(u.id, me.id));
+    return c.json(await profileOf(me));
+  })
 
   // Cambiar mi contraseña
   .post("/password", requireAuth, zValidator("json", changePasswordSchema), async (c) => {

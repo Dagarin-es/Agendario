@@ -1,5 +1,20 @@
 # Historial de cambios
 
+## 0.13.0-beta
+- **Temas de color**: Índigo, Océano, Laguna, Lavanda, Arcilla y Grafito (casi monocromo), en ⚙️ Ajustes → Apariencia. Cada uno con su icono en ese tono (en la web, la pestaña del navegador; en Android, el icono del lanzador). En la app, además, «Tu fondo de pantalla» (Material You). El tema se guarda en tu cuenta y te sigue en todos tus dispositivos.
+- **Ajustes en pestañas**: Cuentas, Aplicaciones externas, Sincronización, Apariencia y Copias.
+- **Foto de perfil**: sube la tuya o marca uno de tus contactos como «mi ficha» y se usa su foto. En la web sale a la izquierda del menú; en la app, abajo a la derecha.
+- **Menú de usuario** con el selector Claro / Oscuro / Auto con iconos (web y app).
+- **App de correo por defecto** (sistema, Gmail, Outlook, Fastmail o Proton Mail) en Aplicaciones externas.
+- **CardDAV**: lista de las libretas que verá el móvil al marcar etiquetas, con su ruta completa («Agendario · Familia › Primos»).
+- **Copias**: botón «Limpiar registro» (no borra las copias).
+- **App Android**: barra superior más baja que siempre dice «Agendario»; la barra inferior es una píldora flotante translúcida y tu foto sustituye a «Más».
+- Fuera la barra de letras (abecedario) de la lista.
+
+## 0.12.1-beta
+- **App Android**: la barra superior ya no se monta sobre la barra de estado (Android 15 y posteriores dibujan la app de borde a borde); lo mismo en el login, los diálogos y el mapa.
+- **Lista**: el buscador ya no parpadea al desplazarse; se recoge al bajar y vuelve al subir con un margen y una pequeña pausa.
+
 ## 0.12.0-beta
 - **App Android** (primera APK, `apps/mobile`, Capacitor 8) con diseño **Material 3 / Material You**: toma los colores del fondo de pantalla (Android 12+), modo oscuro, barra de navegación abajo (Contactos, Fechas, Duplicados, Más), botón flotante «Nuevo», hoja inferior con el resto de opciones, botón atrás de Android, vibración suave e icono temático (Android 13+). La primera vez pregunta la dirección del servidor y comprueba que responde. Todo lo de la web está dentro.
 - **Servidor CardDAV** en `/dav/` para la agenda del móvil y del Mac (DAVx⁵, iPhone, macOS): una libreta con todo y, si quieres, una por etiqueta (con sus subetiquetas). En ⚙️ Ajustes → CardDAV eliges las libretas y ves la dirección e instrucciones.

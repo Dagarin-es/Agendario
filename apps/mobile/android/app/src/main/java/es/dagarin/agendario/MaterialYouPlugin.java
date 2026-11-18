@@ -1,6 +1,8 @@
 package es.dagarin.agendario;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Build;
 import com.getcapacitor.JSObject;
@@ -39,5 +41,33 @@ public class MaterialYouPlugin extends Plugin {
             ret.put(g, tones);
         }
         call.resolve(ret);
+    }
+
+    private static final String[] ICON_THEMES = {"indigo", "ocean", "lagoon", "lavender", "clay", "graphite"};
+
+    /** Cambia el icono del lanzador activando el activity-alias del tema (y desactivando los demás). */
+    @PluginMethod
+    public void setIcon(PluginCall call) {
+        String theme = call.getString("theme", "indigo");
+        boolean known = false;
+        for (String t : ICON_THEMES) if (t.equals(theme)) known = true;
+        if (!known) theme = "indigo";
+        Context ctx = getContext();
+        PackageManager pm = ctx.getPackageManager();
+        String pkg = ctx.getPackageName();
+        // Primero se activa el nuevo y luego se apagan los demás (nunca se queda sin icono)
+        String[] order = new String[ICON_THEMES.length];
+        order[0] = theme;
+        int i = 1;
+        for (String t : ICON_THEMES) if (!t.equals(theme)) order[i++] = t;
+        for (String t : order) {
+            ComponentName cn = new ComponentName(pkg, pkg + ".Icon" + Character.toUpperCase(t.charAt(0)) + t.substring(1));
+            int want = t.equals(theme) ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+            int cur = pm.getComponentEnabledSetting(cn);
+            boolean curEnabled = cur == PackageManager.COMPONENT_ENABLED_STATE_ENABLED || (cur == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT && t.equals("indigo"));
+            boolean wantEnabled = want == PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+            if (curEnabled != wantEnabled) pm.setComponentEnabledSetting(cn, want, PackageManager.DONT_KILL_APP);
+        }
+        call.resolve();
     }
 }

@@ -2,7 +2,9 @@
  * Integración con Android (solo en la app): color dinámico de Material You, barras del sistema,
  * botón atrás y vibración. En la web no se carga nada de esto.
  */
+import type { ColorTheme, ThemeScale } from "@agendario/shared";
 import { isApp } from "./platform";
+import { setDynamicScale, setNativeIconHook } from "./theme";
 
 type Tones = Record<string, string>; // "0" … "1000" → "#rrggbb"
 interface Palette {
@@ -22,20 +24,11 @@ const steps: [string, string][] = [
   ["600", "600"], ["700", "700"], ["800", "800"], ["900", "900"], ["950", "1000"],
 ];
 
-/** Aplica el color del fondo de pantalla del móvil al índigo de la app (claro y oscuro). */
-function applyPalette() {
-  if (!palette?.available || !palette.accent1) return;
+/** Escala del fondo de pantalla (accent1 de Material You) para el tema «Tu fondo de pantalla». */
+function dynamicScale(): ThemeScale | null {
+  if (!palette?.available || !palette.accent1) return null;
   const a = palette.accent1;
-  const light = steps.map(([tw, t]) => `--color-indigo-${tw}: ${a[t]};`).join("");
-  // En oscuro la escala va al revés (como hace dark.css)
-  const dark = steps.map(([tw], i) => `--color-indigo-${tw}: ${a[steps[steps.length - 1 - i]![1]]};`).join("");
-  let el = document.getElementById("material-you") as HTMLStyleElement | null;
-  if (!el) {
-    el = document.createElement("style");
-    el.id = "material-you";
-    document.head.appendChild(el);
-  }
-  el.textContent = `:root{${light}} .dark{${dark}}`;
+  return Object.fromEntries(steps.map(([tw, t]) => [Number(tw), a[t]])) as unknown as ThemeScale;
 }
 
 /** Colores de las barras del sistema según el tema. */
@@ -58,13 +51,15 @@ export async function initNative() {
   if (!isApp) return;
   document.documentElement.classList.add("app");
   const { registerPlugin } = await import("@capacitor/core");
-  const MaterialYou = registerPlugin<{ getPalette(): Promise<Palette> }>("MaterialYou");
+  const MaterialYou = registerPlugin<{ getPalette(): Promise<Palette>; setIcon(o: { theme: string }): Promise<void> }>("MaterialYou");
   try {
     palette = await MaterialYou.getPalette();
-    applyPalette();
+    setDynamicScale(dynamicScale());
   } catch {
-    /* Android anterior a 12: se queda el índigo de Agendario */
+    /* Android anterior a 12: sin colores del fondo de pantalla */
   }
+  // Icono del lanzador con el tono del tema
+  setNativeIconHook((t: ColorTheme) => void MaterialYou.setIcon({ theme: t === "dynamic" ? "indigo" : t }).catch(() => undefined));
   await syncSystemBars();
   // Cambios de tema (auto/claro/oscuro): las barras siguen al tema
   new MutationObserver(() => void syncSystemBars()).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });

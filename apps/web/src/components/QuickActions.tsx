@@ -10,7 +10,13 @@ import {
   type UserPrefs,
 } from "@agendario/shared";
 import { api } from "../lib/api";
-import { isMobileLike, isWebLink, messageLink, telLink } from "../lib/links";
+import { isMobileLike, isWebLink, messageLink, telLink, emailLink } from "../lib/links";
+
+/** Enlace para escribir a una dirección con la app de correo elegida en Ajustes. */
+export function useEmailHref() {
+  const { data } = useUserPrefs();
+  return (to: string) => emailLink(data?.emailApp, to);
+}
 
 export function useUserPrefs() {
   return useQuery({ queryKey: ["prefs"], queryFn: () => api.get<UserPrefs>("/prefs"), staleTime: 5 * 60_000 });
@@ -131,10 +137,10 @@ export function QuickActions({ c, onCall, align = "center" }: { c: ContactDetail
         </Split>
       )}
       {d.email && (
-        <Split href={`mailto:${d.email.value}`} icon="✉️" label="Email">
+        <Split href={emailLink(user?.emailApp, d.email.value)} icon="✉️" label="Email">
           <span className={menuTitle}>Escribir a…</span>
           {c.emails.map((e) => (
-            <ItemRow key={e.id ?? e.value} href={`mailto:${e.value}`} item={e} isDefault={e === d.email} onDefault={() => save.mutate({ emailId: e.id ?? null })} />
+            <ItemRow key={e.id ?? e.value} href={emailLink(user?.emailApp, e.value)} item={e} isDefault={e === d.email} onDefault={() => save.mutate({ emailId: e.id ?? null })} />
           ))}
         </Split>
       )}

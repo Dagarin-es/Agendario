@@ -32,7 +32,7 @@ export function ServerSetup({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div className="m3 flex min-h-dvh flex-col px-6 pb-[calc(24px+env(safe-area-inset-bottom))] pt-16">
+    <div className="m3 flex min-h-dvh flex-col px-6 pb-[calc(24px+var(--sab))] pt-[calc(4rem+var(--sat))]">
       <img src="/favicon.svg" alt="" className="h-20 w-20" />
       <h1 className="mt-8 text-[32px] font-normal leading-10">Conecta con tu Agendario</h1>
       <p className="mt-3 text-base text-slate-600">Escribe la dirección de tu servidor de Agendario: la misma que usas en el navegador.</p>

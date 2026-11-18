@@ -10,6 +10,8 @@ import { backupConfigSchema, backupDestSchema, type BackupStatus } from "@agenda
 import { oauthAvailable, oauthStatus } from "../lib/oauth.js";
 import { listExports } from "../lib/nfs.js";
 import { config } from "../config.js";
+import { db, schema } from "../db/index.js";
+import { ne } from "drizzle-orm";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import {
   connectedTo,
@@ -142,6 +144,11 @@ export const backupRoutes = new Hono<AppEnv>()
     return ctx.json(r);
   })
   .get("/oauth/status", (ctx) => ctx.json(oauthStatus()))
+  // Vaciar el registro de copias (las copias guardadas no se tocan; deja la que esté en marcha)
+  .delete("/runs", async (ctx) => {
+    await db.delete(schema.backupRuns).where(ne(schema.backupRuns.status, "running"));
+    return ctx.json({ ok: true });
+  })
   .delete("/oauth", async (ctx) => {
     await disconnectOAuth();
     return ctx.json({ ok: true });

@@ -1,4 +1,4 @@
-import type { LabeledValue, MessagingApp } from "@agendario/shared";
+import type { EmailApp, LabeledValue, MessagingApp } from "@agendario/shared";
 
 const isAndroid = () => /Android/i.test(navigator.userAgent);
 
@@ -37,3 +37,20 @@ export function isMobileLike(p: LabeledValue) {
 }
 
 export const isWebLink = (href: string) => href.startsWith("http");
+
+/** Enlace para escribir un correo con la app elegida en Ajustes. */
+export function emailLink(app: EmailApp | undefined, to: string) {
+  const e = encodeURIComponent(to);
+  switch (app) {
+    case "gmail":
+      return `https://mail.google.com/mail/?view=cm&fs=1&to=${e}`;
+    case "outlook":
+      return `https://outlook.live.com/mail/0/deeplink/compose?to=${e}`;
+    case "fastmail":
+      return `https://app.fastmail.com/mail/compose?to=${e}`;
+    case "proton":
+      return `https://mail.proton.me/u/0/inbox#compose?to=${e}`;
+    default:
+      return `mailto:${to}`;
+  }
+}

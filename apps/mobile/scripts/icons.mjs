@@ -1,5 +1,7 @@
 // Genera iconos adaptativos (con monocromo para iconos temáticos de Android 13+) y splash.
-// Uso: node apps/mobile/scripts/icons.mjs  (desde la raíz del monorepo)
+// Uso: node --experimental-strip-types apps/mobile/scripts/icons.mjs  (desde la raíz del monorepo)
+// Además del icono por defecto (índigo), genera uno por tema de color (ic_launcher_<tema>), que la app
+// activa con un activity-alias al elegir el tema en Ajustes → Apariencia.
 import sharp from "sharp";
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -62,4 +64,30 @@ for (const dir of readdirSync(res).filter((d) => d.startsWith("drawable"))) {
   await sharp({ create: { width, height, channels: 4, background: BG } })
     .composite([{ input: icon, gravity: "center" }]).png().toFile(f);
 }
+// Un icono por tema
+const { themeDefs, themeIconArt } = await import("../../../packages/shared/src/themes.ts");
+const colors = [];
+for (const [name, def] of Object.entries(themeDefs)) {
+  const bg = def.palette[700];
+  const tArt = themeIconArt(def);
+  const tLegacy = (round) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">${round ? `<circle cx="48" cy="48" r="48" fill="${bg}"/>` : `<rect width="96" height="96" rx="22" fill="${bg}"/>`}<g transform="translate(48 48) scale(${round ? 0.82 : 0.92}) translate(-50 -50.5)">${tArt}</g></svg>`;
+  for (const [d, k] of Object.entries(dens)) {
+    const dir = join(res, `mipmap-${d}`);
+    await png(tLegacy(false), 48 * k, join(dir, `ic_launcher_${name}.png`));
+    await png(tLegacy(true), 48 * k, join(dir, `ic_launcher_${name}_round.png`));
+    await png(fg(tArt), 108 * k, join(dir, `ic_launcher_${name}_foreground.png`));
+  }
+  const xml = `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_bg_${name}"/>
+    <foreground android:drawable="@mipmap/ic_launcher_${name}_foreground"/>
+    <monochrome android:drawable="@mipmap/ic_launcher_monochrome"/>
+</adaptive-icon>
+`;
+  writeFileSync(join(res, `mipmap-anydpi-v26/ic_launcher_${name}.xml`), xml);
+  writeFileSync(join(res, `mipmap-anydpi-v26/ic_launcher_${name}_round.xml`), xml);
+  colors.push(`    <color name="ic_bg_${name}">${bg}</color>`);
+}
+writeFileSync(join(res, "values/ic_theme_colors.xml"), `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n${colors.join("\n")}\n</resources>\n`);
 console.log("iconos y splash generados");

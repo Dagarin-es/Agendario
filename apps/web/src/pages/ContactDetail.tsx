@@ -21,7 +21,7 @@ import { ItemTag } from "../components/ItemTag";
 import { addressLine, MapLinks, MiniMap } from "../components/MapLinks";
 import { MapPickerButton } from "../components/AddressSearch";
 import { VisibilityBadge } from "../components/VisibilityBadge";
-import { QuickActions, useUserPrefs } from "../components/QuickActions";
+import { QuickActions, useEmailHref, useUserPrefs } from "../components/QuickActions";
 import { Interactions, type InteractionPrefill } from "../components/Interactions";
 import { HistoryIcon } from "../components/HistoryIcon";
 import { telLink } from "../lib/links";
@@ -50,6 +50,7 @@ function TrashIcon({ className }: { className?: string }) {
 
 /** Trabajadores: contactos que tienen enlazada esta ficha como empresa. */
 function Employees({ c }: { c: ContactDetail }) {
+  const mail = useEmailHref();
   return (
     <section className="card">
       <div className="mb-2 flex items-center justify-between">
@@ -67,7 +68,7 @@ function Employees({ c }: { c: ContactDetail }) {
               </span>
             </Link>
             {e.phone && <a className="btn-ghost px-2 py-1 text-sm" href={telLink(e.phone)} title={`Llamar al ${e.phone}`}>📞</a>}
-            {e.email && <a className="btn-ghost px-2 py-1 text-sm" href={`mailto:${e.email}`} title={e.email}>✉️</a>}
+            {e.email && <a className="btn-ghost px-2 py-1 text-sm" href={mail(e.email)} target={mail(e.email).startsWith("http") ? "_blank" : undefined} rel="noreferrer" title={e.email}>✉️</a>}
           </li>
         ))}
       </ul>
@@ -97,6 +98,7 @@ function Block({ icon, title, children }: { icon: string; title: string; childre
 }
 
 export function ContactDetailPage() {
+  const mail = useEmailHref();
   const { id } = useParams() as { id: string };
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -265,7 +267,7 @@ export function ContactDetailPage() {
             {c.emails.map((e, i) => (
               <Row key={`e${i}`} label={e.label}>
                 <span className="inline-flex flex-wrap items-center gap-1.5">
-                  <a className="break-all text-indigo-700" href={`mailto:${e.value}`}>{e.value}</a>
+                  <a className="break-all text-indigo-700" href={mail(e.value)} target={mail(e.value).startsWith("http") ? "_blank" : undefined} rel="noreferrer">{e.value}</a>
                   {tag(e.id)}
                 </span>
               </Row>

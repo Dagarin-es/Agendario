@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_bg_indigo">#4338CA</color>
+    <color name="ic_bg_ocean">#0A5998</color>
+    <color name="ic_bg_lagoon">#006869</color>
+    <color name="ic_bg_lavender">#624390</color>
+    <color name="ic_bg_clay">#7C4631</color>
+    <color name="ic_bg_graphite">#53575D</color>
+</resources>

@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> ⚠️ **Versión beta (0.12.0-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
+> ⚠️ **Versión beta (0.13.0-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **contactos compartidos** entre usuarios y **fotos**, pensada para crecer hasta tener apps de escritorio y móvil, sincronización con Google/Outlook/CardDAV y copias cifradas.
 
-Esta es la **versión 0.12.0-beta**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
+Esta es la **versión 0.13.0-beta**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
 
 ---
 
@@ -57,7 +57,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-0.12.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-0.13.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -91,7 +91,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-0.12.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-0.13.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -99,7 +99,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-0.12.0-beta.zip
+unzip agendario-0.13.0-beta.zip
 cd agendario
 ```
 
@@ -143,7 +143,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-0.12.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-0.13.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -206,7 +206,7 @@ Para instalar la PWA en el móvil y usarla fuera de casa **hace falta HTTPS**: l
 
 ### App Android (APK)
 
-1. Pasa `agendario-0.12.0-beta.apk` al móvil (Drive, Telegram, cable…) y ábrelo.
+1. Pasa `agendario-0.13.0-beta.apk` al móvil (Drive, Telegram, cable…) y ábrelo.
 2. Android pedirá permiso para **instalar apps de origen desconocido** desde esa aplicación (Archivos, Chrome…): actívalo solo para ella.
 3. Abre **Agendario**, escribe la dirección de tu servidor (la **https** de Nginx Proxy Manager; en casa vale `http://IP:3002`) y entra con tu usuario.
 
@@ -229,7 +229,7 @@ storePassword=LA_CONTRASEÑA
 keyAlias=agendario
 ```
 
-La versión de la APK sale sola de `APP_VERSION` (0.12.0-beta → código 1200).
+La versión de la APK sale sola de `APP_VERSION` (0.13.0-beta → código 1200).
 
 ### Como web app (PWA)
 
@@ -406,9 +406,13 @@ Los **santos** se pueden añadir a mano en «Fechas importantes». Si quieres qu
 
 ---
 
-## Apariencia (modo oscuro)
+## Apariencia (temas y modo oscuro)
 
-En **⚙️ Ajustes → Apariencia**: **Automático** (sigue el modo claro u oscuro del sistema), **Claro** u **Oscuro**. Se guarda en cada dispositivo.
+En **⚙️ Ajustes → Apariencia**:
+
+- **Modo**: Claro, Oscuro o Auto (el del sistema). También está en el menú de usuario. Se guarda en cada dispositivo.
+- **Tema de color**: Índigo, Océano, Laguna, Lavanda, Arcilla o Grafito. Se guarda en tu cuenta (te sigue en todos tus dispositivos) y cambia también el icono: en la web, el de la pestaña; en Android, el del lanzador. En la app de Android hay además «Tu fondo de pantalla» (Material You).
+- **Foto de perfil** (⚙️ Ajustes → Cuentas): sube una o marca tu propia ficha de contacto y se usa su foto.
 
 ---
 

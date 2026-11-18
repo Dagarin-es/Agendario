@@ -3,6 +3,10 @@
  * El color principal (índigo en la web) se sustituye por el del fondo de pantalla del móvil.
  */
 .app {
+  /* Zonas de la barra de estado y de gestos (Android 15+ es siempre edge-to-edge).
+     Capacitor inyecta --safe-area-inset-* con el valor correcto en cualquier WebView. */
+  --sat: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --sab: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   --app-surface: var(--color-slate-50);
   --app-surface-2: color-mix(in oklab, var(--color-indigo-100) 55%, var(--color-slate-50));
   --app-container: color-mix(in oklab, var(--color-indigo-100) 35%, var(--color-white));
@@ -30,11 +34,18 @@
 .m3-icon-btn { display: inline-flex; height: 48px; width: 48px; align-items: center; justify-content: center; border-radius: 9999px; }
 .m3-icon-btn:active { background: color-mix(in oklab, var(--color-indigo-700) 12%, transparent); }
 
-/* Barra de navegación inferior (80 dp) con indicador en píldora */
-.m3-navbar { height: calc(80px + env(safe-area-inset-bottom)); background: var(--app-surface-2); }
-.m3-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--color-slate-600); }
+/* Barra de navegación: píldora flotante translúcida (64 dp) con desenfoque */
+.m3-pill {
+  height: 64px; border-radius: 9999px; padding: 0 4px;
+  background: color-mix(in oklab, var(--app-surface-2) 72%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6);
+  border: 1px solid color-mix(in oklab, var(--color-white) 45%, transparent);
+  box-shadow: 0 8px 28px rgb(0 0 0 / .14), 0 1px 3px rgb(0 0 0 / .08);
+}
+.dark .m3-pill { border-color: rgb(255 255 255 / .08); box-shadow: 0 8px 28px rgb(0 0 0 / .5); }
+.m3-nav-item { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--color-slate-600); }
 .m3-nav-item.active, .m3-nav-item[aria-current="page"] { color: var(--color-indigo-900); }
-.m3-nav-indicator { position: relative; display: flex; height: 32px; width: 64px; align-items: center; justify-content: center; border-radius: 9999px; transition: background-color .2s; }
+.m3-nav-indicator { position: relative; display: flex; height: 30px; width: 56px; align-items: center; justify-content: center; border-radius: 9999px; transition: background-color .2s; }
 .m3-nav-indicator.is-active { background: var(--color-indigo-200); color: var(--color-indigo-950); }
 .m3-badge { position: absolute; top: -2px; left: 36px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9999px; color: #fff; font-size: 11px; font-weight: 600; line-height: 16px; text-align: center; }
 
@@ -62,3 +73,6 @@
 
 /* En la app, el selector de abecedario y la barra fija respetan la barra superior */
 .app .dark-safe {}
+
+/* Pantallas sin barra superior (login): que no queden bajo la barra de estado */
+.app .app-safe-top { padding-top: var(--sat); }

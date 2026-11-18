@@ -52,6 +52,10 @@ export const users = pgTable(
     disabled: boolean("disabled").notNull().default(false),
     /** Contraseña provisional puesta por el administrador: se le pide cambiarla */
     mustChangePassword: boolean("must_change_password").notNull().default(false),
+    /** Foto de perfil propia (clave en photos/) */
+    photoKey: text("photo_key"),
+    /** Contacto que es «mi ficha»: si no hay foto propia, se usa la suya */
+    meContactId: uuid("me_contact_id"),
     ...timestamps,
   },
   (t) => [uniqueIndex("users_email_idx").on(sql`lower(${t.email})`)],

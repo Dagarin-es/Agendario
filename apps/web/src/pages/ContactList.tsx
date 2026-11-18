@@ -48,7 +48,6 @@ function sortText(c: ContactSummary, sort: SortId): string {
 }
 
 const collator = new Intl.Collator("es", { sensitivity: "base", numeric: true });
-export const ALPHABET = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "Ñ", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "#"];
 
 /** Letra del índice: A-Z y Ñ (sin tildes); lo demás, «#». */
 function letterOf(text: string): string {
@@ -58,36 +57,6 @@ function letterOf(text: string): string {
   return /^[A-Z]$/.test(base) ? base : "#";
 }
 
-/** Pestañas del abecedario, a todo el ancho, como las de una agenda (sobrias). Las letras sin contactos, apagadas. */
-function AlphabetTabs({ present, active, onPick }: { present: Set<string>; active: string | null; onPick: (l: string) => void }) {
-  return (
-    <nav className="grid grid-cols-14 gap-px border-b border-slate-200 pt-1.5 sm:grid-cols-28" aria-label="Saltar a la letra">
-      {ALPHABET.map((l) => {
-        const has = present.has(l);
-        const on = active === l;
-        return (
-          <button
-            key={l}
-            type="button"
-            disabled={!has}
-            onClick={() => onPick(l)}
-            className={`h-7 rounded-t-md text-[11px] font-semibold transition sm:h-8 sm:text-xs ${
-              on
-                ? "bg-indigo-700 text-white"
-                : has
-                  ? "bg-white text-indigo-800 ring-1 ring-inset ring-slate-200 hover:bg-indigo-50"
-                  : "text-slate-300"
-            }`}
-            aria-label={`Letra ${l}`}
-            aria-current={on ? "true" : undefined}
-          >
-            {l}
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
 
 function loadPageSize(): number {
   try {
@@ -129,7 +98,6 @@ export function ContactListPage() {
   const tag = params.get("tag") ?? "";
   const page = Math.max(1, Number(params.get("page")) || 1);
   const [sort, setSortState] = useState<SortId>(loadSort);
-  const [jumpTo, setJumpTo] = useState<string | null>(null);
   const [q, setQ] = useState(params.get("q") ?? "");
   const deferred = useDeferredValue(q);
   const [pageSize, setPageSize] = useState(loadPageSize);
@@ -223,14 +191,6 @@ export function ContactListPage() {
     if (sorted && sort !== "geo") sorted.forEach((c) => m.set(c.id, sortText(c, sort) ? letterOf(sortText(c, sort)) : "#"));
     return m;
   }, [sorted, sort]);
-  const firstIndex = useMemo(() => {
-    const m = new Map<string, number>();
-    sorted?.forEach((c, i) => {
-      const l = letters.get(c.id);
-      if (l && !m.has(l)) m.set(l, i);
-    });
-    return m;
-  }, [sorted, letters]);
   const total = data?.length ?? 0;
   const pages = pageSize ? Math.max(1, Math.ceil(total / pageSize)) : 1;
   const current = Math.min(page, pages);
@@ -239,39 +199,36 @@ export function ContactListPage() {
   const to = pageSize ? Math.min(current * pageSize, total) : total;
 
   const filtered = !!(deferred || tag);
-  const showAlphabet = sort !== "geo" && total > 15 && !deferred;
-
-  /** Salta a la primera persona de esa letra (cambiando de página si hace falta). */
-  const [activeLetter, setActiveLetter] = useState<string | null>(null);
   // En el móvil, el buscador se recoge al bajar por la lista y vuelve al subir
   const [compact, setCompact] = useState(false);
   useEffect(() => {
+    // Al recoger/sacar el buscador la página cambia de altura y el navegador mueve el scroll:
+    // sin margen ni pausa eso se interpretaba como «subir» y la cabecera parpadeaba sin parar.
     let last = window.scrollY;
+    let travel = 0;
+    let lockUntil = 0;
+    let cur = false;
     const onScroll = () => {
       const y = window.scrollY;
-      if (Math.abs(y - last) < 12) return;
-      setCompact(y > last && y > 200 && !q);
+      const d = y - last;
       last = y;
+      if (performance.now() < lockUntil) return;
+      if (Math.sign(d) !== Math.sign(travel)) travel = 0;
+      travel += d;
+      let next = cur;
+      if (q || y < 160) next = false;
+      else if (travel > 56) next = true;
+      else if (travel < -56) next = false;
+      if (next !== cur) {
+        cur = next;
+        travel = 0;
+        lockUntil = performance.now() + 450;
+        setCompact(next);
+      }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [q]);
-  const jumpLetter = (l: string) => {
-    setActiveLetter(l);
-    const idx = firstIndex.get(l);
-    if (idx === undefined) return;
-    const p = pageSize ? Math.floor(idx / pageSize) + 1 : 1;
-    if (p !== current) update({ page: p });
-    setJumpTo(l);
-  };
-  useEffect(() => {
-    if (!jumpTo) return;
-    const el = document.getElementById(`letra-${jumpTo}`);
-    if (el) {
-      el.scrollIntoView({ block: "start" });
-      setJumpTo(null);
-    }
-  }, [jumpTo, visible]);
   const pageAllSelected = visible.length > 0 && visible.every((c) => selected.has(c.id));
   const addToSelection = (list: ContactSummary[]) =>
     setSelected((prev) => {
@@ -357,7 +314,7 @@ export function ContactListPage() {
       })()}
 
       {total > 0 && (
-        <div className={`pt-1 ${showAlphabet && selected.size === 0 ? "" : "pb-1.5"}`}>
+        <div className="pb-1.5 pt-1">
           <div className="flex min-h-11 items-center gap-2">
             {/* Selección: casilla + desplegable (agrupados, como en Gmail) */}
             <div className="relative flex shrink-0 items-center rounded-lg border border-slate-300 bg-white">
@@ -430,7 +387,6 @@ export function ContactListPage() {
             )}
           </div>
           {selected.size > 0 && bulk.panelView}
-          {showAlphabet && selected.size === 0 && <AlphabetTabs present={new Set(firstIndex.keys())} active={activeLetter} onPick={jumpLetter} />}
           {selected.size === 0 && sort === "geo" && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pb-1 text-[11px] text-slate-500">
               {geoStatuses.map((g) => (
@@ -463,14 +419,14 @@ export function ContactListPage() {
         </div>
       )}
 
-      <ul className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden ${showAlphabet ? "rounded-t-none" : ""}`}>
+      <ul className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden`}>
         {visible.map((c, i) => {
           const l = letters.get(c.id);
           const header = l && (i === 0 || letters.get(visible[i - 1]!.id) !== l);
           return (
           <Fragment key={c.id}>
           {header && (
-            <li id={firstIndex.get(l) !== undefined && sorted![firstIndex.get(l)!]!.id === c.id ? `letra-${l}` : undefined} className="scroll-mt-32 bg-slate-50 px-4 py-1 text-xs font-bold text-indigo-800">
+            <li className="scroll-mt-32 bg-slate-50 px-4 py-1 text-xs font-bold text-indigo-800">
               {l === "#" && sort !== "display" ? `# · sin ${sortOptions.find((o) => o.id === sort)!.label.toLowerCase()} o con otros signos` : l}
             </li>
           )}
