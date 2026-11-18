@@ -105,11 +105,15 @@ export interface CallLogStatus {
   lastAdded: number;
   lastError: string;
   batteryOptimized: boolean;
+  lastRead?: number;
+  lastUnmatched?: number;
+  lastSkipped?: number;
+  since?: number;
 }
 interface CallLogPlugin {
   getStatus(): Promise<CallLogStatus>;
   configure(o: { server: string; token: string }): Promise<CallLogStatus>;
-  enable(o: { since: number | null }): Promise<CallLogStatus>;
+  enable(o: { since: string }): Promise<CallLogStatus>;
   disable(): Promise<CallLogStatus>;
   syncNow(): Promise<CallLogStatus>;
   openBatterySettings(): Promise<void>;

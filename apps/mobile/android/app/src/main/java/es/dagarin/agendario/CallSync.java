@@ -93,7 +93,7 @@ public final class CallSync {
         String token = p.getString("token", "");
         if (server.isEmpty() || token.isEmpty()) return true;
         long since = p.getLong("since", System.currentTimeMillis());
-        int added = 0;
+        int added = 0, read = 0, unmatched = 0, skipped = 0;
         try {
             while (true) {
                 JSONArray calls = new JSONArray();
@@ -126,13 +126,20 @@ public final class CallSync {
                     break;
                 }
                 JSONObject res = post(server + "/api/calls/import", token, new JSONObject().put("calls", calls).toString());
-                if (res == null) return false;
+                if (res == null) {
+                    p.edit().putString("lastError", "El servidor no ha aceptado el envío").apply();
+                    return false;
+                }
+                read += calls.length();
                 added += res.optInt("added", 0);
+                unmatched += res.optInt("unmatched", 0);
+                skipped += res.optInt("skipped", 0);
                 since = last;
                 p.edit().putLong("since", since).apply();
                 if (calls.length() < BATCH) break;
             }
-            p.edit().putLong("lastSyncAt", System.currentTimeMillis()).putInt("lastAdded", added).putString("lastError", "").apply();
+            p.edit().putLong("lastSyncAt", System.currentTimeMillis()).putInt("lastAdded", added).putInt("lastRead", read)
+                .putInt("lastUnmatched", unmatched).putInt("lastSkipped", skipped).putString("lastError", "").apply();
             return true;
         } catch (Exception e) {
             p.edit().putString("lastError", String.valueOf(e.getMessage())).apply();

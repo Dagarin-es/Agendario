@@ -7,7 +7,7 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
   const icon = useThemeIcon();
   return (
     <Modal title={`Acerca de ${APP_NAME}`} onClose={onClose}>
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-4 p-4">
         <img src={icon} alt="" className="h-16 w-16 shrink-0" />
         <div className="space-y-2 text-sm">
           <p className="text-base font-semibold">{APP_NAME} <span className="font-normal text-slate-500">v{APP_VERSION}</span> <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">BETA</span></p>

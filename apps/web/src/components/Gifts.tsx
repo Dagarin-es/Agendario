@@ -48,6 +48,7 @@ export function GiftThumb({ idea, size = 48, onChanged }: { idea: GiftIdea; size
       </button>
       {open && (
         <Modal title={idea.title} onClose={() => setOpen(false)}>
+          <div className="p-4">
           {idea.imageKey && <img src={src("full")} alt="" className="mx-auto mb-4 max-h-[50vh] rounded-xl object-contain" />}
           <div className="flex flex-wrap gap-2">
             <label className="btn-primary cursor-pointer">
@@ -56,6 +57,7 @@ export function GiftThumb({ idea, size = 48, onChanged }: { idea: GiftIdea; size
             </label>
             {idea.url && <button className="btn-ghost border border-slate-200" disabled={fromWeb.isPending} onClick={() => fromWeb.mutate()}>{fromWeb.isPending ? "Buscando…" : "🌐 Sacar de la web"}</button>}
             {idea.imageKey && <button className="btn-ghost text-red-700" onClick={() => remove.mutate()}>Quitar</button>}
+          </div>
           </div>
         </Modal>
       )}
@@ -281,7 +283,7 @@ export function QuickIdeaForm({ contactId, initial, onDone, onCancel }: { contac
     onError: (e) => setError((e as Error).message),
   });
   return (
-    <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (d.title.trim()) add.mutate(); }}>
+    <form className="grid gap-2 p-4" onSubmit={(e) => { e.preventDefault(); if (d.title.trim()) add.mutate(); }}>
       <input className="input" placeholder="Idea (p. ej. Bufanda de lana)" value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} autoFocus required />
       <input className="input" type="url" placeholder="Enlace (opcional; trae la imagen sola)" value={d.url} onChange={(e) => setD({ ...d, url: e.target.value })} />
       <input className="input" inputMode="decimal" placeholder="Precio € (opcional)" value={d.price} onChange={(e) => setD({ ...d, price: e.target.value })} />

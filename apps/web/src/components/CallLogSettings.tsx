@@ -36,7 +36,7 @@ export function CallLogSettings({ Section }: { Section: (p: { icon: string; titl
     if (!p) return;
     const since = from === "all" ? 0 : from === "date" ? new Date(`${date}T00:00:00`).getTime() : null;
     try {
-      setSt(await p.enable({ since }));
+      setSt(await p.enable({ since: since === null ? "" : String(since) }));
       setAsking(false);
     } catch (e) {
       showAlert("No se ha podido activar", (e as Error).message || "Agendario necesita permiso para leer el registro de llamadas.");
@@ -48,7 +48,11 @@ export function CallLogSettings({ Section }: { Section: (p: { icon: string; titl
         <div className="space-y-2 text-sm">
           <p className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">✅ Activado</span>
-            <span className="text-slate-600">Último envío: {fmt(st.lastSyncAt)}{st.lastAdded ? ` · ${st.lastAdded} llamadas nuevas` : ""}</span>
+            <span className="text-slate-600">Última revisión: {fmt(st.lastSyncAt)}</span>
+          </p>
+          <p className="text-xs text-slate-500">
+            En la última: {st.lastRead ?? 0} leídas del móvil · {st.lastAdded} guardadas · {st.lastSkipped ?? 0} ya estaban · {st.lastUnmatched ?? 0} de números que no son contactos
+            {st.since ? ` · se leen las posteriores al ${fmt(st.since)}` : ""}
           </p>
           {!st.permission && <p className="text-red-700">Falta el permiso de registro de llamadas: desactívalo y vuelve a activarlo.</p>}
           {st.lastError && <p className="text-amber-800">⚠️ {st.lastError}</p>}
@@ -68,7 +72,7 @@ export function CallLogSettings({ Section }: { Section: (p: { icon: string; titl
       )}
       {asking && (
         <Modal title="Activar el registro de llamadas" onClose={() => setAsking(false)}>
-          <div className="space-y-3 text-sm">
+          <div className="space-y-3 p-4 text-sm">
             <p>¿Traemos también las llamadas que ya tiene el móvil? (Android guarda las últimas, según la marca unas 500–1.000 o unos meses). No se duplican las que ya apuntaste a mano.</p>
             <label className="flex items-center gap-2"><input type="radio" checked={from === "all"} onChange={() => setFrom("all")} /> Sí, todo lo que tenga el móvil</label>
             <label className="flex flex-wrap items-center gap-2"><input type="radio" checked={from === "date"} onChange={() => setFrom("date")} /> Desde el <input type="date" className="input w-auto py-1" value={date} onChange={(e) => { setDate(e.target.value); setFrom("date"); }} /></label>

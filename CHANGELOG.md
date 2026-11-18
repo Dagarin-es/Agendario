@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 0.14.2-beta
+- **Registro de llamadas**: corregida la primera carga «desde una fecha», que se ignoraba y solo leía las llamadas a partir de ese momento. La sección enseña cuántas llamadas se leyeron, cuántas se guardaron, cuántas ya estaban y cuántas eran de números que no son contactos.
+- **Ventanas en el móvil**: ya no quedan pegadas a los bordes (registro de llamadas, Acerca de, imagen e idea de regalo).
+
 ## 0.14.1-beta
 - **App**: «Ordenar por…» en la cabecera (pestaña Contactos); la fila de herramientas solo aparece al marcar contactos.
 - **App**: «Acerca de Agendario» se abre como ventana emergente (antes quedaba detrás de la hoja) y está debajo de «Cambiar de servidor».

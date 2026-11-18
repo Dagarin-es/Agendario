@@ -33,6 +33,10 @@ public class CallLogPlugin extends Plugin {
         r.put("lastSyncAt", p.getLong("lastSyncAt", 0));
         r.put("lastAdded", p.getInt("lastAdded", 0));
         r.put("lastError", p.getString("lastError", ""));
+        r.put("lastRead", p.getInt("lastRead", 0));
+        r.put("lastUnmatched", p.getInt("lastUnmatched", 0));
+        r.put("lastSkipped", p.getInt("lastSkipped", 0));
+        r.put("since", p.getLong("since", 0));
         PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
         r.put("batteryOptimized", pm != null && !pm.isIgnoringBatteryOptimizations(ctx.getPackageName()));
         return r;
@@ -71,10 +75,19 @@ public class CallLogPlugin extends Plugin {
     }
 
     private void doEnable(PluginCall call) {
-        Double since = call.getDouble("since");
+        // Llega como texto: los milisegundos no caben en un Integer y getDouble no acepta Long
+        long since = System.currentTimeMillis();
+        String s = call.getString("since", "");
+        if (s != null && !s.isEmpty()) {
+            try {
+                since = (long) Double.parseDouble(s);
+            } catch (NumberFormatException ignored) {
+                // se queda en «a partir de ahora»
+            }
+        }
         CallSync.prefs(getContext()).edit()
             .putBoolean("enabled", true)
-            .putLong("since", since == null ? System.currentTimeMillis() : since.longValue())
+            .putLong("since", since)
             .apply();
         CallSync.schedule(getContext());
         CallSync.now(getContext(), 0);
