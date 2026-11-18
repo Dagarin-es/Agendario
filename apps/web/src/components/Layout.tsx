@@ -8,12 +8,15 @@ import { BetaBadge } from "./BetaBadge";
 import { useGiftsToBuy, usePendingGifts } from "../lib/gifts";
 import { ModeSelector, useColorThemeFromPrefs, useThemeIcon } from "./Personalize";
 import { UserAvatar } from "./UserAvatar";
+import { AboutModal } from "./About";
+import { OfflineBanner } from "./OfflineBanner";
 
 /** Cada sección con su tono: Contactos índigo, Fechas ámbar, Duplicados lila. */
 const tones = {
   indigo: "bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200",
   amber: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
   violet: "bg-violet-100 text-violet-800 ring-1 ring-violet-200",
+  rose: "bg-rose-100 text-rose-800 ring-1 ring-rose-200",
 } as const;
 const link = (tone: keyof typeof tones) => ({ isActive }: { isActive: boolean }) =>
   `relative whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium sm:px-3 ${isActive ? tones[tone] : "text-slate-600 hover:bg-slate-100"}`;
@@ -30,6 +33,7 @@ export function useDuplicateCount() {
 
 function MoreMenu() {
   const [open, setOpen] = useState(false);
+  const [about, setAbout] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const { data: me } = useMe();
@@ -74,13 +78,11 @@ function MoreMenu() {
           <Link to="/trash" className={item}>🗑️ Papelera</Link>
           <Link to="/settings" className={item}>⚙️ Ajustes</Link>
           <div className="my-1 border-t border-slate-100" />
-          <Link to="/import" className={item}>📥 Importar .vcf</Link>
-          <a href={apiUrl("/export/contacts.vcf")} className={item}>📤 Exportar .vcf</a>
-          <a href={apiUrl("/export/contacts.vcf?gifts=true")} className={item}>🎁 Exportar .vcf con regalos</a>
-          <div className="my-1 border-t border-slate-100" />
+          <button className={item} onClick={() => { setOpen(false); setAbout(true); }}>📒 Acerca de Agendario</button>
           <button className={`${item} text-red-700`} onClick={logout}>🚪 Salir</button>
         </div>
       )}
+      {about && <AboutModal onClose={() => setAbout(false)} />}
     </div>
   );
 }
@@ -116,6 +118,7 @@ export function Layout() {
         </Link>
         <nav className="flex flex-1 gap-0.5 overflow-x-auto sm:gap-1">
           <NavLink to="/" end className={link("indigo")}>Contactos</NavLink>
+          <NavLink to="/gifts" className={link("rose")}>Regalos</NavLink>
           <NavLink to="/upcoming" className={link("amber")} title={[gifts.title, pendingGifts ? `${pendingGifts} comprado(s) sin marcar como regalado` : ""].filter(Boolean).join(" · ") || undefined}>
             Fechas
             {gifts.count > 0 && (
@@ -132,6 +135,7 @@ export function Layout() {
         </nav>
         <MoreMenu />
       </header>
+      <OfflineBanner />
       {me?.mustChangePassword && (
         <Link to="/settings" className="mx-4 mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
           🔑 Estás usando una contraseña provisional. <strong>Cámbiala en Ajustes → Mi cuenta.</strong>

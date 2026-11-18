@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => ({
         background_color: "#f8fafc",
         display: "standalone",
         start_url: "/",
+        // «Compartir» desde Android (PWA instalada) → Añadir idea de regalo
+        share_target: { action: "/share-gift", method: "GET", params: { title: "title", text: "text", url: "url" } },
         icons: [
           { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icon-512.png", sizes: "512x512", type: "image/png" },

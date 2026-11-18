@@ -204,6 +204,8 @@ export const giftIdeas = pgTable(
     /** Evento para el que es (birthday · saint · date:<id> · custom) */
     eventKey: text("event_key"),
     eventLabel: text("event_label").notNull().default(""),
+    /** Miniatura (clave en photos/): de la web del enlace o subida a mano */
+    imageKey: text("image_key"),
     ...timestamps,
   },
   (t) => [index("gift_ideas_contact_user_idx").on(t.contactId, t.userId)],
@@ -343,9 +345,11 @@ export const interactions = pgTable(
     /** Teléfono o canal usado (opcional) */
     channel: text("channel").notNull().default(""),
     notes: text("notes").notNull().default(""),
+    /** Id de la llamada en el registro del móvil (evita duplicados al importar) */
+    externalId: text("external_id"),
     ...timestamps,
   },
-  (t) => [index("interactions_contact_idx").on(t.userId, t.contactId, t.occurredAt)],
+  (t) => [index("interactions_contact_idx").on(t.userId, t.contactId, t.occurredAt), uniqueIndex("interactions_external_idx").on(t.userId, t.externalId)],
 );
 
 // ---------- Preferencias de cada usuario y por contacto ----------

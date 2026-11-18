@@ -112,7 +112,14 @@ export function applyColorTheme(theme: ColorTheme) {
   document.querySelectorAll<HTMLLinkElement>('link[rel="icon"]').forEach((l) => (l.href = iconUrl));
   iconListeners.forEach((l) => l(iconUrl));
   apply(getTheme());
-  nativeIconHook.fn?.(theme);
+  pendingIcon = theme;
+}
+
+/** El icono del lanzador se cambia al salir de Apariencia o de la app: Android reinicia la app al cambiarlo. */
+let pendingIcon: ColorTheme | null = null;
+export function commitNativeIcon() {
+  if (pendingIcon && nativeIconHook.fn) nativeIconHook.fn(pendingIcon);
+  pendingIcon = null;
 }
 
 export function initTheme() {

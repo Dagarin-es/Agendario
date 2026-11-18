@@ -26,7 +26,7 @@ export function LoginPage() {
       const user = registering
         ? await api.post<User & { token?: string }>("/auth/register", form)
         : await api.post<User & { token?: string }>("/auth/login", { email: form.email, password: form.password });
-      if (user.token) setToken(user.token); // app de Android
+      if (user.token) { setToken(user.token); void import("../lib/native").then((n) => n.configureCallLog()); } // app de Android
       qc.setQueryData(["me"], user);
     } catch (err) {
       setError((err as Error).message);

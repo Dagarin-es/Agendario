@@ -1,5 +1,16 @@
 # Historial de cambios
 
+## 0.14.0-beta
+- **Modo sin conexión** (app y web): se guarda en el dispositivo una copia de todas las fichas y de las pantallas visitadas. Si el servidor no responde ves lo guardado (con aviso arriba), puedes buscar, y los cambios en contactos, llamadas, apuntes e ideas de regalo se guardan en cola y se envían solos al volver la conexión.
+- **Registro de llamadas automático** (app Android): con tu permiso, las llamadas hechas, recibidas y perdidas con tus contactos se guardan solas al colgar, aunque llames desde el teléfono del sistema. Primera carga con el historial del móvil (todo o desde una fecha), sin duplicar las apuntadas a mano; revisión de respaldo cada 2 horas; aviso de la optimización de batería. En ⚙️ Ajustes → Aplicaciones externas.
+- **Pestaña Regalos**: quién tiene fechas con 🎁, su próxima fecha y sus ideas (con miniatura y estado), ordenable por fecha o nombre, en dos columnas en el ordenador y «+ Idea» directo.
+- **Ideas de regalo**: botón **🛒 Comprar** (abre la tienda y luego eliges para qué fecha es), distintivo **✅ Comprado** y botón **🎁 Regalar**. **Miniatura** de cada idea, sacada sola de la web del enlace o subida a mano.
+- **Compartir → «Añadir idea de regalo»** desde el navegador del móvil (APK y PWA instalada): enlace, título e imagen ya puestos; eliges para quién.
+- **Galaxy Fold / pantallas anchas**: barra lateral de navegación y lista + ficha a la vez; cambia al plegar y desplegar.
+- **App**: el icono del tema se cambia al salir de Apariencia (sin reiniciar a cada toque); solo se ofrecen las apps de correo y mensajería instaladas; la píldora de abajo es más translúcida, tiene «Regalos» y se esconde con el teclado; la hoja de tu cuenta se cierra deslizando hacia abajo y tiene «Acerca de».
+- **Móvil**: la lista muestra todos los contactos (sin páginas), «Ordenar por…» arriba a la derecha y la casilla de marcar todos solo cuando hay algo marcado; en la ficha, de las etiquetas para abajo va a todo el ancho.
+- **Importar y exportar .vcf** pasan a ⚙️ Ajustes → Sincronización; «Acerca de Agendario» al menú de usuario.
+
 ## 0.13.0-beta
 - **Temas de color**: Índigo, Océano, Laguna, Lavanda, Arcilla y Grafito (casi monocromo), en ⚙️ Ajustes → Apariencia. Cada uno con su icono en ese tono (en la web, la pestaña del navegador; en Android, el icono del lanzador). En la app, además, «Tu fondo de pantalla» (Material You). El tema se guarda en tu cuenta y te sigue en todos tus dispositivos.
 - **Ajustes en pestañas**: Cuentas, Aplicaciones externas, Sincronización, Apariencia y Copias.

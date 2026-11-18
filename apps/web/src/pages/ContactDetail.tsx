@@ -150,9 +150,9 @@ export function ContactDetailPage() {
   return (
     <div className="space-y-4">
       {/* Cabecera compacta: foto a la izquierda, todo lo demás a la derecha */}
-      <section className="card flex items-start gap-4">
+      <section className="card grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-3">
         <button
-          className="group relative shrink-0 rounded-full"
+          className="group relative shrink-0 rounded-full sm:row-span-2"
           disabled={!c.canEdit}
           onClick={() => fileRef.current?.click()}
           title={c.canEdit ? "Cambiar foto" : undefined}
@@ -166,8 +166,7 @@ export function ContactDetailPage() {
           )}
         </button>
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && uploadPhoto.mutate(e.target.files[0])} />
-        <div className="min-w-0 flex-1 space-y-2.5">
-          <div>
+        <div className="self-center sm:self-start">
             <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold leading-tight">
               {c.displayName}
               <span className="text-xs font-normal"><VisibilityBadge v={c.visibility} /></span>
@@ -186,7 +185,9 @@ export function ContactDetailPage() {
               </p>
             )}
             {!c.isMine && <p className="text-xs text-slate-500">de {c.ownerName}{c.canEdit ? " · puedes editar" : " · solo lectura"}</p>}
-          </div>
+        </div>
+        {/* En el móvil, de las etiquetas para abajo va debajo de la foto, a todo el ancho */}
+        <div className="col-span-2 min-w-0 space-y-2.5 sm:col-span-1 sm:col-start-2">
           <ContactTags contactId={c.id} tags={c.tags} align="start" />
           <QuickActions c={c} align="start" onCall={(phone) => setLastCall({ phone, at: Date.now() })} />
           {askCall && lastCall && (

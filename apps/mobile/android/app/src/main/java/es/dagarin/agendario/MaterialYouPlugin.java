@@ -3,6 +3,7 @@ package es.dagarin.agendario;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import com.getcapacitor.JSArray;
 import android.content.res.Configuration;
 import android.os.Build;
 import com.getcapacitor.JSObject;
@@ -69,5 +70,51 @@ public class MaterialYouPlugin extends Plugin {
             if (curEnabled != wantEnabled) pm.setComponentEnabledSetting(cn, want, PackageManager.DONT_KILL_APP);
         }
         call.resolve();
+    }
+
+    /** Qué apps de la lista están instaladas (para ofrecer solo esas en Ajustes). */
+    @PluginMethod
+    public void installedApps(PluginCall call) {
+        JSObject ret = new JSObject();
+        PackageManager pm = getContext().getPackageManager();
+        try {
+            JSArray list = call.getArray("packages");
+            for (int i = 0; i < list.length(); i++) {
+                String pkg = list.getString(i);
+                boolean ok;
+                try {
+                    pm.getPackageInfo(pkg, 0);
+                    ok = true;
+                } catch (PackageManager.NameNotFoundException e) {
+                    ok = false;
+                }
+                ret.put(pkg, ok);
+            }
+        } catch (Exception e) {
+            call.reject("Lista de apps no válida");
+            return;
+        }
+        call.resolve(ret);
+    }
+
+    // ----- «Compartir» desde otra app (Añadir idea de regalo) -----
+    static JSObject pendingShare = null;
+    static MaterialYouPlugin instance = null;
+
+    @Override
+    public void load() {
+        instance = this;
+    }
+
+    static void deliverShare(JSObject data) {
+        if (instance != null && instance.hasListeners("share")) instance.notifyListeners("share", data, true);
+        else pendingShare = data;
+    }
+
+    @PluginMethod
+    public void consumeShare(PluginCall call) {
+        JSObject r = pendingShare != null ? pendingShare : new JSObject();
+        pendingShare = null;
+        call.resolve(r);
     }
 }

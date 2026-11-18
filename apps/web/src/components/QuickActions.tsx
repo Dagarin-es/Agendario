@@ -10,6 +10,7 @@ import {
   type UserPrefs,
 } from "@agendario/shared";
 import { api } from "../lib/api";
+import { useInstalledFilter } from "../lib/installed";
 import { isMobileLike, isWebLink, messageLink, telLink, emailLink } from "../lib/links";
 
 /** Enlace para escribir a una dirección con la app de correo elegida en Ajustes. */
@@ -100,6 +101,7 @@ export function QuickActions({ c, onCall, align = "center" }: { c: ContactDetail
   const { data: user } = useUserPrefs();
   const cc = user?.countryCode ?? "34";
   const d = resolveDefaults(c, c.prefs, user);
+  const onlyInstalled = useInstalledFilter();
   const save = useMutation({
     mutationFn: (patch: Partial<ContactPrefs>) => api.put(`/contacts/${c.id}/prefs`, { ...c.prefs, ...patch }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contact", c.id] }),
@@ -123,7 +125,7 @@ export function QuickActions({ c, onCall, align = "center" }: { c: ContactDetail
             <ItemRow key={p.id ?? p.value} href={messageLink(d.app, p.value, cc)} item={p} isDefault={p === d.messagePhone} onDefault={() => save.mutate({ messagePhoneId: p.id ?? null })} />
           ))}
           <span className={`${menuTitle} border-t border-slate-100`}>App para este contacto</span>
-          {messagingApps.map((app) => (
+          {onlyInstalled(messagingApps, d.app).map((app) => (
             <button
               key={app}
               type="button"

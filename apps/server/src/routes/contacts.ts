@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, asc, eq, inArray, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, notInArray, or, sql, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -154,6 +154,95 @@ async function loadShares(contactId: string): Promise<Share[]> {
   }));
 }
 
+/** Ficha completa de un contacto (con lo personal del usuario: ideas, llamadas, preferencias…). */
+async function buildDetail(id: string, userId: string): Promise<ContactDetail> {
+    const row = await loadContact(id, userId);
+    const isMine = row.contact.ownerId === userId;
+
+    const related = schema.contacts;
+    const [dates, rels, ideas, received, shares, tagMap] = await Promise.all([
+      db.select().from(schema.importantDates).where(eq(schema.importantDates.contactId, id)),
+      db
+        .select({
+          id: schema.relationships.id,
+          type: schema.relationships.type,
+          relatedContactId: schema.relationships.relatedContactId,
+          relatedName: related.displayName,
+        })
+        .from(schema.relationships)
+        .innerJoin(related, eq(related.id, schema.relationships.relatedContactId))
+        // Solo se muestran relaciones con contactos que el usuario también puede ver.
+        .where(and(eq(schema.relationships.contactId, id), visibleContacts(userId))),
+      db
+        .select()
+        .from(schema.giftIdeas)
+        .where(and(eq(schema.giftIdeas.contactId, id), eq(schema.giftIdeas.userId, userId)))
+        .orderBy(schema.giftIdeas.given, schema.giftIdeas.createdAt),
+      db
+        .select()
+        .from(schema.giftsReceived)
+        .where(and(eq(schema.giftsReceived.contactId, id), eq(schema.giftsReceived.userId, userId)))
+        .orderBy(sql`${schema.giftsReceived.receivedAt} DESC NULLS LAST`),
+      isMine ? loadShares(id) : Promise.resolve(null),
+      tagsForContacts([id], userId),
+    ]);
+    const itemTags = (await itemTagsFor([id], userId)).get(id) ?? {};
+    const [interactions, prefs, [{ n: historyCount }], staff] = await Promise.all([
+      interactionsOf(userId, id),
+      contactPrefsOf(userId, id),
+      db.select({ n: sql<number>`count(*)::int` }).from(schema.contactHistory).where(eq(schema.contactHistory.contactId, id)),
+      // Trabajadores: contactos visibles que tienen esta ficha enlazada como empresa
+      db
+        .select({ id: c.id, displayName: c.displayName, jobTitle: c.jobTitle, photoKey: c.photoKey, updatedAt: c.updatedAt, phones: c.phones, emails: c.emails })
+        .from(c)
+        .where(and(eq(c.organizationContactId, id), visibleContacts(userId)))
+        .orderBy(asc(sql`lower(${c.displayName})`)),
+    ]);
+
+    const detail: ContactDetail = {
+      interactions,
+      prefs,
+      historyCount,
+      employees: staff.map((e) => ({
+        id: e.id, displayName: e.displayName, jobTitle: e.jobTitle, hasPhoto: !!e.photoKey, updatedAt: e.updatedAt.toISOString(),
+        phone: e.phones[0]?.value, email: e.emails[0]?.value,
+      })),
+      ...toContact(row, userId, tagMap.get(id), await orgContactOf(row, userId)),
+      importantDates: dates.map(({ id, contactId, label, type, date, remindDaysBefore }) => ({
+        id, contactId, label, type, date, remindDaysBefore,
+      })),
+      relationships: rels,
+      giftIdeas: ideas.map((g) => ({
+        id: g.id,
+        contactId: g.contactId,
+        title: g.title,
+        url: g.url,
+        notes: g.notes,
+        priceCents: g.priceCents,
+        given: g.given,
+        givenAt: g.givenAt,
+        occasion: g.occasion,
+        status: g.status as GiftStatus,
+        eventKey: g.eventKey,
+        eventLabel: g.eventLabel,
+        imageKey: g.imageKey,
+        createdAt: g.createdAt.toISOString(),
+      })),
+      giftsReceived: received.map((g) => ({
+        id: g.id,
+        contactId: g.contactId,
+        description: g.description,
+        receivedAt: g.receivedAt,
+        occasion: g.occasion,
+        notes: g.notes,
+        createdAt: g.createdAt.toISOString(),
+      })),
+      shares,
+      itemTags,
+    };
+    return detail;
+}
+
 export const contactRoutes = new Hono<AppEnv>()
   .use(requireAuth)
 
@@ -253,93 +342,20 @@ export const contactRoutes = new Hono<AppEnv>()
     return ctx.json(toContact(row, user.id, [], await orgContactOf(row, user.id)), 201);
   })
 
+  // Todo para el modo sin conexión de la app: las fichas completas de todos los contactos visibles
+  .get("/offline-snapshot", async (ctx) => {
+    const user = ctx.get("user");
+    const ids = (await db.select({ id: c.id }).from(c).where(and(visibleContacts(user.id), isNull(c.deletedAt)))).map((r) => r.id);
+    const details: ContactDetail[] = [];
+    for (let k = 0; k < ids.length; k += 8) {
+      details.push(...(await Promise.all(ids.slice(k, k + 8).map((id) => buildDetail(id, user.id).catch(() => null)))).filter((d): d is ContactDetail => !!d));
+    }
+    return ctx.json({ at: new Date().toISOString(), details });
+  })
   .get("/:id", idParam, async (ctx) => {
     const user = ctx.get("user");
     const { id } = ctx.req.valid("param");
-    const row = await loadContact(id, user.id);
-    const isMine = row.contact.ownerId === user.id;
-
-    const related = schema.contacts;
-    const [dates, rels, ideas, received, shares, tagMap] = await Promise.all([
-      db.select().from(schema.importantDates).where(eq(schema.importantDates.contactId, id)),
-      db
-        .select({
-          id: schema.relationships.id,
-          type: schema.relationships.type,
-          relatedContactId: schema.relationships.relatedContactId,
-          relatedName: related.displayName,
-        })
-        .from(schema.relationships)
-        .innerJoin(related, eq(related.id, schema.relationships.relatedContactId))
-        // Solo se muestran relaciones con contactos que el usuario también puede ver.
-        .where(and(eq(schema.relationships.contactId, id), visibleContacts(user.id))),
-      db
-        .select()
-        .from(schema.giftIdeas)
-        .where(and(eq(schema.giftIdeas.contactId, id), eq(schema.giftIdeas.userId, user.id)))
-        .orderBy(schema.giftIdeas.given, schema.giftIdeas.createdAt),
-      db
-        .select()
-        .from(schema.giftsReceived)
-        .where(and(eq(schema.giftsReceived.contactId, id), eq(schema.giftsReceived.userId, user.id)))
-        .orderBy(sql`${schema.giftsReceived.receivedAt} DESC NULLS LAST`),
-      isMine ? loadShares(id) : Promise.resolve(null),
-      tagsForContacts([id], user.id),
-    ]);
-    const itemTags = (await itemTagsFor([id], user.id)).get(id) ?? {};
-    const [interactions, prefs, [{ n: historyCount }], staff] = await Promise.all([
-      interactionsOf(user.id, id),
-      contactPrefsOf(user.id, id),
-      db.select({ n: sql<number>`count(*)::int` }).from(schema.contactHistory).where(eq(schema.contactHistory.contactId, id)),
-      // Trabajadores: contactos visibles que tienen esta ficha enlazada como empresa
-      db
-        .select({ id: c.id, displayName: c.displayName, jobTitle: c.jobTitle, photoKey: c.photoKey, updatedAt: c.updatedAt, phones: c.phones, emails: c.emails })
-        .from(c)
-        .where(and(eq(c.organizationContactId, id), visibleContacts(user.id)))
-        .orderBy(asc(sql`lower(${c.displayName})`)),
-    ]);
-
-    const detail: ContactDetail = {
-      interactions,
-      prefs,
-      historyCount,
-      employees: staff.map((e) => ({
-        id: e.id, displayName: e.displayName, jobTitle: e.jobTitle, hasPhoto: !!e.photoKey, updatedAt: e.updatedAt.toISOString(),
-        phone: e.phones[0]?.value, email: e.emails[0]?.value,
-      })),
-      ...toContact(row, user.id, tagMap.get(id), await orgContactOf(row, user.id)),
-      importantDates: dates.map(({ id, contactId, label, type, date, remindDaysBefore }) => ({
-        id, contactId, label, type, date, remindDaysBefore,
-      })),
-      relationships: rels,
-      giftIdeas: ideas.map((g) => ({
-        id: g.id,
-        contactId: g.contactId,
-        title: g.title,
-        url: g.url,
-        notes: g.notes,
-        priceCents: g.priceCents,
-        given: g.given,
-        givenAt: g.givenAt,
-        occasion: g.occasion,
-        status: g.status as GiftStatus,
-        eventKey: g.eventKey,
-        eventLabel: g.eventLabel,
-        createdAt: g.createdAt.toISOString(),
-      })),
-      giftsReceived: received.map((g) => ({
-        id: g.id,
-        contactId: g.contactId,
-        description: g.description,
-        receivedAt: g.receivedAt,
-        occasion: g.occasion,
-        notes: g.notes,
-        createdAt: g.createdAt.toISOString(),
-      })),
-      shares,
-      itemTags,
-    };
-    return ctx.json(detail);
+    return ctx.json(await buildDetail(id, user.id));
   })
 
   .patch("/:id", idParam, zValidator("json", contactPatchSchema), async (ctx) => {

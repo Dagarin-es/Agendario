@@ -4,4 +4,5 @@
     <string name="title_activity_main">Agendario</string>
     <string name="package_name">es.dagarin.agendario</string>
     <string name="custom_url_scheme">es.dagarin.agendario</string>
+    <string name="share_gift">Añadir idea de regalo</string>
 </resources>

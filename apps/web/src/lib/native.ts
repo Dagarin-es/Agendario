@@ -4,7 +4,8 @@
  */
 import type { ColorTheme, ThemeScale } from "@agendario/shared";
 import { isApp } from "./platform";
-import { setDynamicScale, setNativeIconHook } from "./theme";
+import { commitNativeIcon, setDynamicScale, setNativeIconHook } from "./theme";
+import { getServer, getToken } from "./platform";
 
 type Tones = Record<string, string>; // "0" … "1000" → "#rrggbb"
 interface Palette {
@@ -51,7 +52,18 @@ export async function initNative() {
   if (!isApp) return;
   document.documentElement.classList.add("app");
   const { registerPlugin } = await import("@capacitor/core");
-  const MaterialYou = registerPlugin<{ getPalette(): Promise<Palette>; setIcon(o: { theme: string }): Promise<void> }>("MaterialYou");
+  const MaterialYou = registerPlugin<{
+    getPalette(): Promise<Palette>;
+    setIcon(o: { theme: string }): Promise<void>;
+    installedApps(o: { packages: string[] }): Promise<Record<string, boolean>>;
+    consumeShare(): Promise<{ text?: string; title?: string }>;
+    addListener(e: "share", fn: (d: { text?: string; title?: string }) => void): Promise<unknown>;
+  }>("MaterialYou");
+  nativeApi.installedApps = (packages) => MaterialYou.installedApps({ packages });
+  // «Compartir» desde otra app → Añadir idea de regalo
+  const share = (d: { text?: string; title?: string }) => d?.text && window.dispatchEvent(new CustomEvent("agendario-share", { detail: d }));
+  void MaterialYou.addListener("share", share).catch(() => undefined);
+  setTimeout(() => void MaterialYou.consumeShare().then(share).catch(() => undefined), 800);
   try {
     palette = await MaterialYou.getPalette();
     setDynamicScale(dynamicScale());
@@ -65,6 +77,10 @@ export async function initNative() {
   new MutationObserver(() => void syncSystemBars()).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
   // Botón atrás de Android: atrás en la app; en la pantalla principal, salir
   const { App } = await import("@capacitor/app");
+  // El icono del lanzador se cambia al salir de la app (Android la reinicia al cambiarlo)
+  App.addListener("appStateChange", ({ isActive }) => { if (!isActive) commitNativeIcon(); });
+  // Registro de llamadas: que el envío en segundo plano tenga el servidor y la sesión actuales
+  void configureCallLog();
   App.addListener("backButton", ({ canGoBack }) => {
     if (document.querySelector("[role=dialog]")) {
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
@@ -75,4 +91,39 @@ export async function initNative() {
   });
   const { SplashScreen } = await import("@capacitor/splash-screen");
   await SplashScreen.hide().catch(() => undefined);
+}
+
+/** Funciones nativas que usan otras pantallas (solo en la app). */
+export const nativeApi: { installedApps?: (packages: string[]) => Promise<Record<string, boolean>> } = {};
+
+// ---------- Registro de llamadas ----------
+export interface CallLogStatus {
+  enabled: boolean;
+  permission: boolean;
+  lastSyncAt: number;
+  lastAdded: number;
+  lastError: string;
+  batteryOptimized: boolean;
+}
+interface CallLogPlugin {
+  getStatus(): Promise<CallLogStatus>;
+  configure(o: { server: string; token: string }): Promise<CallLogStatus>;
+  enable(o: { since: number | null }): Promise<CallLogStatus>;
+  disable(): Promise<CallLogStatus>;
+  syncNow(): Promise<CallLogStatus>;
+  openBatterySettings(): Promise<void>;
+}
+let callLog: CallLogPlugin | null = null;
+export async function getCallLog(): Promise<CallLogPlugin | null> {
+  if (!isApp) return null;
+  if (!callLog) {
+    const { registerPlugin } = await import("@capacitor/core");
+    callLog = registerPlugin<CallLogPlugin>("CallLog");
+  }
+  return callLog;
+}
+export async function configureCallLog() {
+  const p = await getCallLog();
+  const token = getToken();
+  if (p && token) await p.configure({ server: getServer(), token }).catch(() => undefined);
 }

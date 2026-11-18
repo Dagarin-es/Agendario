@@ -18,6 +18,8 @@ import { ImportPage } from "./pages/Import";
 import { TagsPage } from "./pages/Tags";
 import { LoginPage } from "./pages/Login";
 import { UpcomingPage } from "./pages/Upcoming";
+import { GiftsPage } from "./pages/Gifts";
+import { ShareGiftPage } from "./pages/ShareGift";
 
 export function App() {
   const [server, setServerState] = useState(getServer());
@@ -34,6 +36,8 @@ export function App() {
         <Route path="contacts/:id" element={<ContactDetailPage />} />
         <Route path="contacts/:id/edit" element={<ContactFormPage />} />
         <Route path="upcoming" element={<UpcomingPage />} />
+        <Route path="gifts" element={<GiftsPage />} />
+        <Route path="share-gift" element={<ShareGiftPage />} />
         <Route path="groups" element={<GroupsPage />} />
         <Route path="tags" element={<TagsPage />} />
         <Route path="import" element={<ImportPage />} />

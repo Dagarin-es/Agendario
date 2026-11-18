@@ -58,6 +58,19 @@ function letterOf(text: string): string {
 }
 
 
+/** Pantalla estrecha (móvil): sin páginas ni casilla de seleccionar todo hasta marcar algo. */
+function useNarrow() {
+  const q = "(max-width: 639px)";
+  const [n, setN] = useState(() => window.matchMedia(q).matches);
+  useEffect(() => {
+    const m = window.matchMedia(q);
+    const f = () => setN(m.matches);
+    m.addEventListener("change", f);
+    return () => m.removeEventListener("change", f);
+  }, []);
+  return n;
+}
+
 function loadPageSize(): number {
   try {
     const v = Number(localStorage.getItem(PAGE_SIZE_KEY));
@@ -92,7 +105,7 @@ function Pager({ page, pages, onPage }: { page: number; pages: number; onPage: (
   );
 }
 
-export function ContactListPage() {
+export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
   const [params, setParams] = useSearchParams();
   const nav = useNavigate();
   const tag = params.get("tag") ?? "";
@@ -100,7 +113,10 @@ export function ContactListPage() {
   const [sort, setSortState] = useState<SortId>(loadSort);
   const [q, setQ] = useState(params.get("q") ?? "");
   const deferred = useDeferredValue(q);
-  const [pageSize, setPageSize] = useState(loadPageSize);
+  const [pageSizePref, setPageSize] = useState(loadPageSize);
+  // En el móvil no hay páginas: salen todos
+  const narrow = useNarrow() || pane;
+  const pageSize = narrow ? 0 : pageSizePref;
   const { data: tags } = useTags();
   const withPath = useTagPath();
   const { data: countData } = useQuery({ queryKey: ["contacts", "count"], queryFn: () => api.get<{ total: number }>("/contacts/count"), staleTime: 30_000 });
@@ -316,8 +332,8 @@ export function ContactListPage() {
       {total > 0 && (
         <div className="pb-1.5 pt-1">
           <div className="flex min-h-11 items-center gap-2">
-            {/* Selección: casilla + desplegable (agrupados, como en Gmail) */}
-            <div className="relative flex shrink-0 items-center rounded-lg border border-slate-300 bg-white">
+            {/* Selección: casilla + desplegable (agrupados, como en Gmail); en el móvil, solo con algo marcado */}
+            <div className={`relative shrink-0 items-center rounded-lg border border-slate-300 bg-white ${narrow && selected.size === 0 ? "hidden" : "flex"}`}>
               <label className="flex cursor-pointer items-center py-2 pl-2.5 pr-1.5" title="Seleccionar los de esta página">
                 <input
                   type="checkbox"
@@ -372,13 +388,13 @@ export function ContactListPage() {
               <>
                 <span className="flex-1" />
                 <label className="flex shrink-0 items-center gap-1.5 text-xs text-slate-500">
-                  <span className="hidden sm:inline">Ordenar</span>
+                  <span>Ordenar por</span>
                   <select className="input w-auto max-w-[10rem] py-1 text-xs" value={sort} onChange={(e) => changeSort(e.target.value as SortId)} aria-label="Ordenar por">
                     {sortOptions.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                   </select>
                 </label>
-                <label className="flex shrink-0 items-center gap-1.5 text-xs text-slate-500">
-                  <span className="hidden sm:inline">Mostrar</span>
+                <label className={`hidden shrink-0 items-center gap-1.5 text-xs text-slate-500 ${narrow ? "" : "sm:flex"}`}>
+                  <span>Mostrar</span>
                   <select className="input w-auto py-1 text-xs" value={pageSize} onChange={(e) => changePageSize(Number(e.target.value))}>
                     {PAGE_SIZES.map((n) => <option key={n} value={n}>{n || "Todos"}</option>)}
                   </select>

@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
 export * from "./themes";
 
-export const APP_VERSION = "0.13.0-beta";
+export const APP_VERSION = "0.14.0-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------
@@ -442,6 +442,46 @@ export interface GiftIdea extends GiftIdeaInput {
   id: string;
   contactId: string;
   createdAt: string;
+  /** Versión de la miniatura (null = sin imagen) */
+  imageKey?: string | null;
+}
+
+/** Pestaña Regalos: contactos con fechas de regalo, su próxima fecha y sus ideas. */
+export interface GiftOverviewItem {
+  contactId: string;
+  contactName: string;
+  hasPhoto: boolean;
+  photoVersion: string;
+  next: UpcomingEvent | null;
+  ideas: GiftIdea[];
+}
+
+/** Lo que se saca de una página web para una idea de regalo. */
+export interface LinkPreview {
+  url: string;
+  title: string | null;
+  image: string | null;
+}
+
+/** Llamadas del registro del móvil (app Android). */
+export const callImportSchema = z.object({
+  calls: z
+    .array(
+      z.object({
+        id: z.string().max(100),
+        number: z.string().max(60),
+        type: z.enum(["in", "out", "missed"]),
+        at: z.string().datetime({ offset: true }),
+        durationSec: z.number().int().min(0).max(86400),
+      }),
+    )
+    .max(5000),
+});
+export type CallImport = z.infer<typeof callImportSchema>;
+export interface CallImportResult {
+  added: number;
+  skipped: number;
+  unmatched: number;
 }
 
 export const giftReceivedInputSchema = z.object({

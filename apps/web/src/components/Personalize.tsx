@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { colorThemeLabels, colorThemes, themeDefs, themeIconSvg, type ColorTheme, type UserPrefs } from "@agendario/shared";
 import { api } from "../lib/api";
 import { isApp } from "../lib/platform";
-import { applyColorTheme, getColorTheme, getTheme, getThemeIcon, hasDynamicColor, onThemeChange, onThemeIcon, setTheme, type ThemeMode } from "../lib/theme";
+import { applyColorTheme, commitNativeIcon, getColorTheme, getTheme, getThemeIcon, hasDynamicColor, onThemeChange, onThemeIcon, setTheme, type ThemeMode } from "../lib/theme";
 import { useUserPrefs } from "./QuickActions";
 
 const Icon = ({ d }: { d: string }) => (
@@ -65,6 +65,8 @@ export function ColorThemePicker() {
     applyColorTheme(t);
     if (prefs) save.mutate({ ...prefs, colorTheme: t });
   };
+  // Al salir de esta pantalla se cambia el icono del lanzador (en la app)
+  useEffect(() => () => commitNativeIcon(), []);
   const list = colorThemes.filter((t) => t !== "dynamic" || (isApp && hasDynamicColor()));
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Tema de color">

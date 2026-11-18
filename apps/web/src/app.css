@@ -37,8 +37,8 @@
 /* Barra de navegación: píldora flotante translúcida (64 dp) con desenfoque */
 .m3-pill {
   height: 64px; border-radius: 9999px; padding: 0 4px;
-  background: color-mix(in oklab, var(--app-surface-2) 72%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6);
+  background: color-mix(in oklab, var(--app-surface-2) 52%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.8); backdrop-filter: blur(14px) saturate(1.8);
   border: 1px solid color-mix(in oklab, var(--color-white) 45%, transparent);
   box-shadow: 0 8px 28px rgb(0 0 0 / .14), 0 1px 3px rgb(0 0 0 / .08);
 }
@@ -76,3 +76,12 @@
 
 /* Pantallas sin barra superior (login): que no queden bajo la barra de estado */
 .app .app-safe-top { padding-top: var(--sat); }
+
+/* Barra lateral (navigation rail) en pantallas anchas */
+.m3-rail { background: var(--app-surface); border-right: 1px solid color-mix(in oklab, var(--color-slate-300) 50%, transparent); }
+.m3-rail .m3-nav-item { height: 64px; width: 80px; }
+
+/* Ficha en el panel derecho (Fold abierto): una sola columna si el panel es estrecho */
+@media (max-width: 1100px) {
+  .two-pane-detail .md\:grid-cols-2, .two-pane-detail .lg\:grid-cols-2 { grid-template-columns: minmax(0, 1fr); }
+}

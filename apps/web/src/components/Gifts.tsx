@@ -8,8 +8,8 @@ import {
   type GiftReceived,
   type Occasion,
 } from "@agendario/shared";
-import { api } from "../lib/api";
-import { useConfirm } from "./Dialogs";
+import { api, apiUrl } from "../lib/api";
+import { Modal, useAlert, useConfirm } from "./Dialogs";
 import { euros, formatDate } from "../lib/format";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -23,6 +23,46 @@ function OccasionSelect({ value, onChange }: { value: Occasion | null; onChange:
   );
 }
 
+/** Miniatura de una idea (de la web del enlace o subida). Al tocarla: verla en grande y cambiarla. */
+export function GiftThumb({ idea, size = 48, onChanged }: { idea: GiftIdea; size?: number; onChanged?: () => void }) {
+  const [open, setOpen] = useState(false);
+  const showAlert = useAlert();
+  const qc = useQueryClient();
+  const done = () => {
+    qc.invalidateQueries({ queryKey: ["contact", idea.contactId] });
+    qc.invalidateQueries({ queryKey: ["gifts-overview"] });
+    onChanged?.();
+  };
+  const fail = (e: unknown) => showAlert("No se ha podido cambiar la imagen", (e as Error).message);
+  const upload = useMutation({
+    mutationFn: (f: File) => { const fd = new FormData(); fd.append("photo", f); return api.put(`/gift-ideas/${idea.id}/image`, fd); },
+    onSuccess: () => { setOpen(false); done(); }, onError: fail,
+  });
+  const fromWeb = useMutation({ mutationFn: () => api.put(`/gift-ideas/${idea.id}/image`, {}), onSuccess: () => { setOpen(false); done(); }, onError: fail });
+  const remove = useMutation({ mutationFn: () => api.del(`/gift-ideas/${idea.id}/image`), onSuccess: () => { setOpen(false); done(); }, onError: fail });
+  const src = (sz: string) => apiUrl(`/gift-ideas/${idea.id}/image?size=${sz}&v=${idea.imageKey}`);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} style={{ width: size, height: size }} className="shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white" title={idea.imageKey ? "Ver imagen" : "Añadir imagen"}>
+        {idea.imageKey ? <img src={src("thumb")} alt="" className="h-full w-full object-cover" loading="lazy" /> : <span className="flex h-full w-full items-center justify-center bg-slate-50 text-xl text-slate-300" aria-hidden="true">🎁</span>}
+      </button>
+      {open && (
+        <Modal title={idea.title} onClose={() => setOpen(false)}>
+          {idea.imageKey && <img src={src("full")} alt="" className="mx-auto mb-4 max-h-[50vh] rounded-xl object-contain" />}
+          <div className="flex flex-wrap gap-2">
+            <label className="btn-primary cursor-pointer">
+              {upload.isPending ? "Subiendo…" : idea.imageKey ? "Subir otra" : "Subir imagen"}
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); e.target.value = ""; }} />
+            </label>
+            {idea.url && <button className="btn-ghost border border-slate-200" disabled={fromWeb.isPending} onClick={() => fromWeb.mutate()}>{fromWeb.isPending ? "Buscando…" : "🌐 Sacar de la web"}</button>}
+            {idea.imageKey && <button className="btn-ghost text-red-700" onClick={() => remove.mutate()}>Quitar</button>}
+          </div>
+        </Modal>
+      )}
+    </>
+  );
+}
+
 /** Ideas para regalos: privadas de cada usuario. Idea → comprada (para un evento) → regalada. */
 export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: GiftIdea[] }) {
   const qc = useQueryClient();
@@ -30,6 +70,7 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
     qc.invalidateQueries({ queryKey: ["contact", contactId] });
     qc.invalidateQueries({ queryKey: ["upcoming"] });
     qc.invalidateQueries({ queryKey: ["pending-gifts"] });
+    qc.invalidateQueries({ queryKey: ["gifts-overview"] });
   };
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ title: "", url: "", price: "", notes: "" });
@@ -101,15 +142,18 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
             return (
               <li key={g.id} className={`rounded-lg border p-3 ${late ? "border-amber-300 bg-amber-50" : "border-emerald-200 bg-emerald-50/60"}`}>
                 <div className="flex flex-wrap items-start gap-2">
+                  <GiftThumb idea={g} />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium">🛍️ {title(g)}</div>
+                    <div className="font-medium">{title(g)}</div>
                     <div className="text-sm text-slate-600">
-                      Comprado para <strong>{g.eventLabel || (g.occasion ? occasionLabels[g.occasion] : "una fecha")}</strong> · {formatDate(g.givenAt)}
+                      <span className="mr-1 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">✅ Comprado</span> para <strong>{g.eventLabel || (g.occasion ? occasionLabels[g.occasion] : "una fecha")}</strong> · {formatDate(g.givenAt)}
                       {late && <span className="font-medium text-amber-800"> · ¿ya lo has regalado?</span>}
                     </div>
                   </div>
-                  <button className="btn-primary px-3 py-1.5" onClick={() => patch.mutate({ id: g.id, body: { status: "given" } })}>✓ Regalado</button>
-                  <button className="btn-ghost px-2 py-1.5 text-xs" onClick={() => patch.mutate({ id: g.id, body: { status: "idea" } })} title="Volver a idea">Deshacer</button>
+                  <div className="flex w-full justify-end gap-1 sm:w-auto">
+                    <button className="btn-ghost px-2 py-1.5 text-xs" onClick={() => patch.mutate({ id: g.id, body: { status: "idea" } })} title="Volver a idea">Deshacer</button>
+                    <button className="btn-primary px-3 py-1.5" onClick={() => patch.mutate({ id: g.id, body: { status: "given" } })}>🎁 Regalar</button>
+                  </div>
                 </div>
               </li>
             );
@@ -122,11 +166,16 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
         {pending.map((g) => (
           <li key={g.id} className="rounded-lg border border-slate-200 p-3">
             <div className="flex items-start gap-2">
+              <GiftThumb idea={g} />
               <div className="min-w-0 flex-1">
                 <div className="font-medium">{title(g)}</div>
                 <div className="text-sm text-slate-500">{[euros(g.priceCents), g.notes].filter(Boolean).join(" · ")}</div>
               </div>
-              <button className="btn-ghost text-emerald-700" onClick={() => setBuying(buying === g.id ? null : g.id)}>🛍️ Comprado</button>
+              <button
+                className="btn-ghost whitespace-nowrap border border-emerald-200 text-emerald-800"
+                title={g.url ? "Abre la tienda y luego marca para qué fecha lo has comprado" : "Marcar como comprado"}
+                onClick={() => { if (g.url && buying !== g.id) window.open(g.url, "_blank", "noopener"); setBuying(buying === g.id ? null : g.id); }}
+              >🛒 Comprar</button>
               <button className="btn-danger" onClick={async () => (await confirm({ title: "¿Borrar esta idea de regalo?", message: g.title, confirmText: "Borrar", danger: true })) && remove.mutate(g.id)}>✕</button>
             </div>
             {buying === g.id && (
@@ -184,6 +233,7 @@ function BuyForm({ contactId, onCancel, onSave }: { contactId: string; onCancel:
 
   return (
     <div className="mt-2 space-y-2 rounded-lg bg-emerald-50 p-2.5">
+      <p className="text-sm font-medium text-emerald-900">¿Lo has comprado? Elige para qué fecha es.</p>
       <label className="block">
         <span className="label">¿Para qué es?</span>
         <select className="input" value={value} onChange={(e) => setSel(e.target.value)}>
@@ -208,9 +258,39 @@ function BuyForm({ contactId, onCancel, onSave }: { contactId: string; onCancel:
       </label>
       <div className="flex justify-end gap-2">
         <button className="btn-ghost" onClick={onCancel}>Cancelar</button>
-        <button className="btn-primary" onClick={save}>Guardar</button>
+        <button className="btn-primary" onClick={save}>✅ Comprado</button>
       </div>
     </div>
+  );
+}
+
+/** Añadir una idea rápida (pestaña Regalos y «Compartir» desde el móvil). */
+export function QuickIdeaForm({ contactId, initial, onDone, onCancel }: { contactId: string; initial?: { title?: string; url?: string }; onDone: () => void; onCancel: () => void }) {
+  const qc = useQueryClient();
+  const [d, setD] = useState({ title: initial?.title ?? "", url: initial?.url ?? "", price: "" });
+  const [error, setError] = useState("");
+  const add = useMutation({
+    mutationFn: () => api.post(`/contacts/${contactId}/gift-ideas`, {
+      title: d.title.trim(), url: d.url.trim() || null, notes: "",
+      priceCents: d.price ? Math.round(parseFloat(d.price.replace(",", ".")) * 100) : null,
+    }),
+    onSuccess: () => {
+      for (const k of [["contact", contactId], ["upcoming"], ["gifts-overview"]]) qc.invalidateQueries({ queryKey: k });
+      onDone();
+    },
+    onError: (e) => setError((e as Error).message),
+  });
+  return (
+    <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (d.title.trim()) add.mutate(); }}>
+      <input className="input" placeholder="Idea (p. ej. Bufanda de lana)" value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} autoFocus required />
+      <input className="input" type="url" placeholder="Enlace (opcional; trae la imagen sola)" value={d.url} onChange={(e) => setD({ ...d, url: e.target.value })} />
+      <input className="input" inputMode="decimal" placeholder="Precio € (opcional)" value={d.price} onChange={(e) => setD({ ...d, price: e.target.value })} />
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <button type="button" className="btn-ghost" onClick={onCancel}>Cancelar</button>
+        <button className="btn-primary" disabled={add.isPending}>{add.isPending ? "Guardando…" : "Guardar idea"}</button>
+      </div>
+    </form>
   );
 }
 

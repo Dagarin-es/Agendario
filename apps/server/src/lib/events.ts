@@ -1,12 +1,13 @@
 /**
  * Eventos del calendario (cumpleaños, santos, fechas importantes) con el estado de los regalos.
  */
-import { and, eq, isNull, lt } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, ne } from "drizzle-orm";
 import {
   dateTypeLabels,
   giftEventKinds,
   saintDateFor,
   type GiftOccasion,
+  type GiftOverviewItem,
   type GiftStatus,
   type Occasion,
   type PendingGift,
@@ -154,4 +155,36 @@ export async function pendingGifts(userId: string): Promise<PendingGift[]> {
     .innerJoin(ct, eq(ct.id, gi.contactId))
     .where(and(eq(gi.userId, userId), eq(gi.status, "bought"), lt(gi.givenAt, today), isNull(ct.deletedAt)));
   return rows;
+}
+
+/** Pestaña Regalos: contactos con alguna fecha de regalo, su próxima ocurrencia y sus ideas sin regalar. */
+export async function giftOverview(userId: string): Promise<GiftOverviewItem[]> {
+  const today = utcDay(new Date());
+  const to = new Date(today.getTime() + 366 * 86_400_000);
+  const evs = (await eventsBetween(userId, today, to)).filter((e) => e.gift !== null);
+  const next = new Map<string, UpcomingEvent>();
+  for (const e of evs) if (!next.has(e.contactId)) next.set(e.contactId, e);
+  const ids = [...next.keys()];
+  if (!ids.length) return [];
+  const [ideas, contacts] = await Promise.all([
+    db.select().from(gi).where(and(eq(gi.userId, userId), inArray(gi.contactId, ids), ne(gi.status, "given"))).orderBy(gi.createdAt),
+    db.select({ id: ct.id, updatedAt: ct.updatedAt }).from(ct).where(inArray(ct.id, ids)),
+  ]);
+  const ver = new Map(contacts.map((c) => [c.id, c.updatedAt.toISOString()]));
+  return ids.map((id) => {
+    const e = next.get(id)!;
+    return {
+      contactId: id,
+      contactName: e.contactName,
+      hasPhoto: e.hasPhoto,
+      photoVersion: ver.get(id) ?? "",
+      next: e,
+      ideas: ideas
+        .filter((g) => g.contactId === id)
+        .map((g) => ({
+          id: g.id, contactId: g.contactId, title: g.title, url: g.url, notes: g.notes, priceCents: g.priceCents, given: g.given, givenAt: g.givenAt,
+          occasion: g.occasion, status: g.status as GiftStatus, eventKey: g.eventKey, eventLabel: g.eventLabel, imageKey: g.imageKey, createdAt: g.createdAt.toISOString(),
+        })),
+    };
+  });
 }

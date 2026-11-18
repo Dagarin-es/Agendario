@@ -28,9 +28,11 @@ import { copyText } from "../lib/clipboard";
 import { SyncSettings } from "../components/SyncSettings";
 import { CardDavSettings } from "../components/CardDavSettings";
 import { AccountSettings, UsersSettings } from "../components/UsersSettings";
-import { ColorThemePicker, ModeSelector, useThemeIcon } from "../components/Personalize";
+import { ColorThemePicker, ModeSelector } from "../components/Personalize";
 import { isApp } from "../lib/platform";
-import { useSearchParams } from "react-router";
+import { useInstalledFilter } from "../lib/installed";
+import { CallLogSettings } from "../components/CallLogSettings";
+import { Link, useSearchParams } from "react-router";
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
 const size = (n: number | null) => (n == null ? "" : n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
@@ -63,6 +65,7 @@ function Communication() {
   const qc = useQueryClient();
   const { data } = useUserPrefs();
   const [p, setP] = useState<UserPrefs | null>(null);
+  const onlyInstalled = useInstalledFilter();
   useEffect(() => setP(data ?? null), [data]);
   const save = useMutation({
     mutationFn: (v: UserPrefs) => api.put("/prefs", v),
@@ -80,13 +83,13 @@ function Communication() {
         <label className="block">
           <span className="label">App de correo</span>
           <select className="input" value={p.emailApp} onChange={(e) => set({ emailApp: e.target.value as EmailApp })}>
-            {emailApps.map((a) => <option key={a} value={a}>{emailAppLabels[a]}</option>)}
+            {onlyInstalled(emailApps, p.emailApp).map((a) => <option key={a} value={a}>{emailAppLabels[a]}</option>)}
           </select>
         </label>
         <label className="block">
           <span className="label">App de mensajería por defecto</span>
           <select className="input" value={p.messagingApp} onChange={(e) => set({ messagingApp: e.target.value as MessagingApp })}>
-            {messagingApps.map((a) => <option key={a} value={a}>{messagingAppLabels[a]}</option>)}
+            {onlyInstalled(messagingApps, p.messagingApp).map((a) => <option key={a} value={a}>{messagingAppLabels[a]}</option>)}
           </select>
         </label>
         <label className="block">
@@ -597,7 +600,6 @@ type TabId = (typeof TABS)[number]["id"];
 
 export function SettingsPage() {
   const { data: me } = useMe();
-  const icon = useThemeIcon();
   const [params, setParams] = useSearchParams();
   const tabs = TABS.filter((t) => !("admin" in t) || me?.isAdmin);
   const tab: TabId = (tabs.find((t) => t.id === params.get("tab"))?.id ?? "cuentas") as TabId;
@@ -624,11 +626,23 @@ export function SettingsPage() {
           {me.isAdmin && <UsersSettings Section={Section} me={me} />}
         </>
       )}
-      {tab === "apps" && <Communication />}
+      {tab === "apps" && (
+        <>
+          <Communication />
+          {isApp && <CallLogSettings Section={Section} />}
+        </>
+      )}
       {tab === "sync" && (
         <>
           <SyncSettings Section={Section} />
           {me && <CardDavSettings Section={Section} me={me} />}
+          <Section icon="📇" title="Importar y exportar .vcf" desc="Para traer contactos de otra agenda o sacar una copia que abre cualquier programa de contactos.">
+            <div className="flex flex-wrap gap-2">
+              <Link to="/import" className="btn-ghost border border-slate-200">📥 Importar .vcf</Link>
+              <a href={apiUrl("/export/contacts.vcf")} target={isApp ? "_blank" : undefined} rel="noreferrer" className="btn-ghost border border-slate-200">📤 Exportar .vcf</a>
+              <a href={apiUrl("/export/contacts.vcf?gifts=true")} target={isApp ? "_blank" : undefined} rel="noreferrer" className="btn-ghost border border-slate-200">🎁 Exportar .vcf con regalos</a>
+            </div>
+          </Section>
         </>
       )}
       {tab === "apariencia" && (
@@ -638,15 +652,6 @@ export function SettingsPage() {
         </>
       )}
       {tab === "copias" && me?.isAdmin && <Backups />}
-      <Section icon="📒" title={`Acerca de ${APP_NAME}`}>
-        <div className="flex items-center gap-3">
-          <img src={icon} alt="" className="h-12 w-12" />
-          <div className="text-sm">
-            <p className="font-semibold">{APP_NAME} <span className="font-normal text-slate-500">v{APP_VERSION}</span></p>
-            <p className="text-slate-500">Agenda de contactos vitaminada, sincronizada, con recordatorios de regalos, copias automáticas, búsqueda de duplicados… Todo lo que siempre has echado de menos en tu gestor de contactos y más aún.</p>
-          </div>
-        </div>
-      </Section>
     </div>
   );
 }
