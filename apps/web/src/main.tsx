@@ -6,9 +6,12 @@ import { App } from "./App";
 import { ConfirmProvider } from "./components/Dialogs";
 import "./styles.css";
 import "./dark.css";
+import "./app.css";
 import { initTheme } from "./lib/theme";
+import { initNative } from "./lib/native";
 
 initTheme();
+void initNative();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true } },

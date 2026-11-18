@@ -1,0 +1,25 @@
+{
+  "appId": "es.dagarin.agendario",
+  "appName": "Agendario",
+  "webDir": "../web/dist-app",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto",
+    "allowMixedContent": true
+  },
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "launchAutoHide": true,
+      "backgroundColor": "#4338ca",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "overlaysWebView": false
+    }
+  }
+}

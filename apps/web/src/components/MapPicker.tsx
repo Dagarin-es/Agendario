@@ -305,7 +305,7 @@ export function MapPicker({
 }
 
 /** Mapa pequeño de la ficha (con la capa que elegiste), sin arrastrar para no estorbar al desplazarte. */
-export function MiniMapView({ lat, lon, title }: { lat: number; lon: number; title: string }) {
+export function MiniMapView({ lat, lon, title, className }: { lat: number; lon: number; title: string; className?: string }) {
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!box.current) return;
@@ -314,7 +314,7 @@ export function MiniMapView({ lat, lon, title }: { lat: number; lon: number; tit
     L.marker([lat, lon], { icon: pinIcon, interactive: false }).addTo(m);
     return () => { m.remove(); };
   }, [lat, lon]);
-  return <div ref={box} role="img" aria-label={title} className="isolate z-0 mt-2 h-44 w-full overflow-hidden rounded-lg border border-slate-200" />;
+  return <div ref={box} role="img" aria-label={title} className={`isolate z-0 overflow-hidden rounded-lg border border-slate-200 ${className ?? "mt-2 h-44 w-full"}`} />;
 }
 
 export default MapPicker;

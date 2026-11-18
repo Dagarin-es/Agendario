@@ -7,9 +7,10 @@ import { HistoryIcon } from "../components/HistoryIcon";
 import { Avatar } from "../components/Avatar";
 import { useBulkActions } from "../components/BulkBar";
 import { useDuplicateCount } from "../components/Layout";
-import { TagChip, tagTree, useTags } from "../components/Tags";
+import { TagChip, tagTree, useTagPath, useTags } from "../components/Tags";
 import { VisibilityBadge } from "../components/VisibilityBadge";
 import { api } from "../lib/api";
+import { isApp } from "../lib/platform";
 
 const PAGE_SIZES = [25, 50, 75, 100, 0] as const; // 0 = todos
 const PAGE_SIZE_KEY = "contactos.pageSize";
@@ -133,6 +134,7 @@ export function ContactListPage() {
   const deferred = useDeferredValue(q);
   const [pageSize, setPageSize] = useState(loadPageSize);
   const { data: tags } = useTags();
+  const withPath = useTagPath();
   const { data: countData } = useQuery({ queryKey: ["contacts", "count"], queryFn: () => api.get<{ total: number }>("/contacts/count"), staleTime: 30_000 });
   const allCount = countData?.total ?? null;
   const dupCount = useDuplicateCount();
@@ -241,6 +243,19 @@ export function ContactListPage() {
 
   /** Salta a la primera persona de esa letra (cambiando de página si hace falta). */
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
+  // En el móvil, el buscador se recoge al bajar por la lista y vuelve al subir
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (Math.abs(y - last) < 12) return;
+      setCompact(y > last && y > 200 && !q);
+      last = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [q]);
   const jumpLetter = (l: string) => {
     setActiveLetter(l);
     const idx = firstIndex.get(l);
@@ -299,20 +314,12 @@ export function ContactListPage() {
 
   return (
     <div className="space-y-4" ref={topRef}>
-      <div className="flex gap-2">
+      {/* Buscador, etiquetas y barra de la lista: siempre visibles al desplazar */}
+      <div className="sticky z-[5] -mx-4 -mt-4 space-y-2 bg-slate-50 px-4 pt-4" style={{ top: "var(--header-h, 68px)" }}>
+      <div className={`gap-2 ${compact ? "hidden sm:flex" : "flex"}`}>
         <input className="input" placeholder="Buscar por nombre, email, teléfono…" value={q} onChange={(e) => setQ(e.target.value)} type="search" />
-        <Link to="/contacts/new" className="btn-primary shrink-0">+ Nuevo</Link>
+        {!isApp && <Link to="/contacts/new" className="btn-primary shrink-0">+ Nuevo</Link>}
       </div>
-
-      {dupCount > 0 && (
-        <Link to="/duplicates" className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 hover:bg-amber-100">
-          <span>👥</span>
-          <span className="flex-1">
-            Hay <strong>{dupCount}</strong> {dupCount === 1 ? "grupo" : "grupos"} de posibles duplicados
-          </span>
-          <span className="font-medium">Revisar y combinar ›</span>
-        </Link>
-      )}
 
       {/* Filtro por etiquetas: las principales y, debajo, las subetiquetas de la elegida */}
       {tags && tags.length > 0 && (() => {
@@ -349,18 +356,8 @@ export function ContactListPage() {
         );
       })()}
 
-      {isLoading && <p className="text-slate-500">Cargando…</p>}
-      {error && <p className="text-red-600">{(error as Error).message}</p>}
-      {data && data.length === 0 && (
-        <div className="card text-center text-slate-500">
-          {q || tag ? "Sin resultados." : (
-            <>Aún no tienes contactos. Crea el primero con «+ Nuevo» o <Link to="/import" className="text-indigo-700 underline">importa un .vcf</Link>.</>
-          )}
-        </div>
-      )}
-
       {total > 0 && (
-        <div className={`sticky z-[5] -mx-4 bg-slate-50 px-4 pt-1.5 ${showAlphabet && selected.size === 0 ? "" : "pb-1.5"}`} style={{ top: "var(--header-h, 68px)" }}>
+        <div className={`pt-1 ${showAlphabet && selected.size === 0 ? "" : "pb-1.5"}`}>
           <div className="flex min-h-11 items-center gap-2">
             {/* Selección: casilla + desplegable (agrupados, como en Gmail) */}
             <div className="relative flex shrink-0 items-center rounded-lg border border-slate-300 bg-white">
@@ -444,6 +441,28 @@ export function ContactListPage() {
         </div>
       )}
 
+      </div>
+
+      {dupCount > 0 && (
+        <Link to="/duplicates" className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 hover:bg-amber-100">
+          <span>👥</span>
+          <span className="flex-1">
+            Hay <strong>{dupCount}</strong> {dupCount === 1 ? "grupo" : "grupos"} de posibles duplicados
+          </span>
+          <span className="font-medium">Revisar y combinar ›</span>
+        </Link>
+      )}
+
+      {isLoading && <p className="text-slate-500">Cargando…</p>}
+      {error && <p className="text-red-600">{(error as Error).message}</p>}
+      {data && data.length === 0 && (
+        <div className="card text-center text-slate-500">
+          {q || tag ? "Sin resultados." : (
+            <>Aún no tienes contactos. Crea el primero con «+ Nuevo» o <Link to="/import" className="text-indigo-700 underline">importa un .vcf</Link>.</>
+          )}
+        </div>
+      )}
+
       <ul className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden ${showAlphabet ? "rounded-t-none" : ""}`}>
         {visible.map((c, i) => {
           const l = letters.get(c.id);
@@ -472,7 +491,7 @@ export function ContactListPage() {
                 </div>
                 {c.tags.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1">
-                    {c.tags.map((t) => <TagChip key={t.id} tag={t} small />)}
+                    {c.tags.map((t) => <TagChip key={t.id} tag={withPath(t)} small />)}
                   </div>
                 )}
               </div>

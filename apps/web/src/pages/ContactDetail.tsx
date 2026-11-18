@@ -19,6 +19,7 @@ import { SharePanel } from "../components/SharePanel";
 import { ContactTags } from "../components/Tags";
 import { ItemTag } from "../components/ItemTag";
 import { addressLine, MapLinks, MiniMap } from "../components/MapLinks";
+import { MapPickerButton } from "../components/AddressSearch";
 import { VisibilityBadge } from "../components/VisibilityBadge";
 import { QuickActions, useUserPrefs } from "../components/QuickActions";
 import { Interactions, type InteractionPrefill } from "../components/Interactions";
@@ -279,17 +280,36 @@ export function ContactDetailPage() {
           <div className="space-y-2.5">
             {c.addresses.length > 0 && (
               <Block icon="🏠" title="Direcciones">
-                {c.addresses.map((a, i) => (
-                  <Row key={`a${i}`} label={a.label}>
-                    <span className="inline-flex flex-wrap items-center gap-1.5">
-                      <span>{addressLine(a)}</span>
-                      {isGeolocated(a) && <span title="Dirección geolocalizada">📍</span>}
-                      {tag(a.id)}
-                    </span>
-                    <div className="relative z-10 mt-1.5"><MapLinks address={a} /></div>
-                    <MiniMap address={a} />
-                  </Row>
-                ))}
+                <div className="grid gap-3 pt-1 md:grid-cols-2">
+                  {c.addresses.map((a, i) => (
+                    <div key={`a${i}`} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3 sm:flex-row">
+                      <div className="min-w-0 flex-1 text-sm">
+                        <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">{a.label || "Dirección"}</div>
+                        <span className="inline-flex flex-wrap items-center gap-1.5">
+                          <span>{addressLine(a)}</span>
+                          {isGeolocated(a) && <span title="Dirección geolocalizada">📍</span>}
+                          {tag(a.id)}
+                        </span>
+                        <div className="relative z-10 mt-2"><MapLinks address={a} /></div>
+                      </div>
+                      {isGeolocated(a) ? (
+                        <MiniMap address={a} className="h-36 w-full shrink-0 sm:h-32 sm:w-40" />
+                      ) : (
+                        c.canEdit && (
+                          <div className="flex shrink-0 items-center">
+                            <MapPickerButton
+                              address={a}
+                              onChange={async (patch) => {
+                                await api.patch(`/contacts/${c.id}`, { addresses: c.addresses.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
+                                refresh();
+                              }}
+                            />
+                          </div>
+                        )
+                      )}
+                    </div>
+                  ))}
+                </div>
               </Block>
             )}
             {c.urls.length > 0 && (
@@ -315,7 +335,6 @@ export function ContactDetailPage() {
 
       {/* Celebraciones */}
       <div>
-        <h2 className="mb-2 flex items-center gap-2 px-1 text-base font-semibold text-indigo-950"><span aria-hidden="true">🎉</span> Celebraciones</h2>
         <div className="grid items-start gap-4 md:grid-cols-2">
           <GiftIdeas contactId={c.id} ideas={c.giftIdeas} />
           <ImportantDates c={c} onChange={refresh} />
@@ -329,6 +348,56 @@ export function ContactDetailPage() {
         <p className="text-center text-xs text-slate-400">Para compartirlo, edítalo y cambia la visibilidad a «Compartido».</p>
       )}
     </div>
+  );
+}
+
+const emojiChoices = ["🎂", "🎉", "🎁", "💍", "❤️", "🌹", "🍾", "🎓", "⭐", "🙏", "🕯️", "📅"];
+
+/** Por fecha (personal): ¿lleva regalo? y emoji para el calendario. */
+function EventControls({ c, eventKey, defaultGift, onChange }: { c: ContactDetail; eventKey: string; defaultGift: boolean; onChange: () => void }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState("");
+  const cur = c.prefs.events?.[eventKey] ?? {};
+  const gift = cur.gift ?? defaultGift;
+  const save = useMutation({
+    mutationFn: (patch: { gift?: boolean; emoji?: string }) => {
+      const next = { ...cur, ...patch };
+      if (next.emoji === "") delete next.emoji;
+      return api.put(`/contacts/${c.id}/prefs`, { ...c.prefs, events: { ...(c.prefs.events ?? {}), [eventKey]: next } });
+    },
+    onSuccess: () => { onChange(); qc.invalidateQueries({ queryKey: ["upcoming"] }); },
+  });
+  return (
+    <span className="relative flex shrink-0 items-center gap-1">
+      <button
+        type="button"
+        onClick={() => save.mutate({ gift: !gift })}
+        className={`rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${gift ? "bg-amber-50 text-amber-800 ring-amber-200" : "bg-white text-slate-400 ring-slate-200 line-through"}`}
+        title={gift ? "Lleva regalo (toca para quitarlo)" : "Sin regalo (toca para que lo lleve)"}
+      >
+        🎁
+      </button>
+      <button type="button" onClick={() => setOpen(!open)} className="rounded-full px-1.5 py-0.5 text-sm ring-1 ring-slate-200 hover:bg-slate-50" title="Emoji para el calendario">
+        {cur.emoji ?? <span className="text-xs text-slate-400">☺︎+</span>}
+      </button>
+      {open && <span className="fixed inset-0 z-10" onClick={() => setOpen(false)} />}
+      {open && (
+        <span className="absolute right-0 top-full z-20 mt-1 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+          <span className="mb-1 block text-[11px] text-slate-500">Emoji en el calendario</span>
+          <span className="grid grid-cols-6 gap-1">
+            {emojiChoices.map((e) => (
+              <button key={e} type="button" className={`rounded-lg p-1 text-lg hover:bg-slate-100 ${cur.emoji === e ? "bg-indigo-100" : ""}`} onClick={() => { save.mutate({ emoji: e }); setOpen(false); }}>{e}</button>
+            ))}
+          </span>
+          <span className="mt-2 flex gap-1">
+            <input className="input py-1 text-sm" placeholder="Otro…" value={custom} maxLength={8} onChange={(e) => setCustom(e.target.value)} />
+            <button type="button" className="btn-primary px-2 py-1 text-xs" disabled={!custom.trim()} onClick={() => { save.mutate({ emoji: custom.trim() }); setOpen(false); setCustom(""); }}>OK</button>
+          </span>
+          {cur.emoji && <button type="button" className="mt-1 text-xs text-slate-500 hover:underline" onClick={() => { save.mutate({ emoji: "" }); setOpen(false); }}>Quitar emoji</button>}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -374,23 +443,25 @@ function ImportantDates({ c, onChange }: { c: ContactDetail; onChange: () => voi
       )}
       {c.birthday && (
         <div className="mb-2 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm">
-          <span className="flex-1">🎂 Cumpleaños <span className="text-slate-500">· {formatPartialDate(c.birthday)}</span></span>
-          <span className="text-xs text-slate-400">en los datos del contacto</span>
+          <span className="flex-1">{c.prefs.events?.birthday?.emoji ?? "🎂"} Cumpleaños <span className="text-slate-500">· {formatPartialDate(c.birthday)}</span></span>
+          <EventControls c={c} eventKey="birthday" defaultGift onChange={onChange} />
         </div>
       )}
       {showAuto && (
         <div className="mb-2 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm">
           <span className={`flex-1 ${c.prefs.autoSaint ? "" : "text-slate-400 line-through"}`}>
-            Santo <span className="text-slate-500">· {formatPartialDate(saint)} (por el nombre)</span>
+            {c.prefs.events?.saint?.emoji ?? ""} Santo <span className="text-slate-500">· {formatPartialDate(saint)} (por el nombre)</span>
           </span>
+          {c.prefs.autoSaint && <EventControls c={c} eventKey="saint" defaultGift onChange={onChange} />}
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => toggleAuto.mutate(!c.prefs.autoSaint)}>{c.prefs.autoSaint ? "Quitar" : "Volver a poner"}</button>
         </div>
       )}
       {c.importantDates.length === 0 && !adding && !showAuto && !c.birthday && <p className="text-sm text-slate-500">Ninguna. El cumpleaños va en los datos del contacto.</p>}
       <ul className="space-y-1">
         {c.importantDates.map((d) => (
-          <li key={d.id} className="flex items-center gap-2 text-sm">
-            <span className="flex-1">{d.label} <span className="text-slate-500">· {formatPartialDate(d.date)}</span></span>
+          <li key={d.id} className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm hover:bg-slate-50">
+            <span className="flex-1">{c.prefs.events?.[`date:${d.id}`]?.emoji ? `${c.prefs.events[`date:${d.id}`]!.emoji} ` : ""}{d.label} <span className="text-slate-500">· {formatPartialDate(d.date)}</span></span>
+            <EventControls c={c} eventKey={`date:${d.id}`} defaultGift={["anniversary", "saint_day"].includes(d.type)} onChange={onChange} />
             {c.canEdit && <button className="btn-danger text-xs" onClick={() => remove.mutate(d.id)}>✕</button>}
           </li>
         ))}

@@ -19,10 +19,12 @@ import {
 } from "@agendario/shared";
 import { useAlert, useConfirm } from "../components/Dialogs";
 import { useUserPrefs } from "../components/QuickActions";
-import { api } from "../lib/api";
+import { api, apiUrl } from "../lib/api";
 import { useMe } from "../lib/auth";
 import { copyText } from "../lib/clipboard";
 import { SyncSettings } from "../components/SyncSettings";
+import { CardDavSettings } from "../components/CardDavSettings";
+import { AccountSettings, UsersSettings } from "../components/UsersSettings";
 import { getTheme, setTheme, type ThemeMode } from "../lib/theme";
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
@@ -349,7 +351,7 @@ function Restore({ status }: { status: BackupStatus }) {
             <li key={f.name} className={`flex flex-wrap items-center gap-2 p-2 text-sm ${pick?.name === f.name ? "bg-indigo-50" : ""}`}>
               <span className="min-w-0 flex-1 truncate font-mono text-xs">{f.name}</span>
               <span className="text-xs text-slate-500">{size(f.size)}</span>
-              <a className="text-xs text-indigo-700 hover:underline" href={`/api/backup/files/${encodeURIComponent(f.name)}`}>Descargar</a>
+              <a className="text-xs text-indigo-700 hover:underline" href={apiUrl(`/backup/files/${encodeURIComponent(f.name)}`)}>Descargar</a>
               <button className="text-xs font-medium text-indigo-800 hover:underline" onClick={() => { setPick({ name: f.name }); setPreview(null); }}>Elegir</button>
             </li>
           ))}
@@ -577,10 +579,13 @@ export function SettingsPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">⚙️ Ajustes</h1>
+      {me && <AccountSettings Section={Section} me={me} />}
       <Appearance />
       <Communication />
       <DatesSettings />
       <SyncSettings Section={Section} />
+      {me && <CardDavSettings Section={Section} me={me} />}
+      {me?.isAdmin && <UsersSettings Section={Section} me={me} />}
       {me?.isAdmin && <Backups />}
       <Section icon="📒" title={`Acerca de ${APP_NAME}`}>
         <div className="flex items-center gap-3">

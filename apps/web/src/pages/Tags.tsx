@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import type { Tag, TagColor } from "@agendario/shared";
 import { ColorPicker, descendantIds, TagChip, tagTree, useTags } from "../components/Tags";
-import { api } from "../lib/api";
+import { api, apiUrl } from "../lib/api";
 import { useAlert, useConfirm } from "../components/Dialogs";
 
 export function TagsPage() {
@@ -150,7 +150,7 @@ export function TagsPage() {
                     {tree.filter((n) => !blocked.has(n.tag.id) && n.tag.id !== t.parentId).map((n) => <option key={n.tag.id} value={n.tag.id}>Dentro de {n.path}</option>)}
                   </select>
                   {t.contactCount > 0 && (
-                    <a className="btn-ghost px-2 py-1 text-xs" href={`/api/export/contacts.vcf?tag=${t.id}`} title="Exporta sus contactos con los teléfonos, emails y direcciones de esta etiqueta">⤒ Exportar</a>
+                    <a className="btn-ghost px-2 py-1 text-xs" href={apiUrl(`/export/contacts.vcf?tag=${t.id}`)} title="Exporta sus contactos con los teléfonos, emails y direcciones de esta etiqueta">⤒ Exportar</a>
                   )}
                   <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { setEditing(t.id); setDraft({ name: t.name, color: t.color }); }}>Editar</button>
                   <button className="btn-danger px-2 py-1 text-xs" onClick={() => askDelete(t)}>Borrar</button>

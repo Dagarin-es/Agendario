@@ -4,6 +4,7 @@ import type { User } from "@agendario/shared";
 import { APP_VERSION } from "@agendario/shared";
 import { BetaBadge } from "../components/BetaBadge";
 import { api } from "../lib/api";
+import { getServer, isApp, setServer, setToken } from "../lib/platform";
 
 export function LoginPage() {
   const qc = useQueryClient();
@@ -23,8 +24,9 @@ export function LoginPage() {
     setBusy(true);
     try {
       const user = registering
-        ? await api.post<User>("/auth/register", form)
-        : await api.post<User>("/auth/login", { email: form.email, password: form.password });
+        ? await api.post<User & { token?: string }>("/auth/register", form)
+        : await api.post<User & { token?: string }>("/auth/login", { email: form.email, password: form.password });
+      if (user.token) setToken(user.token); // app de Android
       qc.setQueryData(["me"], user);
     } catch (err) {
       setError((err as Error).message);
@@ -37,7 +39,7 @@ export function LoginPage() {
     setForm({ ...form, [k]: e.target.value });
 
   return (
-    <div className="flex min-h-dvh items-center justify-center p-4">
+    <div className={`flex min-h-dvh items-center justify-center p-4 ${isApp ? "m3" : ""}`}>
       <form onSubmit={submit} className="card w-full max-w-sm space-y-4">
         <div className="flex flex-col items-center gap-2 pb-2">
           <img src="/favicon.svg" alt="" className="h-14 w-14" />
@@ -79,6 +81,12 @@ export function LoginPage() {
           <button type="button" className="btn-ghost w-full" onClick={() => setMode(mode === "login" ? "register" : "login")}>
             {mode === "login" ? "Crear una cuenta nueva" : "Ya tengo cuenta"}
           </button>
+        )}
+        {isApp && (
+          <p className="text-center text-xs text-slate-500">
+            Servidor: {getServer().replace(/^https?:\/\//, "")} ·{" "}
+            <button type="button" className="text-indigo-700 underline" onClick={() => { setServer(null); window.location.reload(); }}>Cambiar</button>
+          </p>
         )}
         <p className="pt-2 text-center text-[11px] text-slate-400">v{APP_VERSION}</p>
       </form>

@@ -7,6 +7,7 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
+COPY apps/mobile/package.json apps/mobile/
 RUN npm ci
 COPY packages packages
 COPY apps apps
@@ -19,13 +20,14 @@ COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
+COPY apps/mobile/package.json apps/mobile/
 RUN npm ci --omit=dev --workspace @agendario/server --include-workspace-root=false
 
 # ---------- 3. Imagen final ----------
 FROM node:22-alpine
 # rclone: copias de seguridad en SMB y Google Drive · tzdata: hora local de las copias
 RUN apk add --no-cache su-exec rclone tzdata ca-certificates
-ARG APP_VERSION=0.11.0-beta
+ARG APP_VERSION=0.12.0-beta
 # App de Google para conectar Google Drive (la imagen de Docker Hub la recibe de los secretos de GitHub)
 ARG GOOGLE_CLIENT_ID=""
 ARG GOOGLE_CLIENT_SECRET=""

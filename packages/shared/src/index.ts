@@ -3,7 +3,7 @@ export { saintDateFor } from "./santoral";
 
 // ---------- Versión ----------
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
-export const APP_VERSION = "0.11.0-beta";
+export const APP_VERSION = "0.12.0-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------
@@ -118,7 +118,34 @@ export interface User {
   email: string;
   name: string;
   isAdmin: boolean;
+  mustChangePassword?: boolean;
 }
+
+export const registrationModes = ["closed", "first", "open"] as const;
+export type RegistrationMode = (typeof registrationModes)[number];
+
+/** Administración de usuarios */
+export interface AdminUser extends User {
+  disabled: boolean;
+  createdAt: string;
+  contactCount: number;
+}
+export const adminUserCreateSchema = z.object({
+  email: z.string().trim().email().max(200),
+  name: z.string().trim().min(1).max(100),
+  password: z.string().min(10, "Mínimo 10 caracteres").max(200),
+  isAdmin: z.boolean().default(false),
+});
+export const adminUserPatchSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  isAdmin: z.boolean().optional(),
+  disabled: z.boolean().optional(),
+  password: z.string().min(10, "Mínimo 10 caracteres").max(200).optional(),
+});
+export const changePasswordSchema = z.object({
+  current: z.string().min(1),
+  password: z.string().min(10, "Mínimo 10 caracteres").max(200),
+});
 
 // ---------- Contactos ----------
 
@@ -503,6 +530,8 @@ export interface UpcomingEvent {
   gift: "none" | "ideas" | "bought" | "given" | null;
   /** Santo calculado por el nombre */
   auto?: boolean;
+  /** Emoji elegido para el calendario */
+  emoji?: string;
   /** Ideas compradas o regaladas para esta ocurrencia */
   gifts?: { id: string; title: string; status: GiftStatus }[];
 }
@@ -668,6 +697,8 @@ export const userPrefsSchema = z.object({
   countryCode: z.string().regex(/^\d{1,4}$/).default("34"),
   /** Santos calculados por el nombre en Fechas */
   autoSaints: z.boolean().default(false),
+  /** Servidor CardDAV: libretas que se publican (todos los contactos y/o por etiqueta) */
+  carddav: z.object({ all: z.boolean().default(true), tagIds: z.array(z.string().uuid()).max(100).default([]) }).default({}),
   /** Etiquetas de teléfonos, emails y webs que se ofrecen en la lista */
   itemLabels: z
     .object({
@@ -687,6 +718,8 @@ export const contactPrefsSchema = z.object({
   messagingApp: z.enum(messagingApps).nullable().default(null),
   /** false = sin santo automático para este contacto */
   autoSaint: z.boolean().default(true),
+  /** Ajustes de cada fecha (birthday · saint · date:<id>): si lleva regalo y su emoji en el calendario */
+  events: z.record(z.string().max(80), z.object({ gift: z.boolean().optional(), emoji: z.string().max(16).optional() })).default({}),
 });
 export type ContactPrefs = z.infer<typeof contactPrefsSchema>;
 

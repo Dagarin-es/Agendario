@@ -1,4 +1,16 @@
-/** Cliente mínimo de la API. Usa la cookie de sesión (mismo origen). */
+/** Cliente mínimo de la API. En la web usa la cookie de sesión; en la app de Android, un token. */
+import { apiBase, apiUrl, getToken, isApp } from "./platform";
+
+function headers(json: boolean): Record<string, string> {
+  const h: Record<string, string> = {};
+  if (json) h["Content-Type"] = "application/json";
+  if (isApp) {
+    h["X-Agendario-Client"] = "app";
+    const t = getToken();
+    if (t) h.Authorization = `Bearer ${t}`;
+  }
+  return h;
+}
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -8,10 +20,10 @@ export class ApiError extends Error {
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const isForm = body instanceof FormData;
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${apiBase()}${path}`, {
     method,
-    credentials: "same-origin",
-    headers: body && !isForm ? { "Content-Type": "application/json" } : undefined,
+    credentials: isApp ? "omit" : "same-origin",
+    headers: headers(!!body && !isForm),
     body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
   });
   if (res.status === 204) return undefined as T;
@@ -32,14 +44,16 @@ export const api = {
 };
 
 export const photoUrl = (id: string, size: "thumb" | "full" = "thumb", v?: string) =>
-  `/api/contacts/${id}/photo?size=${size}${v ? `&v=${encodeURIComponent(v)}` : ""}`;
+  apiUrl(`/contacts/${id}/photo?size=${size}${v ? `&v=${encodeURIComponent(v)}` : ""}`);
+
+export { apiUrl };
 
 /** Descarga un fichero generado por una petición POST (p. ej. exportar una selección). */
 export async function downloadPost(path: string, body: unknown, fallbackName: string) {
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${apiBase()}${path}`, {
     method: "POST",
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
+    credentials: isApp ? "omit" : "same-origin",
+    headers: headers(true),
     body: JSON.stringify(body),
   });
   if (!res.ok) {

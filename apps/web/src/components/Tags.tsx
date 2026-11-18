@@ -72,6 +72,13 @@ export function tagTree(tags: Tag[] | undefined): TagNode[] {
   return out;
 }
 
+/** Ruta legible de cada etiqueta («Raíz › Sub»). */
+export function useTagPath() {
+  const { data } = useTags();
+  const map = new Map(tagTree(data).map((n) => [n.tag.id, n.path]));
+  return <T extends TagLite>(t: T): T => ({ ...t, name: map.get(t.id) ?? t.name });
+}
+
 /** Ids de una etiqueta y todas sus subetiquetas. */
 export function descendantIds(tags: Tag[] | undefined, id: string): Set<string> {
   const out = new Set<string>([id]);

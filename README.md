@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> ⚠️ **Versión beta (0.11.0-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
+> ⚠️ **Versión beta (0.12.0-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **contactos compartidos** entre usuarios y **fotos**, pensada para crecer hasta tener apps de escritorio y móvil, sincronización con Google/Outlook/CardDAV y copias cifradas.
 
-Esta es la **versión 0.11.0-beta**: servidor + web app instalable (PWA) en un contenedor Docker.
+Esta es la **versión 0.12.0-beta**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
 
 ---
 
@@ -57,7 +57,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-0.11.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-0.12.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -91,7 +91,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-0.11.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-0.12.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -99,7 +99,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-0.11.0-beta.zip
+unzip agendario-0.12.0-beta.zip
 cd agendario
 ```
 
@@ -143,7 +143,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-0.11.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-0.12.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -203,6 +203,35 @@ Para instalar la PWA en el móvil y usarla fuera de casa **hace falta HTTPS**: l
 ---
 
 ## Instalar la app
+
+### App Android (APK)
+
+1. Pasa `agendario-0.12.0-beta.apk` al móvil (Drive, Telegram, cable…) y ábrelo.
+2. Android pedirá permiso para **instalar apps de origen desconocido** desde esa aplicación (Archivos, Chrome…): actívalo solo para ella.
+3. Abre **Agendario**, escribe la dirección de tu servidor (la **https** de Nginx Proxy Manager; en casa vale `http://IP:3002`) y entra con tu usuario.
+
+Las actualizaciones se instalan encima, siempre que estén firmadas con la misma clave (`agendario-release.jks`: **guárdala** con su contraseña en Vaultwarden; si se pierde, habrá que desinstalar y volver a instalar).
+
+Para compilarla tú (necesitas Android SDK y Java 21):
+
+```bash
+cd apps/web && npm run build:app            # web para la app → dist-app
+cd ../mobile && npx cap sync android
+node scripts/icons.mjs                      # solo si cambia el icono
+cd android && ./gradlew assembleRelease     # APK en app/build/outputs/apk/release/
+```
+
+La firma se lee de `apps/mobile/android/keystore.properties` (no se sube a git) o de las variables `AGENDARIO_KEYSTORE`, `AGENDARIO_KEYSTORE_PASSWORD` y `AGENDARIO_KEY_ALIAS`:
+
+```properties
+storeFile=/ruta/agendario-release.jks
+storePassword=LA_CONTRASEÑA
+keyAlias=agendario
+```
+
+La versión de la APK sale sola de `APP_VERSION` (0.12.0-beta → código 1200).
+
+### Como web app (PWA)
 
 - **Android (Chrome)**: abre la web → menú ⋮ → *Instalar aplicación*.
 - **Mac (Edge)**: menú … → *Aplicaciones* → *Instalar este sitio como una aplicación*.
@@ -309,9 +338,9 @@ En cualquier combinación, las etiquetas, ideas de regalo, regalos recibidos, fe
 
 ## Añadir más usuarios (familia)
 
-1. En el `.env`, pon `REGISTRATION=open` y ejecuta `docker compose up -d`.
-2. Cada persona entra en la web y crea su cuenta.
-3. Vuelve a poner `REGISTRATION=closed` (o `first`) y ejecuta `docker compose up -d`.
+1. En **⚙️ Ajustes → Usuarios** (solo administradores) pulsa **+ Crear usuario**: nombre, email y una contraseña temporal. Al entrar se le pedirá cambiarla.
+2. Desde ahí también puedes ponerle otra contraseña, hacerle administrador o desactivarlo. Siempre queda al menos un administrador.
+3. «Registro desde la web» decide si cualquiera puede crearse cuenta (abierto), solo el primero o nadie. Manda sobre `REGISTRATION` del `.env`.
 4. En **⋯ → Grupos**, crea por ejemplo "Familia" y añade a sus miembros.
 5. En un contacto: **Editar → Visibilidad: Compartido** y, en la ficha, elige con quién compartirlo.
 
@@ -329,6 +358,16 @@ En **⚙️ Ajustes → Sincronización → Añadir sincronización**:
 Reglas: solo van los contactos con esas etiquetas y, de cada uno, los datos de esas etiquetas y los que no tienen etiqueta. Quitar la etiqueta lo borra de Fastmail (no de Agendario). Lo creado en Fastmail llega con la etiqueta. Lo borrado en Fastmail va a la papelera de Agendario. Si cambia en los dos sitios, gana lo más reciente y lo otro queda en el historial. Si de golpe se fuese a borrar más de la mitad, se para y te pregunta.
 
 Para otro servidor (Nextcloud, Radicale, iCloud con contraseña de app…) elige «Otro servidor CardDAV» y pon su dirección.
+
+## Agenda del móvil y del Mac (servidor CardDAV)
+
+Agendario es también un servidor CardDAV en `https://TU_DOMINIO/dav/`. En **⚙️ Ajustes → CardDAV** eliges qué libretas verá el móvil: «Agendario» con todo y, si quieres, una por etiqueta (incluye sus subetiquetas).
+
+- **Android**: instala **DAVx⁵** → Añadir cuenta → *Acceder con URL y nombre de usuario* → `https://TU_DOMINIO/dav/`, tu email y tu contraseña de Agendario. Marca las libretas.
+- **iPhone/iPad**: Ajustes → Contactos → Cuentas → Añadir cuenta → Otra → *Añadir cuenta CardDAV*: servidor `TU_DOMINIO`, tu email y contraseña.
+- **Mac**: Contactos → Ajustes → Cuentas → + → *Otra cuenta de Contactos* → CardDAV, manual, servidor `https://TU_DOMINIO/dav/`.
+
+Usa siempre la dirección **https** (Nginx Proxy Manager). Lo que crees en una libreta de etiqueta llega con esa etiqueta y lo que borres en el móvil va a la papelera.
 
 ## Fechas y regalos
 
@@ -557,7 +596,7 @@ Mientras el proyecto sea beta, la web muestra la etiqueta «Beta». Para quitarl
    - ✅ 0.7: nuevo nombre (Agendario) e interfaz, historial de cambios con restaurar, papelera, llamadas y apuntes, acciones por defecto y copias de seguridad cifradas programables.
    - ✅ 0.6: direcciones geolocalizadas (buscador, abrir en mapa o Waze, mapa en la ficha) y orden por geolocalización.
 2. ✅ **Fase 2**: copias cifradas (age), programables, a una carpeta, NFS, SMB o Google Drive. Pendiente: personalizar la interfaz (colores e icono alternativo).
-3. **Fase 3**: servidor **CardDAV**, para sincronizar con la agenda nativa del móvil y del Mac (DAVx5, iOS, macOS).
-4. **Fase 4**: importación desde Google y Outlook, y después sincronización bidireccional.
-5. **Fase 5**: apps empaquetadas con Capacitor (Android/iOS) y Tauri (Mac/Windows).
+3. ✅ **Fase 3** (0.12): servidor **CardDAV** para la agenda nativa del móvil y del Mac, y subetiquetas ↔ grupos de Fastmail.
+4. Google: solo traer las fotos de perfil (`scripts/fotos-google.py`). Sin sincronización con Google ni Outlook.
+5. **Fase 5**: ✅ app Android con Capacitor (0.12). Pendiente: iOS y Tauri (Mac/Windows).
 6. Más adelante: historial de interacciones, "mantener el contacto" y préstamos.

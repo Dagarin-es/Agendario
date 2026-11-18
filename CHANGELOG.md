@@ -1,5 +1,18 @@
 # Historial de cambios
 
+## 0.12.0-beta
+- **App Android** (primera APK, `apps/mobile`, Capacitor 8) con diseño **Material 3 / Material You**: toma los colores del fondo de pantalla (Android 12+), modo oscuro, barra de navegación abajo (Contactos, Fechas, Duplicados, Más), botón flotante «Nuevo», hoja inferior con el resto de opciones, botón atrás de Android, vibración suave e icono temático (Android 13+). La primera vez pregunta la dirección del servidor y comprueba que responde. Todo lo de la web está dentro.
+- **Servidor CardDAV** en `/dav/` para la agenda del móvil y del Mac (DAVx⁵, iPhone, macOS): una libreta con todo y, si quieres, una por etiqueta (con sus subetiquetas). En ⚙️ Ajustes → CardDAV eliges las libretas y ves la dirección e instrucciones.
+- **Subetiquetas ↔ grupos de Fastmail**: al sincronizar, las subetiquetas se convierten en grupos de Fastmail («Familia › Primos») y los grupos creados en Fastmail llegan como subetiquetas.
+- **Gestión de usuarios** (⚙️ Ajustes → Usuarios, solo administradores): crear usuarios con contraseña temporal (se les pide cambiarla al entrar), poner otra contraseña, hacer o quitar administrador, desactivar, y elegir el modo de registro sin tocar el `.env`. Cada uno puede cambiar su contraseña en ⚙️ Ajustes → Cuenta.
+- **Regalo y emoji por evento**: en Fechas importantes, cada fecha (cumpleaños, santo, aniversario…) tiene 🎁 para decir si toca regalo y un emoji propio para el calendario.
+- **Aviso de regalos en la pestaña Fechas**: 🎁 rojo si hay algo a menos de 30 días sin regalo, amarillo si solo hay ideas.
+- **Lista**: buscador, etiquetas y barra de herramientas siempre visibles (en el móvil el buscador se esconde al bajar y vuelve al subir). Las etiquetas muestran la ruta completa (`Personal › Familia`).
+- **Pestañas con su propio tono** (Contactos índigo, Fechas ámbar, Duplicados violeta) y sin títulos repetidos en Fechas.
+- **Ficha**: fuera el título «Celebraciones»; direcciones en dos columnas con el minimapa a la derecha.
+- `scripts/fotos-google.py`: trae las fotos de perfil de Google Contacts a los contactos que no tienen foto.
+- Corregido: el número de contactos de cada usuario.
+
 ## 0.11.0-beta
 - **Ficha más compacta**: foto a la izquierda y, a la derecha, nombre, puesto y empresa, etiquetas, Llamar/WhatsApp/Email y los botones ✏️ Editar, 🕘 Historial y 🗑️ Borrar.
 - **Teléfonos y Emails** en dos recuadros de la misma altura. Las **llamadas y apuntes** van plegados dentro de Teléfonos (botón «Llamadas y apuntes»).

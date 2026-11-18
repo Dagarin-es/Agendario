@@ -43,6 +43,8 @@ const TABLES = [
   "sync_accounts",
   "sync_links",
   "sync_log",
+  "dav_resources",
+  "sync_group_links",
   "settings",
 ] as const;
 

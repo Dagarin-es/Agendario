@@ -1,15 +1,21 @@
 {
   "name": "@agendario/web",
-  "version": "0.11.0-beta",
+  "version": "0.12.0-beta",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -p . && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "build:app": "tsc -p . && vite build --mode app --outDir dist-app --emptyOutDir"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "@tanstack/react-query": "^5.80.0",
     "@types/leaflet": "^1.9.22",
     "leaflet": "^1.9.4",

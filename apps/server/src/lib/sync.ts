@@ -12,7 +12,7 @@
  *   combinan sin perder datos.
  */
 import { createHash } from "node:crypto";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Address, LabeledValue, SyncPreview, SyncSummary, TagLite } from "@agendario/shared";
 import { db, schema } from "../db/index.js";
 import { DavError, deleteCard, discoverAddressBooks, fetchCards, listCards, putCard, type DavAuth, type RemoteCard } from "./carddav.js";
@@ -65,7 +65,7 @@ function fold(line: string): string {
 /** Etiquetas de Agendario que tienen tipo estándar en vCard; las demás van como etiqueta propia (X-ABLabel). */
 const stdTypes: Record<string, string> = { móvil: "CELL", movil: "CELL", casa: "HOME", trabajo: "WORK", fax: "FAX", otro: "OTHER", principal: "MAIN" };
 
-type Items = { phones: LabeledValue[]; emails: LabeledValue[]; urls: LabeledValue[]; addresses: Address[] };
+export type Items = { phones: LabeledValue[]; emails: LabeledValue[]; urls: LabeledValue[]; addresses: Address[] };
 
 /** Cuerpo del vCard (sin foto, REV ni extras): sirve también de huella del estado local. */
 function vcardCore(row: ContactRow, items: Items, uid: string): string[] {
@@ -98,7 +98,7 @@ function localHash(row: ContactRow, items: Items, uid: string) {
   return createHash("sha256").update(vcardCore(row, items, uid).join("\n")).update(`|photo:${row.photoKey ?? ""}`).digest("hex").slice(0, 32);
 }
 
-async function buildVCard(row: ContactRow, items: Items, uid: string, extra: string): Promise<string> {
+export async function buildVCard(row: ContactRow, items: Items, uid: string, extra: string): Promise<string> {
   const lines = vcardCore(row, items, uid);
   if (row.photoKey) {
     try {
@@ -119,7 +119,7 @@ async function buildVCard(row: ContactRow, items: Items, uid: string, extra: str
 
 const handled = new Set(["BEGIN", "END", "VERSION", "UID", "FN", "N", "NICKNAME", "ORG", "TITLE", "BDAY", "EMAIL", "TEL", "URL", "ADR", "NOTE", "PHOTO", "REV", "PRODID", "X-CONTACTOS-GIFT"]);
 
-interface Remote {
+export interface Remote {
   card: RemoteCard;
   parsed: ParsedContact;
   uid: string;
@@ -129,7 +129,7 @@ interface Remote {
   isGroup: boolean;
 }
 
-function readRemote(card: RemoteCard): Remote {
+export function readRemote(card: RemoteCard): Remote {
   const data = card.data ?? "";
   const parsed = parseVCard(data);
   const lines = logicalLines(data);
@@ -158,7 +158,7 @@ function readRemote(card: RemoteCard): Remote {
 // Datos de cada contacto que se envían (regla de etiquetas de datos)
 // ---------------------------------------------------------------------------
 
-function exportedItems(row: ContactRow, itemTags: Record<string, TagLite> | undefined, tagIds: Set<string>): Items {
+export function exportedItems(row: ContactRow, itemTags: Record<string, TagLite> | undefined, tagIds: Set<string>): Items {
   const keep = <T extends { id?: string }>(list: T[]) => list.filter((x) => !x.id || !itemTags?.[x.id] || tagIds.has(itemTags[x.id]!.id));
   return { phones: keep(row.phones), emails: keep(row.emails), urls: keep(row.urls), addresses: keep(row.addresses) };
 }
@@ -175,7 +175,7 @@ const kinds = ["phones", "emails", "urls", "addresses"] as const;
  * Lo que llega del servicio sustituye a los datos que se le enviaron; los de otras etiquetas se
  * conservan. Si un dato ya existía se mantiene su id (y su etiqueta) y, en direcciones, sus coordenadas.
  */
-function mergeFromRemote(row: ContactRow, exported: Items, parsed: ParsedContact) {
+export function mergeFromRemote(row: ContactRow, exported: Items, parsed: ParsedContact) {
   const out: Partial<Items> = {};
   for (const k of kinds) {
     const sent = new Set((exported[k] as { id?: string }[]).map((x) => x.id));
@@ -505,8 +505,192 @@ async function doSync(account: Account, force: boolean, log: LogEntry[]): Promis
       await db.update(sl).set({ etag: card.etag, remotePhotoHash: r.photoHash, extra: r.extra }).where(and(eq(sl.accountId, account.id), eq(sl.href, card.href)));
     }
   }
+  await syncGroups(account, auth, st.tagIds, remoteByHref, fetched, log, sum).catch((e) => {
+    sum.errors++;
+    log.push({ action: "error", detail: `Grupos: ${(e as Error).message}` });
+  });
   return sum;
 }
+
+// ---------------------------------------------------------------------------
+// Grupos del servicio ↔ subetiquetas
+// ---------------------------------------------------------------------------
+
+const sg = schema.syncGroupLinks;
+const tg = schema.tags;
+const ctg = schema.contactTags;
+const SEP = " › ";
+
+function groupMembers(data: string): { name: string; uid: string; members: string[] } {
+  const lines = logicalLines(data);
+  let name = "";
+  let uid = "";
+  const members: string[] = [];
+  for (const l of lines) {
+    const p = parseProp(l);
+    if (!p) continue;
+    if (p.name === "FN") name = p.value.replace(/\\,/g, ",").trim();
+    else if (p.name === "UID") uid = p.value.trim();
+    else if (p.name === "MEMBER" || p.name === "X-ADDRESSBOOKSERVER-MEMBER") members.push(p.value.trim().replace(/^urn:uuid:/i, ""));
+  }
+  return { name, uid, members };
+}
+
+function groupVCard(uid: string, name: string, memberUids: string[]) {
+  const lines = ["BEGIN:VCARD", "VERSION:3.0", `UID:${uid}`, `N:${esc(name)};;;;`, `FN:${esc(name)}`, "X-ADDRESSBOOKSERVER-KIND:group"];
+  for (const m of memberUids) lines.push(`X-ADDRESSBOOKSERVER-MEMBER:urn:uuid:${m}`);
+  lines.push("PRODID:-//Agendario//ES", "END:VCARD");
+  return lines.map(fold).join("\r\n") + "\r\n";
+}
+
+async function syncGroups(
+  account: Account,
+  auth: DavAuth,
+  scopeTags: Set<string>,
+  remoteByHref: Map<string, RemoteCard>,
+  fetched: Map<string, Remote>,
+  log: LogEntry[],
+  sum: SyncSummary,
+) {
+  const roots = new Set(account.tagIds);
+  const allTags = await db.select().from(tg).where(eq(tg.userId, account.userId));
+  const byId = new Map(allTags.map((t) => [t.id, t]));
+  // Ruta de cada subetiqueta relativa a su etiqueta sincronizada: «Familia › Primos»
+  const pathOf = (id: string): string | null => {
+    const parts: string[] = [];
+    for (let cur = byId.get(id); cur; cur = cur.parentId ? byId.get(cur.parentId) : undefined) {
+      if (roots.has(cur.id)) return parts.length ? parts.reverse().join(SEP) : null;
+      parts.push(cur.name);
+    }
+    return null;
+  };
+  const subtags = [...scopeTags].filter((id) => !roots.has(id) && pathOf(id));
+  // Contactos sincronizados: id ↔ UID en el servicio
+  const links = await db.select({ contactId: sl.contactId, uid: sl.uid }).from(sl).where(eq(sl.accountId, account.id));
+  const uidOf = new Map(links.map((l) => [l.contactId, l.uid]));
+  const idOf = new Map(links.map((l) => [l.uid.replace(/^urn:uuid:/i, ""), l.contactId]));
+  const linkedIds = links.map((l) => l.contactId);
+  // Quién tiene cada subetiqueta (asignada directamente)
+  const assigned = linkedIds.length && subtags.length
+    ? await db.select({ contactId: ctg.contactId, tagId: ctg.tagId }).from(ctg).where(and(inArray(ctg.tagId, subtags), inArray(ctg.contactId, linkedIds)))
+    : [];
+  const localMembers = (tagId: string) => new Set(assigned.filter((a) => a.tagId === tagId).map((a) => a.contactId));
+
+  // Grupos del servicio (siempre se descargan porque no son contactos enlazados)
+  const remoteGroups = new Map<string, { href: string; etag: string; name: string; uid: string; members: string[] }>();
+  for (const r of fetched.values()) if (r.isGroup) remoteGroups.set(r.card.href, { href: r.card.href, etag: r.card.etag, ...groupMembers(r.card.data ?? "") });
+
+  const groupLinks = await db.select().from(sg).where(eq(sg.accountId, account.id));
+  const linkedHref = new Set(groupLinks.map((g) => g.href));
+  const linkedTag = new Set(groupLinks.map((g) => g.tagId).filter(Boolean) as string[]);
+  const bookUrl = account.addressBookUrl.replace(/\/?$/, "/");
+
+  const writeGroup = async (href: string, uid: string, name: string, members: Set<string>, etag?: string) => {
+    const uids = [...members].map((id) => uidOf.get(id)).filter(Boolean) as string[];
+    await putCard(href, auth, groupVCard(uid, name, uids), etag ? { etag } : { create: true });
+    const [fresh] = await fetchCards(account.addressBookUrl, auth, [href]);
+    return fresh?.etag ?? "";
+  };
+  const setTag = async (tagId: string, add: Set<string>, remove: Set<string>) => {
+    if (add.size) await db.insert(ctg).values([...add].map((contactId) => ({ contactId, tagId }))).onConflictDoNothing();
+    if (remove.size) await db.delete(ctg).where(and(eq(ctg.tagId, tagId), inArray(ctg.contactId, [...remove])));
+  };
+
+  // 1) Enlaces existentes
+  for (const g of groupLinks) {
+    const remote = remoteGroups.get(g.href);
+    const stillThere = remoteByHref.has(g.href);
+    if (!g.tagId || !scopeTags.has(g.tagId) || !pathOf(g.tagId)) {
+      // Subetiqueta borrada o sacada de la etiqueta sincronizada → se borra el grupo del servicio
+      if (stillThere) await deleteCard(g.href, auth).catch(() => undefined);
+      await db.delete(sg).where(eq(sg.id, g.id));
+      log.push({ action: "deleted_remote", contactName: g.name, detail: `Grupo «${g.name}» borrado en ${account.name}` });
+      continue;
+    }
+    const name = pathOf(g.tagId)!;
+    const local = localMembers(g.tagId);
+    const base = new Set(g.members);
+    if (!stillThere || !remote) {
+      // Borrado en el servicio: se vuelve a crear con lo que hay en Agendario
+      const href = bookUrl + encodeURIComponent(g.uid) + ".vcf";
+      const etag = await writeGroup(href, g.uid, name, local);
+      await db.update(sg).set({ href, etag, name, members: [...local] }).where(eq(sg.id, g.id));
+      continue;
+    }
+    const remoteSet = new Set(remote.members.map((u) => idOf.get(u)).filter(Boolean) as string[]);
+    const finalSet = new Set(base);
+    for (const x of local) if (!base.has(x)) finalSet.add(x);
+    for (const x of remoteSet) if (!base.has(x)) finalSet.add(x);
+    for (const x of base) if (!local.has(x) || !remoteSet.has(x)) finalSet.delete(x);
+    // Nombre: si cambió en Agendario manda Agendario; si solo cambió en el servicio, se renombra la etiqueta (último nivel)
+    let finalName = name;
+    if (name === g.name && remote.name && remote.name !== g.name) {
+      const leaf = remote.name.split(SEP).pop()!.trim();
+      if (leaf) {
+        await db.update(tg).set({ name: leaf }).where(eq(tg.id, g.tagId)).catch(() => undefined);
+        finalName = pathOf(g.tagId) ?? remote.name;
+      }
+    }
+    const addLocal = new Set([...finalSet].filter((x) => !local.has(x)));
+    const removeLocal = new Set([...local].filter((x) => !finalSet.has(x)));
+    await setTag(g.tagId, addLocal, removeLocal);
+    const same = finalSet.size === remoteSet.size && [...finalSet].every((x) => remoteSet.has(x)) && finalName === remote.name;
+    let etag = remote.etag;
+    if (!same) etag = await writeGroup(g.href, g.uid, finalName, finalSet, remote.etag);
+    if (!same || addLocal.size || removeLocal.size) log.push({ action: "updated", contactName: finalName, detail: `Grupo «${finalName}»: ${finalSet.size} contactos` });
+    await db.update(sg).set({ etag, name: finalName, members: [...finalSet] }).where(eq(sg.id, g.id));
+  }
+
+  // 2) Subetiquetas nuevas: se emparejan con un grupo del mismo nombre o se crea el grupo
+  for (const tagId of subtags) {
+    if (linkedTag.has(tagId)) continue;
+    const name = pathOf(tagId)!;
+    const local = localMembers(tagId);
+    const match = [...remoteGroups.values()].find((r) => !linkedHref.has(r.href) && r.name.trim().toLowerCase() === name.toLowerCase());
+    if (match) {
+      linkedHref.add(match.href);
+      const remoteSet = new Set(match.members.map((u) => idOf.get(u)).filter(Boolean) as string[]);
+      const union = new Set([...local, ...remoteSet]);
+      await setTag(tagId, new Set([...union].filter((x) => !local.has(x))), new Set());
+      const etag = union.size !== remoteSet.size ? await writeGroup(match.href, match.uid || randomUid(), name, union, match.etag) : match.etag;
+      await db.insert(sg).values({ accountId: account.id, tagId, href: match.href, uid: match.uid || randomUid(), etag, name, members: [...union] });
+      log.push({ action: "paired", contactName: name, detail: `Grupo «${name}» emparejado con la subetiqueta` });
+    } else {
+      const uid = randomUid();
+      const href = bookUrl + uid + ".vcf";
+      const etag = await writeGroup(href, uid, name, local);
+      await db.insert(sg).values({ accountId: account.id, tagId, href, uid, etag, name, members: [...local] });
+      log.push({ action: "uploaded_new", contactName: name, detail: `Grupo «${name}» creado en ${account.name}` });
+    }
+    sum.uploaded++;
+  }
+
+  // 3) Grupos nuevos en el servicio: se crea la subetiqueta (dentro de la primera etiqueta sincronizada)
+  const root = account.newTagId && roots.has(account.newTagId) ? account.newTagId : account.tagIds[0];
+  for (const r of remoteGroups.values()) {
+    if (linkedHref.has(r.href) || !root || !r.name.trim()) continue;
+    let parent = root;
+    for (const part of r.name.split(SEP).map((x) => x.trim()).filter(Boolean)) {
+      const existing = allTags.find((t) => t.parentId === parent && t.name.toLowerCase() === part.toLowerCase());
+      if (existing) parent = existing.id;
+      else {
+        const [created] = await db.insert(tg).values({ userId: account.userId, name: part, color: byId.get(root)?.color ?? "teal", parentId: parent }).onConflictDoNothing().returning();
+        if (!created) break; // ya existe una etiqueta con ese nombre en otro sitio
+        allTags.push(created);
+        byId.set(created.id, created);
+        parent = created.id;
+      }
+    }
+    if (parent === root) continue;
+    const members = new Set(r.members.map((u) => idOf.get(u)).filter(Boolean) as string[]);
+    await setTag(parent, members, new Set());
+    await db.insert(sg).values({ accountId: account.id, tagId: parent, href: r.href, uid: r.uid || randomUid(), etag: r.etag, name: r.name, members: [...members] }).onConflictDoNothing();
+    log.push({ action: "created", contactName: r.name, detail: `Subetiqueta creada desde el grupo «${r.name}» de ${account.name}` });
+    sum.created++;
+  }
+}
+
+const randomUid = () => crypto.randomUUID();
 
 const fieldNames: Record<string, string> = {
   givenName: "nombre", familyName: "apellidos", displayName: "nombre a mostrar", nickname: "apodo", organization: "empresa",

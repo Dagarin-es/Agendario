@@ -3,11 +3,12 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+// mode «app»: la interfaz para la app de Android (sin service worker; la carga Capacitor desde el móvil)
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     tailwindcss(),
-    VitePWA({
+    mode !== "app" && VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
@@ -35,4 +36,4 @@ export default defineConfig({
     // En desarrollo, la web (5173) reenvía /api al servidor (3002).
     proxy: { "/api": "http://localhost:3002" },
   },
-});
+}));

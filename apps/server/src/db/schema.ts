@@ -48,6 +48,10 @@ export const users = pgTable(
     name: text("name").notNull(),
     passwordHash: text("password_hash").notNull(),
     isAdmin: boolean("is_admin").notNull().default(false),
+    /** Desactivado por el administrador: no puede entrar (sus contactos se conservan) */
+    disabled: boolean("disabled").notNull().default(false),
+    /** Contraseña provisional puesta por el administrador: se le pide cambiarla */
+    mustChangePassword: boolean("must_change_password").notNull().default(false),
     ...timestamps,
   },
   (t) => [uniqueIndex("users_email_idx").on(sql`lower(${t.email})`)],
@@ -465,4 +469,36 @@ export const syncLog = pgTable(
     at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("sync_log_account_at_idx").on(t.accountId, t.at)],
+);
+
+/** Servidor CardDAV: nombre del fichero (.vcf) con el que el móvil creó cada contacto. */
+export const davResources = pgTable(
+  "dav_resources",
+  {
+    contactId: uuid("contact_id")
+      .primaryKey()
+      .references(() => contacts.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+  },
+  (t) => [index("dav_resources_name_idx").on(t.name)],
+);
+
+/** Sincronización: grupos del servicio ↔ subetiquetas de la etiqueta sincronizada. */
+export const syncGroupLinks = pgTable(
+  "sync_group_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => syncAccounts.id, { onDelete: "cascade" }),
+    /** null = la subetiqueta se borró en Agendario (hay que borrar el grupo del servicio) */
+    tagId: uuid("tag_id").references(() => tags.id, { onDelete: "set null" }),
+    href: text("href").notNull(),
+    uid: text("uid").notNull(),
+    etag: text("etag").notNull().default(""),
+    name: text("name").notNull().default(""),
+    /** Miembros (ids de contacto) tras la última sincronización: base para combinar cambios de los dos lados */
+    members: jsonb("members").$type<string[]>().notNull().default([]),
+  },
+  (t) => [uniqueIndex("sync_group_links_href_idx").on(t.accountId, t.href)],
 );

@@ -91,11 +91,11 @@ export function MapLinks({ address }: { address: Address }) {
 /** Mapa pequeño de OpenStreetMap con la chincheta de la dirección. */
 const MiniMapView = lazy(() => import("./MapPicker").then((m) => ({ default: m.MiniMapView })));
 
-export function MiniMap({ address }: { address: Address }) {
+export function MiniMap({ address, className }: { address: Address; className?: string }) {
   if (!isGeolocated(address)) return null;
   return (
-    <Suspense fallback={<div className="mt-2 h-44 w-full rounded-lg border border-slate-200 bg-slate-100" />}>
-      <MiniMapView lat={address.lat!} lon={address.lon!} title={`Mapa de ${addressLine(address)}`} />
+    <Suspense fallback={<div className={`rounded-lg border border-slate-200 bg-slate-100 ${className ?? "mt-2 h-44 w-full"}`} />}>
+      <MiniMapView lat={address.lat!} lon={address.lon!} title={`Mapa de ${addressLine(address)}`} className={className} />
     </Suspense>
   );
 }

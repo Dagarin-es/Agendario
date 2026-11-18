@@ -4,3 +4,10 @@ dist
 data
 *.log
 .actualizar.conf
+dist-app
+apps/mobile/android/app/build
+apps/mobile/android/.gradle
+apps/mobile/android/build
+*.jks
+*.keystore
+apps/mobile/android/keystore.properties

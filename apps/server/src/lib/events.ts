@@ -33,6 +33,8 @@ function occurrence(partial: string, year: number) {
 }
 
 interface Source {
+  gift?: boolean;
+  emoji?: string;
   contactId: string;
   contactName: string;
   hasPhoto: boolean;
@@ -59,6 +61,7 @@ async function sources(userId: string, onlyContact?: string): Promise<Source[]> 
     db.select({ contactId: schema.contactPrefs.contactId, prefs: schema.contactPrefs.prefs }).from(schema.contactPrefs).where(eq(schema.contactPrefs.userId, userId)),
   ]);
   const noAuto = new Set(cprefs.filter((p) => (p.prefs as { autoSaint?: boolean }).autoSaint === false).map((p) => p.contactId));
+  const evPrefs = new Map(cprefs.map((p) => [p.contactId, ((p.prefs as { events?: Record<string, { gift?: boolean; emoji?: string }> }).events ?? {})]));
   const manualSaint = new Set(dates.filter((d) => d.type === "saint_day").map((d) => d.contactId));
   const out: Source[] = [];
   const byId = new Map(people.map((p) => [p.id, p]));
@@ -78,6 +81,10 @@ async function sources(userId: string, onlyContact?: string): Promise<Source[]> 
       contactId: p.id, contactName: p.name, hasPhoto: !!p.photoKey,
       key: `date:${d.id}`, kind: d.type, label: d.label || dateTypeLabels[d.type], partial: d.date, useAge: d.type === "anniversary",
     });
+  }
+  for (const s of out) {
+    const p = evPrefs.get(s.contactId)?.[s.key];
+    if (p) Object.assign(s, { gift: p.gift, emoji: p.emoji || undefined });
   }
   return out;
 }
@@ -107,13 +114,13 @@ export async function eventsBetween(userId: string, from: Date, to: Date, onlyCo
       const gifts = linked.get(`${s.contactId}|${s.key}|${iso}`) ?? [];
       const daysLeft = Math.round((date.getTime() - today.getTime()) / 86_400_000);
       let gift: UpcomingEvent["gift"] = null;
-      if ((giftEventKinds as readonly string[]).includes(s.kind)) {
+      if (s.gift ?? (giftEventKinds as readonly string[]).includes(s.kind)) {
         if (gifts.length) gift = gifts.every((g) => g.status === "given") ? "given" : "bought";
         else if (daysLeft >= 0) gift = (open.get(s.contactId) ?? 0) > 0 ? "ideas" : "none";
       }
       out.push({
         contactId: s.contactId, contactName: s.contactName, hasPhoto: s.hasPhoto, label: s.label, kind: s.kind, key: s.key,
-        date: iso, daysLeft, turning: s.useAge ? turning : null, openGiftIdeas: open.get(s.contactId) ?? 0, gift, auto: s.auto, gifts,
+        date: iso, daysLeft, turning: s.useAge ? turning : null, openGiftIdeas: open.get(s.contactId) ?? 0, gift, auto: s.auto, gifts, emoji: s.emoji,
       });
     }
   }

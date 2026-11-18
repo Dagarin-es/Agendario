@@ -2,13 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { APP_NAME, APP_VERSION, type DuplicateGroup } from "@agendario/shared";
-import { api } from "../lib/api";
+import { api, apiUrl } from "../lib/api";
 import { useLogout, useMe } from "../lib/auth";
 import { BetaBadge } from "./BetaBadge";
-import { usePendingGifts } from "../lib/gifts";
+import { useGiftsToBuy, usePendingGifts } from "../lib/gifts";
 
-const link = ({ isActive }: { isActive: boolean }) =>
-  `relative whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium sm:px-3 ${isActive ? "bg-indigo-50 text-indigo-800" : "text-slate-600 hover:bg-slate-100"}`;
+/** Cada sección con su tono: Contactos índigo, Fechas ámbar, Duplicados lila. */
+const tones = {
+  indigo: "bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200",
+  amber: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
+  violet: "bg-violet-100 text-violet-800 ring-1 ring-violet-200",
+} as const;
+const link = (tone: keyof typeof tones) => ({ isActive }: { isActive: boolean }) =>
+  `relative whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium sm:px-3 ${isActive ? tones[tone] : "text-slate-600 hover:bg-slate-100"}`;
 
 /** Número de grupos de posibles duplicados (para el aviso del menú). */
 export function useDuplicateCount() {
@@ -57,8 +63,8 @@ function MoreMenu() {
           <Link to="/settings" className={item}>⚙️ Ajustes</Link>
           <div className="my-1 border-t border-slate-100" />
           <Link to="/import" className={item}>📥 Importar .vcf</Link>
-          <a href="/api/export/contacts.vcf" className={item}>📤 Exportar .vcf</a>
-          <a href="/api/export/contacts.vcf?gifts=true" className={item}>🎁 Exportar .vcf con regalos</a>
+          <a href={apiUrl("/export/contacts.vcf")} className={item}>📤 Exportar .vcf</a>
+          <a href={apiUrl("/export/contacts.vcf?gifts=true")} className={item}>🎁 Exportar .vcf con regalos</a>
           <div className="my-1 border-t border-slate-100" />
           <div className="truncate px-4 pt-1 text-[11px] text-slate-400">{me?.email}</div>
           <button className={`${item} text-red-700`} onClick={logout}>🚪 Salir</button>
@@ -82,6 +88,8 @@ export function Layout() {
     return () => ro.disconnect();
   }, []);
   const pendingGifts = usePendingGifts().data?.length ?? 0;
+  const { data: me } = useMe();
+  const gifts = useGiftsToBuy();
   return (
     <div className="mx-auto flex min-h-dvh max-w-5xl flex-col">
       <header ref={headerRef} className="sticky top-0 z-10 flex items-center gap-1 border-b border-slate-200 bg-white px-3 py-3 sm:gap-2 sm:px-4">
@@ -94,12 +102,15 @@ export function Layout() {
           <span className="md:hidden"><BetaBadge size="xs" /></span>
         </Link>
         <nav className="flex flex-1 gap-0.5 overflow-x-auto sm:gap-1">
-          <NavLink to="/" end className={link}>Contactos</NavLink>
-          <NavLink to="/upcoming" className={link} title={pendingGifts ? "Hay regalos comprados sin marcar como regalados" : undefined}>
+          <NavLink to="/" end className={link("indigo")}>Contactos</NavLink>
+          <NavLink to="/upcoming" className={link("amber")} title={[gifts.title, pendingGifts ? `${pendingGifts} comprado(s) sin marcar como regalado` : ""].filter(Boolean).join(" · ") || undefined}>
             Fechas
+            {gifts.count > 0 && (
+              <span className={`ml-1 rounded-full px-1.5 py-px text-[10px] font-semibold text-white ${gifts.red ? "bg-red-600" : "bg-amber-500"}`}>🎁{gifts.count}</span>
+            )}
             {pendingGifts > 0 && <span className="ml-1 rounded-full bg-rose-500 px-1.5 py-px text-[10px] font-semibold text-white">🛍️{pendingGifts}</span>}
           </NavLink>
-          <NavLink to="/duplicates" className={link} title="Buscar y combinar duplicados">
+          <NavLink to="/duplicates" className={link("violet")} title="Buscar y combinar duplicados">
             Duplicados
             {dupCount > 0 && (
               <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-px text-[10px] font-semibold text-white">{dupCount}</span>
@@ -108,6 +119,11 @@ export function Layout() {
         </nav>
         <MoreMenu />
       </header>
+      {me?.mustChangePassword && (
+        <Link to="/settings" className="mx-4 mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
+          🔑 Estás usando una contraseña provisional. <strong>Cámbiala en Ajustes → Mi cuenta.</strong>
+        </Link>
+      )}
       <main className="flex-1 p-4 pb-10">
         <Outlet />
       </main>

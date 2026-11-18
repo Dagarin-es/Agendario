@@ -53,7 +53,7 @@ function EventRow({ e }: { e: UpcomingEvent }) {
         <div className="min-w-0 flex-1">
           <div className="font-medium">{e.contactName}</div>
           <div className="text-sm text-slate-500">
-            {e.label}{e.auto ? " (por el nombre)" : ""} · {formatDate(e.date)}
+            {e.emoji ? `${e.emoji} ` : ""}{e.label}{e.auto ? " (por el nombre)" : ""} · {formatDate(e.date)}
             {e.turning ? ` · ${e.kind === "birthday" ? "cumple" : "hace"} ${e.turning} años` : ""}
           </div>
           {g && <div className={`mt-1 text-xs font-medium ${g.cls}`}>{g.text}</div>}
@@ -124,7 +124,7 @@ export function UpcomingPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Fechas</h1>
+      <h1 className="sr-only">Fechas</h1>
 
       {/* Regalos comprados sin entregar cuya fecha ya pasó */}
       {pending && pending.length > 0 && (
@@ -179,7 +179,17 @@ export function UpcomingPage() {
                 <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${isToday && !isSel ? "bg-indigo-700 font-semibold text-white" : ""}`}>{d.getDate()}</span>
                 {tones.length > 0 && (
                   <span className={`relative ${isSel ? "rounded bg-white/90 px-0.5" : ""}`}>
-                    <GiftIcon tone={tones[0]!} className="h-5 w-5" />
+                    {(() => {
+                      // Emoji del evento más importante de ese día; si lleva regalo, un punto de color en la esquina
+                      const main = [...evs].sort((a, b) => giftRank[toneOf(a)] - giftRank[toneOf(b)])[0]!;
+                      if (!main.emoji) return <GiftIcon tone={tones[0]!} className="h-5 w-5" />;
+                      return (
+                        <>
+                          <span className="text-lg leading-none">{main.emoji}</span>
+                          {main.gift && <span className={`absolute -bottom-0.5 -right-1 h-2.5 w-2.5 rounded-full ring-2 ring-white ${main.gift === "none" ? "bg-red-500" : main.gift === "ideas" ? "bg-amber-500" : "bg-emerald-600"}`} />}
+                        </>
+                      );
+                    })()}
                     {evs.length > 1 && (
                       <span className="absolute -right-2.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-700 px-1 text-[9px] font-bold leading-none text-white">{evs.length}</span>
                     )}
@@ -198,10 +208,14 @@ export function UpcomingPage() {
       </section>
 
       <div className="space-y-3 lg:order-1">
-      <div className="flex items-center gap-2">
-        <h2 className="flex-1 font-semibold text-slate-700">{listTitle}</h2>
-        {selected && <button className="btn-ghost px-2.5 text-xs" onClick={() => setSelected(null)}>Ver {isCurrentMonth ? "próximos 30 días" : "todo el mes"}</button>}
-      </div>
+      {(selected || !isCurrentMonth) && (
+        <div className="flex items-center gap-2 text-sm text-slate-500">
+          <span className="flex-1">Viendo: <strong className="text-slate-700">{listTitle}</strong></span>
+          <button className="btn-ghost px-2.5 py-1 text-xs" onClick={() => { setSelected(null); setCursor({ y: now.getFullYear(), m: now.getMonth() }); }}>
+            Ver próximos 30 días
+          </button>
+        </div>
+      )}
       {isLoading && <p className="text-slate-500">Cargando…</p>}
       {!isLoading && list.length === 0 && <div className="card text-center text-slate-500">Nada en estas fechas.</div>}
       <ul className="space-y-2">

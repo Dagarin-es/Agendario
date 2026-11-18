@@ -1,4 +1,8 @@
+import { useState } from "react";
 import { Navigate, Route, Routes } from "react-router";
+import { AppShell } from "./components/AppShell";
+import { ServerSetup } from "./pages/ServerSetup";
+import { getServer, isApp } from "./lib/platform";
 import { HistoryPage } from "./pages/History";
 import { TrashPage } from "./pages/Trash";
 import { SettingsPage } from "./pages/Settings";
@@ -16,13 +20,15 @@ import { LoginPage } from "./pages/Login";
 import { UpcomingPage } from "./pages/Upcoming";
 
 export function App() {
-  const { data: me, isLoading } = useMe();
+  const [server, setServerState] = useState(getServer());
+  const { data: me, isLoading } = useMe(!isApp || !!server);
+  if (isApp && !server) return <ServerSetup onDone={() => setServerState(getServer())} />;
   if (isLoading) return <div className="p-8 text-center text-slate-500">Cargando…</div>;
   if (!me) return <LoginPage />;
 
   return (
     <Routes>
-      <Route element={<Layout />}>
+      <Route element={isApp ? <AppShell /> : <Layout />}>
         <Route index element={<ContactListPage />} />
         <Route path="contacts/new" element={<ContactFormPage />} />
         <Route path="contacts/:id" element={<ContactDetailPage />} />

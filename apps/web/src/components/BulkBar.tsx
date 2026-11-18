@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { BulkResult, Tag, TagLite } from "@agendario/shared";
 import { api, downloadPost } from "../lib/api";
 import { useConfirm } from "./Dialogs";
-import { TagChip, useTags } from "./Tags";
+import { TagChip, tagTree, useTags } from "./Tags";
 
 type Panel = null | "export" | "add" | "remove";
 
@@ -22,6 +22,7 @@ export function useBulkActions({
   const [withGifts, setWithGifts] = useState(false);
   const [onlyTagData, setOnlyTagData] = useState(true);
   const [newTag, setNewTag] = useState("");
+  const [newParent, setNewParent] = useState("");
   const n = ids.length;
 
   const refresh = () => {
@@ -38,13 +39,13 @@ export function useBulkActions({
   const tagOp = useMutation({
     mutationFn: ({ tagId, op }: { tagId: string; op: "add" | "remove" }) => api.post<BulkResult>("/contacts/bulk/tags", { ids, tagId, op }),
     onSuccess: (r, v) => {
-      const name = tags?.find((t) => t.id === v.tagId)?.name ?? "";
+      const name = tagTree(tags).find((n) => n.tag.id === v.tagId)?.path ?? "";
       done(v.op === "add" ? `Etiqueta «${name}» añadida a ${r.affected} contactos` : `Etiqueta «${name}» quitada de ${r.affected} contactos`);
     },
     onError: fail,
   });
   const createAndAdd = useMutation({
-    mutationFn: async () => (await api.post<Tag>("/tags", { name: newTag.trim(), color: "violet" })).id,
+    mutationFn: async () => (await api.post<Tag>("/tags", { name: newTag.trim(), color: "violet", parentId: newParent || null })).id,
     onSuccess: async (tagId) => {
       setNewTag("");
       await qc.invalidateQueries({ queryKey: ["tags"] });
@@ -132,13 +133,17 @@ export function useBulkActions({
           <p className="text-xs text-slate-500">
             {panel === "add" ? `Elige la etiqueta que quieres añadir a los ${n} contactos:` : `Elige la etiqueta que quieres quitar de los ${n} contactos:`}
           </p>
-          <div className="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
-            {tags?.map((t) => <TagChip key={t.id} tag={t} onClick={() => !busy && tagOp.mutate({ tagId: t.id, op: panel })} />)}
+          <div className="-m-1 flex max-h-56 flex-wrap gap-1.5 overflow-y-auto p-1">
+            {tagTree(tags).map((n) => <TagChip key={n.tag.id} tag={{ ...n.tag, name: n.path }} onClick={() => !busy && tagOp.mutate({ tagId: n.tag.id, op: panel })} />)}
             {!tags?.length && <span className="text-xs text-slate-400">Todavía no tienes etiquetas.</span>}
           </div>
           {panel === "add" && (
             <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (newTag.trim()) createAndAdd.mutate(); }}>
               <input className="input py-1.5" placeholder="O crea una nueva…" value={newTag} onChange={(e) => setNewTag(e.target.value)} />
+              <select className="input w-auto max-w-[45%] py-1.5 text-sm" value={newParent} onChange={(e) => setNewParent(e.target.value)} aria-label="Dentro de">
+                <option value="">Nivel principal</option>
+                {tagTree(tags).map((n) => <option key={n.tag.id} value={n.tag.id}>Dentro de {n.path}</option>)}
+              </select>
               <button className="btn-primary shrink-0 py-1.5" disabled={!newTag.trim() || busy}>Crear y añadir</button>
             </form>
           )}

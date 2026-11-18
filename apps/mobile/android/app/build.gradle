@@ -1,0 +1,77 @@
+apply plugin: 'com.android.application'
+
+// Versión tomada de packages/shared (APP_VERSION), p. ej. 0.12.0-beta -> code 1200
+def sharedIndex = new File(rootDir, "../../../packages/shared/src/index.ts").text
+def appVersion = (sharedIndex =~ /APP_VERSION\s*=\s*"([^"]+)"/)[0][1]
+def nums = (appVersion =~ /(\d+)\.(\d+)\.(\d+)/)[0]
+def appCode = nums[1].toInteger() * 1000000 + nums[2].toInteger() * 100 + nums[3].toInteger()
+
+// Firma: android/keystore.properties (no se sube a git) o variables de entorno
+def ksProps = new Properties()
+def ksFile = rootProject.file("keystore.properties")
+if (ksFile.exists()) ksFile.withInputStream { ksProps.load(it) }
+def ks = { k, e -> ksProps.getProperty(k) ?: System.getenv(e) }
+
+android {
+    namespace = "es.dagarin.agendario"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "es.dagarin.agendario"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode appCode
+        versionName appVersion
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (ks("storeFile", "AGENDARIO_KEYSTORE")) {
+                storeFile file(ks("storeFile", "AGENDARIO_KEYSTORE"))
+                storePassword ks("storePassword", "AGENDARIO_KEYSTORE_PASSWORD")
+                keyAlias ks("keyAlias", "AGENDARIO_KEY_ALIAS") ?: "agendario"
+                keyPassword ks("keyPassword", "AGENDARIO_KEY_PASSWORD") ?: ks("storePassword", "AGENDARIO_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (ks("storeFile", "AGENDARIO_KEYSTORE")) signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

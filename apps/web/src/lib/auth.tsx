@@ -1,10 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@agendario/shared";
 import { api, ApiError } from "./api";
+import { setToken } from "./platform";
 
-export function useMe() {
+export function useMe(enabled = true) {
   return useQuery({
     queryKey: ["me"],
+    enabled,
     queryFn: async () => {
       try {
         return await api.get<User>("/auth/me");
@@ -20,7 +22,8 @@ export function useMe() {
 export function useLogout() {
   const qc = useQueryClient();
   return async () => {
-    await api.post("/auth/logout");
+    await api.post("/auth/logout").catch(() => undefined);
+    setToken(null);
     qc.clear();
     qc.setQueryData(["me"], null);
   };
