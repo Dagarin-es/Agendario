@@ -17,9 +17,45 @@ import { getSetting, setSetting } from "./settings.js";
  * con rclone; la carpeta local y NFS (montado como volumen) se escriben directamente.
  */
 
-const CONFIG_KEY = "backup.config";
-const SECRETS_KEY = "backup.secrets";
-const LAST_AUTO_KEY = "backup.lastAuto";
+/**
+ * Varias copias («trabajos»): cada una con su destino, contraseña, programación y registro.
+ * La primera («main») usa las claves de siempre, así las instalaciones anteriores no cambian nada.
+ */
+const JOBS_KEY = "backup.jobs";
+const CONFIG_KEY = (job: string) => (job === "main" ? "backup.config" : `backup.config.${job}`);
+const SECRETS_KEY = (job: string) => (job === "main" ? "backup.secrets" : `backup.secrets.${job}`);
+const LAST_AUTO_KEY = (job: string) => (job === "main" ? "backup.lastAuto" : `backup.lastAuto.${job}`);
+
+export interface BackupJob {
+  id: string;
+  name: string;
+}
+export async function listJobs(): Promise<BackupJob[]> {
+  const jobs = await getSetting<BackupJob[]>(JOBS_KEY, []);
+  return jobs.length ? jobs : [{ id: "main", name: "Copia principal" }];
+}
+export async function createJob(name: string): Promise<BackupJob> {
+  const jobs = await listJobs();
+  const job = { id: Math.random().toString(36).slice(2, 10), name: name.trim().slice(0, 60) || "Copia" };
+  await setSetting(JOBS_KEY, [...jobs, job]);
+  return job;
+}
+export async function renameJob(id: string, name: string) {
+  const jobs = await listJobs();
+  if (!jobs.some((j) => j.id === id)) throw new Error("No existe esa copia");
+  await setSetting(JOBS_KEY, jobs.map((j) => (j.id === id ? { ...j, name: name.trim().slice(0, 60) || j.name } : j)));
+}
+/** Quita una copia de la lista (no borra los ficheros ya guardados en su destino). */
+export async function deleteJob(id: string) {
+  const jobs = await listJobs();
+  if (jobs.length <= 1) throw new Error("Tiene que quedar al menos una copia");
+  await setSetting(JOBS_KEY, jobs.filter((j) => j.id !== id));
+  await db.execute(sql`DELETE FROM settings WHERE key IN (${CONFIG_KEY(id)}, ${SECRETS_KEY(id)}, ${LAST_AUTO_KEY(id)})`);
+  await db.delete(schema.backupRuns).where(eq(schema.backupRuns.jobId, id));
+}
+export async function jobExists(id: string) {
+  return (await listJobs()).some((j) => j.id === id);
+}
 
 /** Tablas en orden de dependencias (para restaurar). Las sesiones no se copian. */
 const TABLES = [
@@ -57,11 +93,11 @@ const photosDir = () => dataPath("photos");
 
 // ---------- Configuración ----------
 
-export async function loadConfig(): Promise<BackupConfig> {
-  const raw = await getSetting<unknown>(CONFIG_KEY, {});
+export async function loadConfig(job = "main"): Promise<BackupConfig> {
+  const raw = await getSetting<unknown>(CONFIG_KEY(job), {});
   const parsed = backupConfigSchema.safeParse(raw);
   const cfg = parsed.success ? parsed.data : backupConfigSchema.parse({});
-  const sec = await loadSecrets();
+  const sec = await loadSecrets(job);
   cfg.hasEncryptionPassword = !!sec.encryptionPassword;
   cfg.dest.hasPassword = !!sec.destPassword;
   cfg.dest.connected = !!sec.token && sec.tokenType === cfg.dest.type;
@@ -72,13 +108,13 @@ export async function loadConfig(): Promise<BackupConfig> {
 }
 
 /** Nube conectada ahora mismo (aunque el destino guardado sea otro) */
-export async function connectedTo() {
-  const sec = await loadSecrets();
+export async function connectedTo(job = "main") {
+  const sec = await loadSecrets(job);
   return sec.token && sec.tokenType === "drive" ? { type: "drive" as const, account: sec.account } : null;
 }
 
-export const loadSecrets = () => getSetting<Secrets>(SECRETS_KEY, {});
-const saveSecrets = (s: Secrets) => setSetting(SECRETS_KEY, s);
+export const loadSecrets = (job = "main") => getSetting<Secrets>(SECRETS_KEY(job), {});
+const saveSecrets = (job: string, s: Secrets) => setSetting(SECRETS_KEY(job), s);
 
 /** Comprobaciones de los datos del destino antes de guardar o probar. */
 export function validateDest(d: BackupDest) {
@@ -88,10 +124,10 @@ export function validateDest(d: BackupDest) {
   if (d.type === "nfs" && !d.share.trim().startsWith("/")) throw new Error("Indica la ruta exportada (empieza por /)");
 }
 
-export async function saveConfig(input: BackupConfig) {
+export async function saveConfig(input: BackupConfig, job = "main") {
   validateDest(input.dest);
-  const prev = await getSetting<Partial<BackupConfig>>(CONFIG_KEY, {});
-  const sec = await loadSecrets();
+  const prev = await getSetting<Partial<BackupConfig>>(CONFIG_KEY(job), {});
+  const sec = await loadSecrets(job);
   if (input.encryptionPassword) sec.encryptionPassword = input.encryptionPassword;
   if (input.dest.password) sec.destPassword = input.dest.password;
   // Si cambia el tipo de destino: la contraseña anterior ya no vale, y la autorización solo si es de otra nube
@@ -105,7 +141,7 @@ export async function saveConfig(input: BackupConfig) {
     }
     if (!input.dest.password) delete sec.destPassword;
   }
-  await saveSecrets(sec);
+  await saveSecrets(job, sec);
   const clean = backupConfigSchema.parse(input);
   delete clean.encryptionPassword;
   delete clean.dest.password;
@@ -113,9 +149,9 @@ export async function saveConfig(input: BackupConfig) {
   delete clean.dest.hasPassword;
   delete clean.dest.connected;
   delete clean.dest.account;
-  await setSetting(CONFIG_KEY, clean);
+  await setSetting(CONFIG_KEY(job), clean);
   // La próxima copia automática se calcula a partir de ahora
-  await setSetting(LAST_AUTO_KEY, new Date().toISOString());
+  await setSetting(LAST_AUTO_KEY(job), new Date().toISOString());
 }
 
 // ---------- Programación ----------
@@ -135,26 +171,28 @@ export function nextOccurrence(cfg: BackupConfig, after: Date): Date {
   return new Date(after.getTime() + 86400_000);
 }
 
-export async function nextRun(cfg?: BackupConfig) {
-  const c = cfg ?? (await loadConfig());
+export async function nextRun(cfg?: BackupConfig, job = "main") {
+  const c = cfg ?? (await loadConfig(job));
   if (!c.enabled) return null;
-  const last = new Date(await getSetting<string>(LAST_AUTO_KEY, new Date().toISOString()));
+  const last = new Date(await getSetting<string>(LAST_AUTO_KEY(job), new Date().toISOString()));
   return nextOccurrence(c, last);
 }
 
-let running = false;
-export const isRunning = () => running;
+const running = new Set<string>();
+export const isRunning = (job = "main") => running.has(job);
 
 export function startBackupScheduler() {
   const tick = async () => {
-    try {
-      const cfg = await loadConfig();
-      const next = await nextRun(cfg);
-      if (!next || running || Date.now() < next.getTime()) return;
-      await setSetting(LAST_AUTO_KEY, new Date().toISOString());
-      await runBackup("auto");
-    } catch (e) {
-      console.warn("Programador de copias:", (e as Error).message);
+    for (const { id } of await listJobs().catch(() => [])) {
+      try {
+        const cfg = await loadConfig(id);
+        const next = await nextRun(cfg, id);
+        if (!next || running.has(id) || Date.now() < next.getTime()) continue;
+        await setSetting(LAST_AUTO_KEY(id), new Date().toISOString());
+        await runBackup("auto", id);
+      } catch (e) {
+        console.warn("Programador de copias:", (e as Error).message);
+      }
     }
   };
   setInterval(tick, 60_000).unref();
@@ -313,9 +351,9 @@ async function deleteFile(dest: BackupDest, sec: Secrets, name: string) {
  * Prueba de conexión: escribe y borra un fichero pequeño. Se puede probar con los datos
  * del formulario sin guardarlos (las contraseñas vacías usan las guardadas).
  */
-export async function testDestination(draft?: BackupDest) {
-  const saved = await loadConfig();
-  const sec = { ...(await loadSecrets()) };
+export async function testDestination(draft?: BackupDest, job = "main") {
+  const saved = await loadConfig(job);
+  const sec = { ...(await loadSecrets(job)) };
   const dest = draft ?? saved.dest;
   validateDest(dest);
   if (draft?.password) sec.destPassword = draft.password;
@@ -380,14 +418,14 @@ export async function createArchive(password: string, name = `agendario-${stamp(
   return { file: out, name, work, counts };
 }
 
-export async function runBackup(trigger: "auto" | "manual") {
-  if (running) throw new Error("Ya hay una copia en marcha");
-  running = true;
-  const cfg = await loadConfig();
-  const sec = await loadSecrets();
+export async function runBackup(trigger: "auto" | "manual", job = "main") {
+  if (running.has(job)) throw new Error("Ya hay una copia en marcha");
+  running.add(job);
+  const cfg = await loadConfig(job);
+  const sec = await loadSecrets(job);
   const [run_] = await db
     .insert(schema.backupRuns)
-    .values({ trigger, status: "running", destination: describeDest(cfg.dest) })
+    .values({ trigger, status: "running", destination: describeDest(cfg.dest), jobId: job })
     .returning();
   let work: string | undefined;
   try {
@@ -416,7 +454,7 @@ export async function runBackup(trigger: "auto" | "manual") {
     console.warn("Copia de seguridad fallida:", msg);
     throw e;
   } finally {
-    running = false;
+    running.delete(job);
     if (work) await rm(work, { recursive: true, force: true });
     // El registro guarda las 200 últimas
     await db.execute(sql`DELETE FROM backup_runs WHERE id NOT IN (SELECT id FROM backup_runs ORDER BY started_at DESC LIMIT 200)`);
@@ -436,8 +474,8 @@ export function describeDest(d: BackupDest) {
   }
 }
 
-export async function recentRuns() {
-  const rows = await db.select().from(schema.backupRuns).orderBy(desc(schema.backupRuns.startedAt)).limit(30);
+export async function recentRuns(job = "main") {
+  const rows = await db.select().from(schema.backupRuns).where(eq(schema.backupRuns.jobId, job)).orderBy(desc(schema.backupRuns.startedAt)).limit(30);
   return rows.map((r) => ({
     ...r,
     startedAt: r.startedAt.toISOString(),
@@ -521,9 +559,9 @@ export async function restoreArchive(work: string) {
 
 // ---------- Conectar Google Drive (código de dispositivo) ----------
 
-export function startOAuth(type: OAuthType) {
+export function startOAuth(type: OAuthType, job = "main") {
   return startDeviceFlow(type, async (token) => {
-    const sec = await loadSecrets();
+    const sec = await loadSecrets(job);
     sec.token = JSON.stringify(token);
     sec.tokenType = type;
     sec.account = undefined;
@@ -534,17 +572,17 @@ export function startOAuth(type: OAuthType) {
       const d = (await me.json()) as { user?: { emailAddress?: string; displayName?: string } };
       sec.account = d.user?.emailAddress ?? d.user?.displayName;
     }
-    await saveSecrets(sec);
+    await saveSecrets(job, sec);
   });
 }
 
-export async function disconnectOAuth() {
-  const sec = await loadSecrets();
+export async function disconnectOAuth(job = "main") {
+  const sec = await loadSecrets(job);
   delete sec.token;
   delete sec.tokenType;
   delete sec.driveId;
   delete sec.driveType;
   delete sec.account;
-  await saveSecrets(sec);
+  await saveSecrets(job, sec);
 }
 

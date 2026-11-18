@@ -49,7 +49,7 @@ export function LetterIndex({ present, onJump }: { present: Set<string>; onJump:
   return (
     <div
       ref={ref}
-      className="letter-index m3-index fixed right-0 z-10 flex w-[22px] touch-none select-none flex-col items-center justify-between rounded-l-2xl py-1.5"
+      className="letter-index m3-index fixed right-0 z-10 flex w-[30px] touch-none select-none flex-col items-center justify-between rounded-l-2xl py-1.5"
       style={{ top: "calc(var(--header-h, 56px) + 118px)", bottom: "calc(160px + var(--sab, 0px))" }}
       onPointerDown={(e) => { (e.target as HTMLElement).setPointerCapture(e.pointerId); go(e.clientY); }}
       onPointerMove={(e) => { if (e.buttons || e.pointerType === "touch") go(e.clientY); }}
@@ -60,9 +60,9 @@ export function LetterIndex({ present, onJump }: { present: Set<string>; onJump:
     >
       {rows.map((l, i) =>
         l ? (
-          <span key={l} className={`text-[10.5px] font-bold leading-none ${present.has(l) ? "text-indigo-800" : "text-slate-400/60"}`}>{l}</span>
+          <span key={l} className={`text-[13px] font-bold leading-none ${present.has(l) ? "text-indigo-800" : "text-slate-400/60"}`}>{l}</span>
         ) : (
-          <span key={`d${i}`} className="text-[8px] leading-none text-slate-400" aria-hidden="true">•</span>
+          <span key={`d${i}`} className="text-[10px] leading-none text-slate-400" aria-hidden="true">•</span>
         ),
       )}
       {active && (

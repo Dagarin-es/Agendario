@@ -156,5 +156,9 @@
         <package android:name="com.microsoft.office.outlook" />
         <package android:name="com.fastmail.app" />
         <package android:name="ch.protonmail.android" />
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
     </queries>
 </manifest>

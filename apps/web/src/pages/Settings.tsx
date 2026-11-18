@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
   APP_NAME,
   APP_VERSION,
@@ -20,7 +20,7 @@ import {
   type MessagingApp,
   type UserPrefs,
 } from "@agendario/shared";
-import { useAlert, useConfirm } from "../components/Dialogs";
+import { Modal, useAlert, useConfirm } from "../components/Dialogs";
 import { useUserPrefs } from "../components/QuickActions";
 import { api, apiUrl } from "../lib/api";
 import { useMe } from "../lib/auth";
@@ -268,11 +268,12 @@ function DestFields({ cfg, set }: { cfg: BackupConfig; set: (d: Partial<BackupCo
 
 function Connect({ type, connected, account, available, onChange }: { type: "drive"; connected?: boolean; account?: string; available: boolean; onChange: () => void }) {
   const showAlert = useAlert();
+  const jq = useJobQuery();
   const [code, setCode] = useState<OAuthStart | null>(null);
   const [copied, setCopied] = useState(false);
   const name = backupDestLabels[type];
   const start = useMutation({
-    mutationFn: () => api.post<OAuthStart>("/backup/oauth/start", { type }),
+    mutationFn: () => api.post<OAuthStart>(jq("/backup/oauth/start"), { type }),
     onSuccess: setCode,
     onError: (e) => showAlert("No se ha podido empezar", (e as Error).message),
   });
@@ -287,7 +288,7 @@ function Connect({ type, connected, account, available, onChange }: { type: "dri
     if (st.state === "ok") { setCode(null); onChange(); }
     if (st.state === "error") { setCode(null); showAlert("No se ha podido conectar", st.message ?? ""); }
   }, [st, code, onChange, showAlert]);
-  const disconnect = useMutation({ mutationFn: () => api.del("/backup/oauth"), onSuccess: onChange });
+  const disconnect = useMutation({ mutationFn: () => api.del(jq("/backup/oauth")), onSuccess: onChange });
 
   if (!available)
     return <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">Esta instalación no tiene configurada la app de Google. Mientras tanto, usa NFS, SMB o la carpeta local.</p>;
@@ -323,11 +324,12 @@ function Restore({ status }: { status: BackupStatus }) {
   const qc = useQueryClient();
   const confirm = useConfirm();
   const showAlert = useAlert();
+  const jq = useJobQuery();
   const [files, setFiles] = useState<BackupFile[] | null>(null);
   const [pick, setPick] = useState<{ name?: string; file?: File } | null>(null);
   const [password, setPassword] = useState("");
   const [preview, setPreview] = useState<{ createdAt: string; version: string; counts: Record<string, number> } | null>(null);
-  const load = useMutation({ mutationFn: () => api.get<BackupFile[]>("/backup/files"), onSuccess: setFiles, onError: (e) => showAlert("No se ha podido leer el destino", (e as Error).message) });
+  const load = useMutation({ mutationFn: () => api.get<BackupFile[]>(jq("/backup/files")), onSuccess: setFiles, onError: (e) => showAlert("No se ha podido leer el destino", (e as Error).message) });
   const send = useMutation({
     mutationFn: (confirmIt: boolean) => {
       const fd = new FormData();
@@ -335,7 +337,7 @@ function Restore({ status }: { status: BackupStatus }) {
       if (pick?.file) fd.append("file", pick.file);
       if (pick?.name) fd.append("name", pick.name);
       fd.append("confirm", String(confirmIt));
-      return api.post<{ manifest: { createdAt: string; version: string; counts: Record<string, number> }; restored: boolean }>("/backup/restore", fd);
+      return api.post<{ manifest: { createdAt: string; version: string; counts: Record<string, number> }; restored: boolean }>(jq("/backup/restore"), fd);
     },
     onSuccess: (r) => {
       if (!r.restored) setPreview(r.manifest);
@@ -365,7 +367,7 @@ function Restore({ status }: { status: BackupStatus }) {
             <li key={f.name} className={`flex flex-wrap items-center gap-2 p-2 text-sm ${pick?.name === f.name ? "bg-indigo-50" : ""}`}>
               <span className="min-w-0 flex-1 truncate font-mono text-xs">{f.name}</span>
               <span className="text-xs text-slate-500">{size(f.size)}</span>
-              <a className="text-xs text-indigo-700 hover:underline" href={apiUrl(`/backup/files/${encodeURIComponent(f.name)}`)}>Descargar</a>
+              <a className="text-xs text-indigo-700 hover:underline" href={apiUrl(jq(`/backup/files/${encodeURIComponent(f.name)}`))}>Descargar</a>
               <button className="text-xs font-medium text-indigo-800 hover:underline" onClick={() => { setPick({ name: f.name }); setPreview(null); }}>Elegir</button>
             </li>
           ))}
@@ -399,13 +401,75 @@ function Restore({ status }: { status: BackupStatus }) {
   );
 }
 
-function Backups() {
+/** Copia (pestaña) sobre la que trabajan los componentes de copias. */
+const BackupJobCtx = createContext("main");
+function useJobQuery() {
+  const job = useContext(BackupJobCtx);
+  return (p: string) => `${p}${p.includes("?") ? "&" : "?"}job=${encodeURIComponent(job)}`;
+}
+
+interface BackupJobInfo { id: string; name: string; enabled: boolean; lastStatus: "running" | "ok" | "error" | null }
+
+/** Varias copias de seguridad, cada una en su pestaña (destino, contraseña, programación y registro propios). */
+function BackupJobs() {
   const qc = useQueryClient();
   const showAlert = useAlert();
   const confirm = useConfirm();
+  const { data: jobs } = useQuery({ queryKey: ["backup-jobs"], queryFn: () => api.get<BackupJobInfo[]>("/backup/jobs") });
+  const [sel, setSel] = useState<string>("main");
+  const [naming, setNaming] = useState<{ id?: string; name: string } | null>(null);
+  const refresh = () => qc.invalidateQueries({ queryKey: ["backup-jobs"] });
+  const save = useMutation({
+    mutationFn: async (n: { id?: string; name: string }) => (n.id ? api.patch(`/backup/jobs/${n.id}`, { name: n.name }) : api.post<{ id: string }>("/backup/jobs", { name: n.name })),
+    onSuccess: (r, n) => { setNaming(null); refresh(); if (!n.id && r && (r as { id?: string }).id) setSel((r as { id: string }).id); },
+    onError: (e) => showAlert("No se ha podido guardar", (e as Error).message),
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => api.del(`/backup/jobs/${id}`),
+    onSuccess: () => { setSel("main"); refresh(); },
+    onError: (e) => showAlert("No se ha podido quitar", (e as Error).message),
+  });
+  if (!jobs) return <p className="text-sm text-slate-500">Cargando…</p>;
+  const cur = jobs.find((j) => j.id === sel) ?? jobs[0]!;
+  const dot = (j: BackupJobInfo) => (!j.enabled ? "bg-slate-300" : j.lastStatus === "error" ? "bg-red-500" : j.lastStatus === "ok" ? "bg-emerald-500" : "bg-amber-400");
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Copias de seguridad">
+        {jobs.map((j) => (
+          <button key={j.id} role="tab" aria-selected={cur.id === j.id} onClick={() => setSel(j.id)} className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium ${cur.id === j.id ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200" : "text-slate-600 hover:bg-white/60"}`}>
+            <span className={`h-2 w-2 rounded-full ${dot(j)}`} aria-hidden="true" /> {j.name}
+          </button>
+        ))}
+        <button className="rounded-xl px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50" onClick={() => setNaming({ name: "" })}>+ Nueva copia</button>
+      </div>
+      <BackupJobCtx.Provider value={cur.id}>
+        <Backups key={cur.id} title={cur.name} onRename={() => setNaming({ id: cur.id, name: cur.name })} onDelete={jobs.length > 1 ? async () => { if (await confirm({ title: `¿Quitar «${cur.name}»?`, message: "Se borra su configuración y su registro. Los ficheros de copia que ya estén en su destino no se tocan.", confirmText: "Quitar" })) remove.mutate(cur.id); } : undefined} />
+      </BackupJobCtx.Provider>
+      {naming && (
+        <Modal title={naming.id ? "Cambiar el nombre" : "Nueva copia de seguridad"} onClose={() => setNaming(null)}>
+          <form className="space-y-3 p-4" onSubmit={(e) => { e.preventDefault(); if (naming.name.trim()) save.mutate(naming); }}>
+            <input className="input" autoFocus placeholder="Nombre (p. ej. NAS, Google Drive)" value={naming.name} onChange={(e) => setNaming({ ...naming, name: e.target.value })} maxLength={60} />
+            <p className="text-xs text-slate-500">Es el título de la pestaña. Después eliges su destino, contraseña y cuándo se hace.</p>
+            <div className="flex justify-end gap-2">
+              <button type="button" className="btn-ghost" onClick={() => setNaming(null)}>Cancelar</button>
+              <button className="btn-primary" disabled={!naming.name.trim() || save.isPending}>{naming.id ? "Guardar" : "Crear"}</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function Backups({ title, onRename, onDelete }: { title: string; onRename: () => void; onDelete?: () => void }) {
+  const qc = useQueryClient();
+  const showAlert = useAlert();
+  const confirm = useConfirm();
+  const job = useContext(BackupJobCtx);
+  const jq = useJobQuery();
   const { data: status } = useQuery({
-    queryKey: ["backup"],
-    queryFn: () => api.get<BackupStatus & { running: boolean }>("/backup"),
+    queryKey: ["backup", job],
+    queryFn: () => api.get<BackupStatus & { running: boolean }>(jq("/backup")),
     refetchInterval: (q) => (q.state.data?.running ? 2000 : false),
   });
   const [cfg, setCfg] = useState<BackupConfig | null>(null);
@@ -413,28 +477,28 @@ function Backups() {
   useEffect(() => {
     if (status && !dirty) setCfg(status.config);
   }, [status, dirty]);
-  const refresh = () => qc.invalidateQueries({ queryKey: ["backup"] });
+  const refresh = () => { qc.invalidateQueries({ queryKey: ["backup", job] }); qc.invalidateQueries({ queryKey: ["backup-jobs"] }); };
   const save = useMutation({
-    mutationFn: () => api.put("/backup/config", cfg),
+    mutationFn: () => api.put(jq("/backup/config"), cfg),
     onSuccess: () => { setDirty(false); setCfg((c) => (c ? { ...c, encryptionPassword: undefined, dest: { ...c.dest, password: undefined } } : c)); refresh(); },
     onError: (e) => showAlert("No se ha podido guardar", (e as Error).message),
   });
   const test = useMutation({
-    mutationFn: () => api.post("/backup/test", { dest: cfg?.dest }),
+    mutationFn: () => api.post(jq("/backup/test"), { dest: cfg?.dest }),
     onSuccess: () => showAlert("Conexión correcta", "Se ha podido escribir en el destino."),
     onError: (e) => showAlert("No se puede escribir en el destino", (e as Error).message),
   });
   const run = useMutation({
-    mutationFn: () => api.post<{ file: string; size: number }>("/backup/run"),
+    mutationFn: () => api.post<{ file: string; size: number }>(jq("/backup/run")),
     onSuccess: refresh,
     onError: (e) => { refresh(); showAlert("La copia ha fallado", (e as Error).message); },
   });
   const clearLog = useMutation({
-    mutationFn: () => api.del("/backup/runs"),
+    mutationFn: () => api.del(jq("/backup/runs")),
     onSuccess: refresh,
     onError: (e) => showAlert("No se ha podido limpiar", (e as Error).message),
   });
-  if (!status || !cfg) return <Section icon="🛟" title="Copias de seguridad"><p className="text-sm text-slate-500">Cargando…</p></Section>;
+  if (!status || !cfg) return <Section icon="🛟" title={title}><p className="text-sm text-slate-500">Cargando…</p></Section>;
 
   const set = (v: Partial<BackupConfig>) => { setCfg({ ...cfg, ...v }); setDirty(true); };
   const setDest = (v: Partial<BackupConfig["dest"]>) => set({ dest: { ...cfg.dest, ...v } });
@@ -442,7 +506,11 @@ function Backups() {
   const last = status.runs[0];
 
   return (
-    <Section icon="🛟" title="Copias de seguridad" desc="Copia cifrada de toda la base de datos (todos los usuarios) y de las fotos. Solo la ve el administrador.">
+    <Section icon="🛟" title={title} desc="Copia cifrada de toda la base de datos (todos los usuarios) y de las fotos. Solo la ve el administrador. Cada copia tiene su destino, contraseña, programación y registro.">
+      <div className="-mt-2 flex flex-wrap gap-3 text-xs">
+        <button className="text-indigo-700 hover:underline" onClick={onRename}>✏️ Cambiar el nombre</button>
+        {onDelete && <button className="text-red-700 hover:underline" onClick={onDelete}>🗑️ Quitar esta copia</button>}
+      </div>
       {/* Estado */}
       <div className="grid gap-2 rounded-xl bg-indigo-50/60 p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
         <div className="space-y-0.5">
@@ -651,7 +719,7 @@ export function SettingsPage() {
           <DatesSettings />
         </>
       )}
-      {tab === "copias" && me?.isAdmin && <Backups />}
+      {tab === "copias" && me?.isAdmin && <BackupJobs />}
     </div>
   );
 }

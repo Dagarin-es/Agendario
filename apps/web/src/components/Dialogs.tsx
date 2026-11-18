@@ -37,7 +37,7 @@ export function Modal({
         // Un formulario dentro de la ventana no debe enviar el de la página (p. ej. la edición del contacto)
         onSubmit={(e) => e.stopPropagation()}
         className={`flex w-full flex-col overflow-hidden bg-white shadow-2xl ${width} ${
-          full ? "h-dvh sm:h-[90vh] sm:rounded-2xl" : "max-h-[90dvh] rounded-t-2xl sm:rounded-2xl"
+          full ? "h-full sm:h-[90vh] sm:rounded-2xl" : "max-h-[90dvh] rounded-t-2xl sm:rounded-2xl"
         } animate-[dialogIn_.15s_ease-out]`}
       >
         {title !== undefined && (

@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 0.17.0-beta
+- **Varias copias de seguridad**: en Ajustes → Copias, cada copia va en su pestaña con el nombre que le pongas (p. ej. «NAS» por NFS y «Drive» por Google Drive), con su destino, contraseña, programación y registro propios. «+ Nueva copia» añade todas las que quieras; cada una se puede renombrar o quitar. La copia que ya tenías pasa a ser la primera pestaña («Copia principal»), sin perder nada.
+- **Buscador**: corregido que al escribir desaparecieran el campo y el teclado en el móvil.
+- **Índice de iniciales** (app): letras más grandes; flota sobre la lista sin estrecharla.
+- **Ventanas a pantalla completa** (como el historial de sincronización): ya no se meten debajo de la barra de estado y el reloj.
+- **Galaxy Fold abierto**: en la cabecera de la ficha, de las etiquetas para abajo va bajo la foto a todo el ancho, como con el móvil cerrado.
+- **Email en la app**: abre la app de correo del teléfono (la elegida en Ajustes si está instalada, si no la predeterminada), nunca la web en el navegador. El desplegable ▾ añade «Abrir con…» con las apps de correo instaladas.
+
 ## 0.16.0-beta
 - **Etiquetas de teléfonos, emails y webs**: desplegable propio con la lista completa al tocar (las tuyas, las habituales y las que ya usan tus contactos), filtro al escribir y «+ Crear "…"». Si sales escribiendo una nueva, pregunta si se crea.
 - **Fechas importantes**: botón ✏️ para editar nombre, día, mes y año (opcional), también el cumpleaños. **Selector de emoji completo**: buscador, recientes, categorías y escribir o pegar cualquiera.

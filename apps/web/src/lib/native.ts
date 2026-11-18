@@ -57,12 +57,16 @@ export async function initNative() {
     getPalette(): Promise<Palette>;
     setIcon(o: { theme: string }): Promise<void>;
     installedApps(o: { packages: string[] }): Promise<Record<string, boolean>>;
+    mailApps(): Promise<{ apps: MailApp[] }>;
+    openMail(o: { to: string; package?: string }): Promise<void>;
     consumeShare(): Promise<{ text?: string; title?: string }>;
     consumeOpen(): Promise<{ path?: string }>;
     addListener(e: "open", fn: (d: { path?: string }) => void): Promise<unknown>;
     addListener(e: "share", fn: (d: { text?: string; title?: string }) => void): Promise<unknown>;
   }>("MaterialYou");
   nativeApi.installedApps = (packages) => MaterialYou.installedApps({ packages });
+  nativeApi.mailApps = () => MaterialYou.mailApps().then((r) => r.apps ?? []);
+  nativeApi.openMail = (to, pkg) => MaterialYou.openMail({ to, ...(pkg ? { package: pkg } : {}) });
   // «Compartir» desde otra app → Añadir idea de regalo
   const share = (d: { text?: string; title?: string }) => d?.text && window.dispatchEvent(new CustomEvent("agendario-share", { detail: d }));
   void MaterialYou.addListener("share", share).catch(() => undefined);
@@ -101,7 +105,12 @@ export async function initNative() {
 }
 
 /** Funciones nativas que usan otras pantallas (solo en la app). */
-export const nativeApi: { installedApps?: (packages: string[]) => Promise<Record<string, boolean>> } = {};
+export interface MailApp { package: string; label: string }
+export const nativeApi: {
+  installedApps?: (packages: string[]) => Promise<Record<string, boolean>>;
+  mailApps?: () => Promise<MailApp[]>;
+  openMail?: (to: string, pkg?: string) => Promise<void>;
+} = {};
 
 // ---------- Registro de llamadas ----------
 export interface CallLogStatus {

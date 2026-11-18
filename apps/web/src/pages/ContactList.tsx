@@ -220,6 +220,10 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
       if (Math.sign(d) !== Math.sign(travel)) travel = 0;
       travel += d;
       let next = cur;
+      // Mientras se escribe (buscador con foco o teclado abierto) nunca se recoge: al abrirse el
+      // teclado la página se desplaza y antes el buscador —y con él el teclado— desaparecía.
+      const typing = document.activeElement instanceof HTMLInputElement || document.documentElement.classList.contains("kb-open");
+      if (typing) { travel = 0; return; }
       if (q || y < 160) next = false;
       else if (travel > 56) next = true;
       else if (travel < -56) next = false;
@@ -424,7 +428,7 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
       )}
 
       {showIndex && <LetterIndex present={present} onJump={jumpLetter} />}
-      <ul className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden ${showIndex ? "mr-5" : ""}`}>
+      <ul className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden `}>
         {visible.map((c, i) => {
           const l = letters.get(c.id);
           const header = l && (i === 0 || letters.get(visible[i - 1]!.id) !== l);

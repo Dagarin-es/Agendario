@@ -11,13 +11,15 @@ import {
   type UserPrefs,
 } from "@agendario/shared";
 import { api } from "../lib/api";
-import { useInstalledFilter } from "../lib/installed";
+import { openMailNative, useInstalledFilter, useMailApps } from "../lib/installed";
+import { isApp } from "../lib/platform";
 import { isMobileLike, isWebLink, messageLink, telLink, emailLink } from "../lib/links";
 
 /** Enlace para escribir a una dirección con la app de correo elegida en Ajustes. */
 export function useEmailHref() {
   const { data } = useUserPrefs();
-  return (to: string) => emailLink(data?.emailApp, to);
+  // En la app, mailto: abre la app de correo del teléfono (no la web en el navegador)
+  return (to: string) => (isApp ? `mailto:${to}` : emailLink(data?.emailApp, to));
 }
 
 export function useUserPrefs() {
@@ -37,7 +39,7 @@ export function resolveDefaults(c: ContactDetail, prefs: ContactPrefs, user?: Us
   };
 }
 
-function Split({ href, label, icon, children, onMain, disabled }: { href: string; label: ReactNode; icon: string; children: ReactNode; onMain?: () => void; disabled?: boolean }) {
+function Split({ href, label, icon, children, onMain, disabled }: { href: string; label: ReactNode; icon: string; children: ReactNode; onMain?: (e: React.MouseEvent) => void; disabled?: boolean }) {
   const [open, setOpen] = useState(false);
   if (disabled) return null;
   return (
@@ -73,7 +75,7 @@ function Split({ href, label, icon, children, onMain, disabled }: { href: string
 const menuTitle = "block px-4 pb-1 pt-2 text-[11px] font-semibold uppercase text-slate-400";
 
 /** Fila del menú: el dato (pulsar = usarlo) y una estrella para dejarlo por defecto. */
-function ItemRow({ href, item, isDefault, onDefault, onUse }: { href: string; item: LabeledValue; isDefault: boolean; onDefault: () => void; onUse?: () => void }) {
+function ItemRow({ href, item, isDefault, onDefault, onUse }: { href: string; item: LabeledValue; isDefault: boolean; onDefault: () => void; onUse?: (e: React.MouseEvent) => void }) {
   return (
     <span className="flex items-center hover:bg-slate-50">
       <a href={href} {...(isWebLink(href) ? { target: "_blank", rel: "noreferrer" } : {})} onClick={onUse} className="min-w-0 flex-1 px-4 py-2">
@@ -103,6 +105,14 @@ export function QuickActions({ c, onCall, align = "center" }: { c: ContactDetail
   const cc = user?.countryCode ?? "34";
   const d = resolveDefaults(c, c.prefs, user);
   const onlyInstalled = useInstalledFilter();
+  const mailApps = useMailApps();
+  // En la app de Android el correo siempre va a una app nativa (nunca a la web de Fastmail/Gmail en el navegador)
+  const mailHref = (to: string) => (isApp ? `mailto:${to}` : emailLink(user?.emailApp, to));
+  const mailNative = (to: string, app?: string) => (e: React.MouseEvent) => {
+    if (!isApp) return;
+    e.preventDefault();
+    void openMailNative(to, app ?? user?.emailApp);
+  };
   const save = useMutation({
     mutationFn: (patch: Partial<ContactPrefs>) => api.put(`/contacts/${c.id}/prefs`, { ...c.prefs, ...patch }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contact", c.id] }),
@@ -140,11 +150,21 @@ export function QuickActions({ c, onCall, align = "center" }: { c: ContactDetail
         </Split>
       )}
       {d.email && (
-        <Split href={emailLink(user?.emailApp, d.email.value)} icon="✉️" label="Email">
+        <Split href={mailHref(d.email.value)} icon="✉️" label="Email" onMain={mailNative(d.email.value)}>
           <span className={menuTitle}>Escribir a…</span>
           {c.emails.map((e) => (
-            <ItemRow key={e.id ?? e.value} href={emailLink(user?.emailApp, e.value)} item={e} isDefault={e === d.email} onDefault={() => save.mutate({ emailId: e.id ?? null })} />
+            <ItemRow key={e.id ?? e.value} href={mailHref(e.value)} item={e} isDefault={e === d.email} onDefault={() => save.mutate({ emailId: e.id ?? null })} onUse={mailNative(e.value)} />
           ))}
+          {isApp && mailApps.length > 0 && (
+            <>
+              <span className={`${menuTitle} border-t border-slate-100`}>Abrir con…</span>
+              {mailApps.map((a) => (
+                <a key={a.package} href={`mailto:${d.email!.value}`} onClick={mailNative(d.email!.value, a.package)} className="block px-4 py-2 hover:bg-slate-50">
+                  {a.label}
+                </a>
+              ))}
+            </>
+          )}
         </Split>
       )}
     </div>

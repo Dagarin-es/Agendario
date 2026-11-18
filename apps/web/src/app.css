@@ -84,6 +84,10 @@
 /* Ficha en el panel derecho (Fold abierto): una sola columna si el panel es estrecho */
 @media (max-width: 1100px) {
   .two-pane-detail .md\:grid-cols-2, .two-pane-detail .lg\:grid-cols-2 { grid-template-columns: minmax(0, 1fr); }
+  /* Plegable abierto (Fold): la cabecera de la ficha como en el móvil — etiquetas y demás bajo la foto, a todo el ancho */
+  .two-pane-detail .detail-photo { grid-row: auto; }
+  .two-pane-detail .detail-name { align-self: center; }
+  .two-pane-detail .detail-rest { grid-column: 1 / -1; }
 }
 
 /* Índice de iniciales: mismo cristal que la píldora, pegado al borde derecho */

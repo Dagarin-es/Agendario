@@ -1,6 +1,11 @@
 package es.dagarin.agendario;
 
 import android.content.ComponentName;
+import android.content.Intent;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
+import java.util.HashSet;
+import java.util.List;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import com.getcapacitor.JSArray;
@@ -73,6 +78,49 @@ public class MaterialYouPlugin extends Plugin {
     }
 
     /** Qué apps de la lista están instaladas (para ofrecer solo esas en Ajustes). */
+    /** Apps de correo instaladas (las que atienden un enlace mailto:). */
+    @PluginMethod
+    public void mailApps(PluginCall call) {
+        PackageManager pm = getContext().getPackageManager();
+        Intent i = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
+        List<ResolveInfo> list = Build.VERSION.SDK_INT >= 33
+            ? pm.queryIntentActivities(i, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_ALL))
+            : pm.queryIntentActivities(i, PackageManager.MATCH_ALL);
+        JSArray apps = new JSArray();
+        HashSet<String> seen = new HashSet<>();
+        for (ResolveInfo r : list) {
+            String pkg = r.activityInfo.packageName;
+            if (!seen.add(pkg)) continue;
+            JSObject o = new JSObject();
+            o.put("package", pkg);
+            o.put("label", String.valueOf(r.loadLabel(pm)));
+            apps.put(o);
+        }
+        JSObject ret = new JSObject();
+        ret.put("apps", apps);
+        call.resolve(ret);
+    }
+
+    /** Escribe un correo con la app indicada (o con la predeterminada / el selector si no se indica). */
+    @PluginMethod
+    public void openMail(PluginCall call) {
+        String to = call.getString("to", "");
+        String pkg = call.getString("package");
+        Intent i = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + Uri.encode(to, "@")));
+        if (pkg != null && !pkg.isEmpty()) i.setPackage(pkg);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getContext().startActivity(i);
+            call.resolve();
+        } catch (Exception e) {
+            if (pkg != null && !pkg.isEmpty()) {
+                // La app ya no está: se abre la predeterminada
+                try { i.setPackage(null); getContext().startActivity(i); call.resolve(); return; } catch (Exception ignored) {}
+            }
+            call.reject("No hay ninguna app de correo");
+        }
+    }
+
     @PluginMethod
     public void installedApps(PluginCall call) {
         JSObject ret = new JSObject();

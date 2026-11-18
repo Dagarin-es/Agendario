@@ -389,6 +389,8 @@ export const backupRuns = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     /** auto · manual · restore-safety */
     trigger: text("trigger").notNull(),
+    /** A qué copia pertenece («main» = la principal) */
+    jobId: text("job_id").notNull().default("main"),
     /** running · ok · error */
     status: text("status").notNull(),
     destination: text("destination").notNull().default(""),
