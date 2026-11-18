@@ -16,6 +16,7 @@ import { UserAvatar } from "./UserAvatar";
 import { AboutModal } from "./About";
 import { ContactListPage } from "../pages/ContactList";
 import { OfflineBanner } from "./OfflineBanner";
+import { sortOptions, useSortPref } from "../lib/sort";
 
 // ---------- Iconos (24 px, trazo, estilo Material Symbols) ----------
 const I = ({ d, filled, className = "h-6 w-6" }: { d: ReactNode; filled?: boolean; className?: string }) => (
@@ -105,6 +106,7 @@ export function AppShell() {
   const gifts = useGiftsToBuy();
   const pending = usePendingGifts().data?.length ?? 0;
   const [sheet, setSheet] = useState(false);
+  const [about, setAbout] = useState(false);
   useColorThemeFromPrefs();
   const icon = useThemeIcon();
   const headerRef = useRef<HTMLElement>(null);
@@ -177,6 +179,7 @@ export function AppShell() {
           <button className="m3-icon-btn" onClick={() => nav(-1)} aria-label="Atrás">{icons.back()}</button>
         )}
         <span className="min-w-0 flex-1 truncate text-[20px] font-medium tracking-tight text-indigo-950">{APP_NAME}</span>
+        {!wide && location.pathname === "/" && <SortMenu />}
         <h1 className="sr-only">{title}</h1>
       </header>
 
@@ -227,16 +230,41 @@ export function AppShell() {
         </nav>
       )}
 
-      {sheet && <MoreSheet onClose={() => setSheet(false)} />}
+      {sheet && <MoreSheet onClose={() => setSheet(false)} onAbout={() => { setSheet(false); setAbout(true); }} />}
+      {about && <AboutModal onClose={() => setAbout(false)} />}
+    </div>
+  );
+}
+
+/** «Ordenar por» en la cabecera (pestaña Contactos en el móvil). */
+function SortMenu() {
+  const [sort, setSort] = useSortPref();
+  const [open, setOpen] = useState(false);
+  const label = sortOptions.find((o) => o.id === sort)?.label ?? "";
+  return (
+    <div className="relative mr-1">
+      <button className="flex max-w-[11rem] items-center gap-1 rounded-full px-3 py-1.5 text-sm text-slate-600 active:bg-indigo-100" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open}>
+        <span className="truncate"><span className="text-slate-400">Ordenar por</span> <span className="font-medium text-slate-800">{label}</span></span>
+        <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="currentColor" aria-hidden="true"><path d="M5.2 7.2a.75.75 0 0 1 1.06 0L10 10.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L5.2 8.26a.75.75 0 0 1 0-1.06Z" /></svg>
+      </button>
+      {open && <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />}
+      {open && (
+        <div role="menu" className="m3-sheet absolute right-0 top-full z-40 mt-1 w-56 overflow-hidden rounded-2xl py-1 shadow-lg ring-1 ring-black/5">
+          {sortOptions.map((o) => (
+            <button key={o.id} role="menuitemradio" aria-checked={sort === o.id} className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm ${sort === o.id ? "font-semibold text-indigo-800" : "text-slate-700"} active:bg-indigo-100`} onClick={() => { setSort(o.id); setOpen(false); }}>
+              {o.label} {sort === o.id && <span aria-hidden="true">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 /** Hoja inferior con tu cuenta y el resto de opciones. Se cierra tocando fuera, con atrás o deslizando hacia abajo. */
-function MoreSheet({ onClose }: { onClose: () => void }) {
+function MoreSheet({ onClose, onAbout }: { onClose: () => void; onAbout: () => void }) {
   const logout = useLogout();
   const { data: me } = useMe();
-  const [about, setAbout] = useState(false);
   const [dy, setDy] = useState(0);
   const start = useRef<number | null>(null);
   useEffect(() => {
@@ -270,13 +298,12 @@ function MoreSheet({ onClose }: { onClose: () => void }) {
           <Link to="/trash" className={item}>🗑️ Papelera</Link>
           <Link to="/settings" className={item}>⚙️ Ajustes</Link>
           <div className="my-1 h-px bg-slate-200" />
-          <button className={item} onClick={() => setAbout(true)}>📒 Acerca de {APP_NAME}</button>
           <button className={item} onClick={() => { setServer(null); void logout().then(() => window.location.reload()); }}>🔁 Cambiar de servidor</button>
+          <button className={item} onClick={onAbout}>📒 Acerca de {APP_NAME}</button>
           <button className={`${item} text-red-700`} onClick={() => void logout()}>🚪 Salir</button>
           <p className="mt-2 px-4 text-xs text-slate-400">{APP_NAME} {APP_VERSION}</p>
         </div>
       </div>
-      {about && <AboutModal onClose={() => setAbout(false)} />}
     </>
   );
 }

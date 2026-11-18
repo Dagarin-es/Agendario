@@ -1,3 +1,4 @@
+import { registerPlugin } from "@capacitor/core";
 /**
  * Integración con Android (solo en la app): color dinámico de Material You, barras del sistema,
  * botón atrás y vibración. En la web no se carga nada de esto.
@@ -114,16 +115,17 @@ interface CallLogPlugin {
   openBatterySettings(): Promise<void>;
 }
 let callLog: CallLogPlugin | null = null;
-export async function getCallLog(): Promise<CallLogPlugin | null> {
+/**
+ * Síncrono a propósito: el plugin de Capacitor es un Proxy que responde a cualquier propiedad, también
+ * a «then», y si se devuelve desde una función async la promesa se queda esperando para siempre.
+ */
+export function getCallLog(): CallLogPlugin | null {
   if (!isApp) return null;
-  if (!callLog) {
-    const { registerPlugin } = await import("@capacitor/core");
-    callLog = registerPlugin<CallLogPlugin>("CallLog");
-  }
+  callLog ??= registerPlugin<CallLogPlugin>("CallLog");
   return callLog;
 }
 export async function configureCallLog() {
-  const p = await getCallLog();
+  const p = getCallLog();
   const token = getToken();
   if (p && token) await p.configure({ server: getServer(), token }).catch(() => undefined);
 }

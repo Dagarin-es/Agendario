@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
 export * from "./themes";
 
-export const APP_VERSION = "0.14.0-beta";
+export const APP_VERSION = "0.14.1-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------

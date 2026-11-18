@@ -1,7 +1,7 @@
 {
   "name": "agendario",
   "private": true,
-  "version": "0.14.0-beta",
+  "version": "0.14.1-beta",
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "dev:server": "npm run dev -w @agendario/server",

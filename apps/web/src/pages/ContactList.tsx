@@ -1,3 +1,4 @@
+import { sortOptions, useSortPref, type SortId } from "../lib/sort";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
@@ -14,28 +15,6 @@ import { isApp } from "../lib/platform";
 
 const PAGE_SIZES = [25, 50, 75, 100, 0] as const; // 0 = todos
 const PAGE_SIZE_KEY = "contactos.pageSize";
-const SORT_KEY = "agendario.sort";
-
-/** Campos por los que se puede ordenar la lista (se recuerda en cada dispositivo). */
-const sortOptions = [
-  { id: "display", label: "Nombre a mostrar" },
-  { id: "given", label: "Nombre" },
-  { id: "family", label: "Apellidos" },
-  { id: "company", label: "Empresa" },
-  { id: "nickname", label: "Apodo" },
-  { id: "geo", label: "📍 Sin geolocalizar" },
-] as const;
-type SortId = (typeof sortOptions)[number]["id"];
-
-function loadSort(): SortId {
-  try {
-    const v = localStorage.getItem(SORT_KEY);
-    return sortOptions.some((o) => o.id === v) ? (v as SortId) : "display";
-  } catch {
-    return "display";
-  }
-}
-
 /** Texto por el que se ordena cada contacto ("" = no tiene ese dato: va al final). */
 function sortText(c: ContactSummary, sort: SortId): string {
   switch (sort) {
@@ -110,12 +89,17 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
   const nav = useNavigate();
   const tag = params.get("tag") ?? "";
   const page = Math.max(1, Number(params.get("page")) || 1);
-  const [sort, setSortState] = useState<SortId>(loadSort);
+  const [sort, setSortPrefState] = useSortPref();
+  // El orden puede cambiarse desde la cabecera de la app: vuelve a la primera página
+  const firstSort = useRef(true);
+  useEffect(() => { if (firstSort.current) { firstSort.current = false; return; } update({ page: 1 }); }, [sort]); // eslint-disable-line react-hooks/exhaustive-deps
   const [q, setQ] = useState(params.get("q") ?? "");
   const deferred = useDeferredValue(q);
   const [pageSizePref, setPageSize] = useState(loadPageSize);
   // En el móvil no hay páginas: salen todos
   const narrow = useNarrow() || pane;
+  // En la app (móvil) el orden va en la cabecera: la fila de herramientas solo sale al marcar algo
+  const sortInHeader = isApp && narrow && !pane;
   const pageSize = narrow ? 0 : pageSizePref;
   const { data: tags } = useTags();
   const withPath = useTagPath();
@@ -176,15 +160,7 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
     }
     update({ page: 1 });
   };
-  const changeSort = (v: SortId) => {
-    setSortState(v);
-    try {
-      localStorage.setItem(SORT_KEY, v);
-    } catch {
-      /* solo en esta sesión */
-    }
-    update({ page: 1 });
-  };
+  const changeSort = (v: SortId) => setSortPrefState(v);
   const goPage = (p: number) => {
     update({ page: p });
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -329,7 +305,7 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
         );
       })()}
 
-      {total > 0 && (
+      {total > 0 && (!sortInHeader || selected.size > 0) && (
         <div className="pb-1.5 pt-1">
           <div className="flex min-h-11 items-center gap-2">
             {/* Selección: casilla + desplegable (agrupados, como en Gmail); en el móvil, solo con algo marcado */}

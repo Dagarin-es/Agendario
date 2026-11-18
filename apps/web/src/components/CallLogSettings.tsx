@@ -11,15 +11,28 @@ export function CallLogSettings({ Section }: { Section: (p: { icon: string; titl
   const [from, setFrom] = useState<"all" | "date" | "now">("all");
   const [date, setDate] = useState(() => new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10));
   const showAlert = useAlert();
-  const refresh = () => void getCallLog().then((p) => p?.getStatus().then(setSt)).catch(() => undefined);
+  const [err, setErr] = useState("");
+  const refresh = () =>
+    void (getCallLog()?.getStatus() ?? Promise.reject(new Error("Solo en la app de Android")))
+      .then((s) => { setSt(s); setErr(""); })
+      .catch((e: Error) => setErr(e?.message || String(e)));
   useEffect(() => {
     refresh();
     const t = setInterval(refresh, 5000);
     return () => clearInterval(t);
   }, []);
-  if (!st) return null;
+  if (!st)
+    return (
+      <Section icon="📞" title="Registro de llamadas">
+        {err ? (
+          <p className="rounded-xl bg-red-50 p-3 text-sm text-red-800 ring-1 ring-red-200">No se puede usar el registro de llamadas en este dispositivo: <code className="break-all">{err}</code></p>
+        ) : (
+          <p className="text-sm text-slate-500">Comprobando…</p>
+        )}
+      </Section>
+    );
   const enable = async () => {
-    const p = await getCallLog();
+    const p = getCallLog();
     if (!p) return;
     const since = from === "all" ? 0 : from === "date" ? new Date(`${date}T00:00:00`).getTime() : null;
     try {
@@ -42,12 +55,12 @@ export function CallLogSettings({ Section }: { Section: (p: { icon: string; titl
           {st.batteryOptimized && (
             <div className="rounded-xl bg-amber-50 p-3 text-amber-900 ring-1 ring-amber-200">
               Android puede retrasar los envíos para ahorrar batería. Si ves que las llamadas tardan en aparecer, quita a Agendario de la optimización de batería.
-              <button className="btn-ghost mt-2 block border border-amber-300 bg-white text-sm" onClick={() => void getCallLog().then((p) => p?.openBatterySettings())}>🔋 Abrir el ajuste de batería</button>
+              <button className="btn-ghost mt-2 block border border-amber-300 bg-white text-sm" onClick={() => void getCallLog()?.openBatterySettings()}>🔋 Abrir el ajuste de batería</button>
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <button className="btn-ghost border border-slate-200" onClick={() => void getCallLog().then((p) => p?.syncNow()).then(refresh)}>🔄 Enviar ahora</button>
-            <button className="btn-ghost text-red-700" onClick={() => void getCallLog().then((p) => p?.disable().then(setSt))}>Desactivar</button>
+            <button className="btn-ghost border border-slate-200" onClick={() => void getCallLog()?.syncNow().then(refresh)}>🔄 Enviar ahora</button>
+            <button className="btn-ghost text-red-700" onClick={() => void getCallLog()?.disable().then(setSt)}>Desactivar</button>
           </div>
         </div>
       ) : (

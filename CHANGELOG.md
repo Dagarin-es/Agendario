@@ -1,5 +1,10 @@
 # Historial de cambios
 
+## 0.14.1-beta
+- **App**: «Ordenar por…» en la cabecera (pestaña Contactos); la fila de herramientas solo aparece al marcar contactos.
+- **App**: «Acerca de Agendario» se abre como ventana emergente (antes quedaba detrás de la hoja) y está debajo de «Cambiar de servidor».
+- **Registro de llamadas**: corregido el fallo por el que la sección no aparecía (la app se quedaba esperando a la parte nativa sin respuesta). Ahora siempre se ve en Ajustes → Aplicaciones externas y, si algo falla, enseña el error exacto.
+
 ## 0.14.0-beta
 - **Modo sin conexión** (app y web): se guarda en el dispositivo una copia de todas las fichas y de las pantallas visitadas. Si el servidor no responde ves lo guardado (con aviso arriba), puedes buscar, y los cambios en contactos, llamadas, apuntes e ideas de regalo se guardan en cola y se envían solos al volver la conexión.
 - **Registro de llamadas automático** (app Android): con tu permiso, las llamadas hechas, recibidas y perdidas con tus contactos se guardan solas al colgar, aunque llames desde el teléfono del sistema. Primera carga con el historial del móvil (todo o desde una fecha), sin duplicar las apuntadas a mano; revisión de respaldo cada 2 horas; aviso de la optimización de batería. En ⚙️ Ajustes → Aplicaciones externas.
