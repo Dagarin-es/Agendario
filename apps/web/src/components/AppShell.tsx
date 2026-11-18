@@ -116,6 +116,7 @@ export function AppShell() {
   // Pantalla ancha (Galaxy Fold abierto, tablet): barra lateral y lista + ficha en dos paneles
   const wide = useMedia("(min-width: 600px)");
   const kb = useKeyboardOpen();
+  useEffect(() => { document.documentElement.classList.toggle("kb-open", kb); }, [kb]);
   const twoPane = wide && (location.pathname === "/" || /^\/contacts\/(?!new$)[^/]+$/.test(location.pathname));
 
   useEffect(() => setSheet(false), [location.pathname]);
@@ -142,7 +143,9 @@ export function AppShell() {
       nav(`/share-gift?${new URLSearchParams({ text: d.text ?? "", title: d.title ?? "" })}`);
     };
     window.addEventListener("agendario-share", on);
-    return () => window.removeEventListener("agendario-share", on);
+    const open = (e: Event) => nav((e as CustomEvent<string>).detail);
+    window.addEventListener("agendario-open", open);
+    return () => { window.removeEventListener("agendario-share", on); window.removeEventListener("agendario-open", open); };
   }, [nav]);
 
   // «Duplicados» solo aparece cuando los hay (o si estás en esa pantalla)

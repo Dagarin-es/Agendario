@@ -34,7 +34,9 @@ export const personalRoutes = new Hono<AppEnv>()
     const { calls } = ctx.req.valid("json");
     const result: CallImportResult = { added: 0, skipped: 0, unmatched: 0 };
     if (!calls.length) return ctx.json(result);
-    const contacts = await db.select({ id: c.id, phones: c.phones }).from(c).where(and(canReadSql(user.id), isNull(c.deletedAt)));
+    const contacts = await db.select({ id: c.id, phones: c.phones, name: c.displayName }).from(c).where(and(canReadSql(user.id), isNull(c.deletedAt)));
+    const names = new Map(contacts.map((x) => [x.id, x.name]));
+    result.items = [];
     const byPhone = new Map<string, string>();
     for (const ct of contacts) for (const p of ct.phones) { const k = phoneKey(p.value); if (k.length >= 6 && !byPhone.has(k)) byPhone.set(k, ct.id); }
     const kinds = { in: "call_in", out: "call_out", missed: "call_missed" } as const;
@@ -53,7 +55,10 @@ export const personalRoutes = new Hono<AppEnv>()
         durationMin: call.durationSec > 0 ? Math.max(1, Math.round(call.durationSec / 60)) : null,
         channel: call.number, notes: "", externalId: `call:${call.id}`,
       }).onConflictDoNothing().returning({ id: i.id });
-      if (ins.length) result.added++; else result.skipped++;
+      if (ins.length) {
+        result.added++;
+        result.items!.push({ interactionId: ins[0]!.id, contactId, contactName: names.get(contactId) ?? "", type: call.type, durationSec: call.durationSec, at: call.at });
+      } else result.skipped++;
     }
     return ctx.json(result);
   })

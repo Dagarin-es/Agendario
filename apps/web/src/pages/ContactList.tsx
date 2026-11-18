@@ -1,4 +1,5 @@
 import { keepInView } from "../lib/keepInView";
+import { LetterIndex } from "../components/LetterIndex";
 import { sortOptions, useSortPref, type SortId } from "../lib/sort";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
@@ -184,6 +185,16 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
     if (sorted && sort !== "geo") sorted.forEach((c) => m.set(c.id, sortText(c, sort) ? letterOf(sortText(c, sort)) : "#"));
     return m;
   }, [sorted, sort]);
+  // Índice de iniciales a la derecha (solo en la app del móvil)
+  const present = useMemo(() => new Set(letters.values()), [letters]);
+  const ALPHA = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "Ñ", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "#"];
+  const jumpLetter = (l: string) => {
+    // La primera letra presente desde la tocada (o la anterior si no hay ninguna después)
+    const i = ALPHA.indexOf(l);
+    const target = ALPHA.slice(i).find((x) => present.has(x)) ?? [...ALPHA.slice(0, i)].reverse().find((x) => present.has(x));
+    if (target) document.getElementById(`letra-${target}`)?.scrollIntoView({ block: "start" });
+  };
+  const showIndex = sortInHeader && !deferred && selected.size === 0 && sort !== "geo" && present.size > 1;
   const total = data?.length ?? 0;
   const pages = pageSize ? Math.max(1, Math.ceil(total / pageSize)) : 1;
   const current = Math.min(page, pages);
@@ -412,14 +423,15 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
         </div>
       )}
 
-      <ul className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden`}>
+      {showIndex && <LetterIndex present={present} onJump={jumpLetter} />}
+      <ul className={`divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white empty:hidden ${showIndex ? "mr-5" : ""}`}>
         {visible.map((c, i) => {
           const l = letters.get(c.id);
           const header = l && (i === 0 || letters.get(visible[i - 1]!.id) !== l);
           return (
           <Fragment key={c.id}>
           {header && (
-            <li className="scroll-mt-32 bg-slate-50 px-4 py-1 text-xs font-bold text-indigo-800">
+            <li id={`letra-${l}`} style={{ scrollMarginTop: "calc(var(--header-h, 0px) + 118px)" }} className="bg-slate-50 px-4 py-1 text-xs font-bold text-indigo-800">
               {l === "#" && sort !== "display" ? `# · sin ${sortOptions.find((o) => o.id === sort)!.label.toLowerCase()} o con otros signos` : l}
             </li>
           )}

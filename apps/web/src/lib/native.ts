@@ -58,6 +58,8 @@ export async function initNative() {
     setIcon(o: { theme: string }): Promise<void>;
     installedApps(o: { packages: string[] }): Promise<Record<string, boolean>>;
     consumeShare(): Promise<{ text?: string; title?: string }>;
+    consumeOpen(): Promise<{ path?: string }>;
+    addListener(e: "open", fn: (d: { path?: string }) => void): Promise<unknown>;
     addListener(e: "share", fn: (d: { text?: string; title?: string }) => void): Promise<unknown>;
   }>("MaterialYou");
   nativeApi.installedApps = (packages) => MaterialYou.installedApps({ packages });
@@ -65,6 +67,10 @@ export async function initNative() {
   const share = (d: { text?: string; title?: string }) => d?.text && window.dispatchEvent(new CustomEvent("agendario-share", { detail: d }));
   void MaterialYou.addListener("share", share).catch(() => undefined);
   setTimeout(() => void MaterialYou.consumeShare().then(share).catch(() => undefined), 800);
+  // Abrir una ficha desde un aviso (p. ej. «Abrir ficha» tras una llamada)
+  const open = (d: { path?: string }) => d?.path && window.dispatchEvent(new CustomEvent("agendario-open", { detail: d.path }));
+  void MaterialYou.addListener("open", open).catch(() => undefined);
+  setTimeout(() => void MaterialYou.consumeOpen().then(open).catch(() => undefined), 900);
   try {
     palette = await MaterialYou.getPalette();
     setDynamicScale(dynamicScale());
@@ -106,6 +112,8 @@ export interface CallLogStatus {
   lastError: string;
   batteryOptimized: boolean;
   lastRead?: number;
+  notify?: boolean;
+  notifyAllowed?: boolean;
   lastUnmatched?: number;
   lastSkipped?: number;
   since?: number;
@@ -116,6 +124,7 @@ interface CallLogPlugin {
   enable(o: { since: string }): Promise<CallLogStatus>;
   disable(): Promise<CallLogStatus>;
   syncNow(): Promise<CallLogStatus>;
+  setNotify(o: { enabled: boolean }): Promise<CallLogStatus>;
   openBatterySettings(): Promise<void>;
 }
 let callLog: CallLogPlugin | null = null;

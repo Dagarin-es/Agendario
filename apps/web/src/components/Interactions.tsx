@@ -87,11 +87,12 @@ function Form({ c, initial, onDone, onCancel, editing }: { c: ContactDetail; ini
 }
 
 /** Llamadas y apuntes de conversaciones (privados: solo los ves tú). */
-export function Interactions({ c, prefill, onPrefillUsed, embedded }: { c: ContactDetail; prefill?: InteractionPrefill | null; onPrefillUsed?: () => void; embedded?: boolean }) {
+export function Interactions({ c, prefill, onPrefillUsed, embedded, openId }: { c: ContactDetail; prefill?: InteractionPrefill | null; onPrefillUsed?: () => void; embedded?: boolean; openId?: string | null }) {
   const qc = useQueryClient();
   const confirm = useConfirm();
   const [adding, setAdding] = useState<Draft | null>(null);
-  const [editing, setEditing] = useState<string | null>(null);
+  // Desde el aviso «¿Quieres apuntar algo?» se abre directamente esa llamada para escribir la nota
+  const [editing, setEditing] = useState<string | null>(openId ?? null);
   const [showAll, setShowAll] = useState(false);
   const refresh = () => qc.invalidateQueries({ queryKey: ["contact", c.id] });
 

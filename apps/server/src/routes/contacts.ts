@@ -343,6 +343,16 @@ export const contactRoutes = new Hono<AppEnv>()
   })
 
   // Todo para el modo sin conexión de la app: las fichas completas de todos los contactos visibles
+  // Etiquetas usadas en los teléfonos, emails y webs de mis contactos (para completar la lista de etiquetas)
+  .get("/item-labels", async (ctx) => {
+    const user = ctx.get("user");
+    const out: Record<"phones" | "emails" | "urls", string[]> = { phones: [], emails: [], urls: [] };
+    for (const k of ["phones", "emails", "urls"] as const) {
+      const rows = await db.execute(sql`select distinct trim(x->>'label') as l from ${c}, jsonb_array_elements(${c[k]}) x where ${c.ownerId} = ${user.id} and ${c.deletedAt} is null and coalesce(trim(x->>'label'), '') <> '' order by 1 limit 200`);
+      out[k] = (rows as unknown as { l: string }[]).map((r) => r.l);
+    }
+    return ctx.json(out);
+  })
   .get("/offline-snapshot", async (ctx) => {
     const user = ctx.get("user");
     const ids = (await db.select({ id: c.id }).from(c).where(and(visibleContacts(user.id), isNull(c.deletedAt)))).map((r) => r.id);
@@ -539,6 +549,20 @@ export const contactRoutes = new Hono<AppEnv>()
       .returning();
     await touchContact(id);
     return ctx.json(row, 201);
+  })
+
+  .patch("/:id/dates/:subId", subParam, zValidator("json", importantDateInputSchema.partial()), async (ctx) => {
+    const user = ctx.get("user");
+    const { id, subId } = ctx.req.valid("param");
+    await requireEdit(id, user.id);
+    const [row] = await db
+      .update(schema.importantDates)
+      .set(ctx.req.valid("json"))
+      .where(and(eq(schema.importantDates.id, subId), eq(schema.importantDates.contactId, id)))
+      .returning();
+    if (!row) throw new HTTPException(404, { message: "Fecha no encontrada" });
+    await touchContact(id);
+    return ctx.json(row);
   })
 
   .delete("/:id/dates/:subId", subParam, async (ctx) => {

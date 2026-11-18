@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
 export * from "./themes";
 
-export const APP_VERSION = "0.15.0-beta";
+export const APP_VERSION = "0.16.0-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------
@@ -500,6 +500,8 @@ export interface CallImportResult {
   added: number;
   skipped: number;
   unmatched: number;
+  /** Las llamadas guardadas (para el aviso «¿Quieres apuntar algo?» al colgar) */
+  items?: { interactionId: string; contactId: string; contactName: string; type: "in" | "out" | "missed"; durationSec: number; at: string }[];
 }
 
 export const giftReceivedInputSchema = z.object({

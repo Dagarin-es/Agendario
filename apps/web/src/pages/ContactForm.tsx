@@ -1,3 +1,4 @@
+import { LabelInput, useItemLabels, type LabelKind } from "../components/LabelInput";
 import { PhotoCropper } from "../components/PhotoCropper";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -30,8 +31,6 @@ function joinBirthday(day: string, month: string, year: string): string | null {
   return year ? `${year.padStart(4, "0")}-${p(month)}-${p(day)}` : `--${p(month)}-${p(day)}`;
 }
 
-type LabelKind = "phones" | "emails" | "urls";
-const kindNames: Record<LabelKind, string> = { phones: "teléfonos", emails: "emails", urls: "webs" };
 
 function ListEditor({
   title, kind, items, onChange, placeholder, type = "text",
@@ -39,15 +38,7 @@ function ListEditor({
   title: string; kind: LabelKind; items: LabeledValue[]; onChange: (v: LabeledValue[]) => void;
   placeholder: string; type?: string;
 }) {
-  const qc = useQueryClient();
-  const confirm = useConfirm();
-  const { data: prefs } = useUserPrefs();
-  const labels = prefs?.itemLabels[kind] ?? [];
-  const before = useRef<string>("");
-  const saveLabels = useMutation({
-    mutationFn: (next: string[]) => api.put("/prefs", { ...prefs!, itemLabels: { ...prefs!.itemLabels, [kind]: next } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["prefs"] }),
-  });
+  const { labels } = useItemLabels(kind);
   const setAt = (i: number, patch: Partial<LabeledValue>) => onChange(items.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   const move = (i: number, d: number) => {
     const j = i + d;
@@ -56,20 +47,6 @@ function ListEditor({
     [next[i], next[j]] = [next[j]!, next[i]!];
     onChange(next);
   };
-
-  /** Al salir del campo: si la etiqueta no existe, se pregunta si se crea (se crea una sola vez). */
-  async function checkLabel(i: number, value: string) {
-    const v = value.trim();
-    if (!v || !prefs || labels.some((l) => l.toLowerCase() === v.toLowerCase())) return;
-    const ok = await confirm({
-      title: `¿Crear la etiqueta «${v}»?`,
-      message: `Se añade a tu lista de etiquetas de ${kindNames[kind]} y la podrás elegir siempre.`,
-      confirmText: "Crear",
-      cancelText: "No",
-    });
-    if (ok) saveLabels.mutate([...labels, v]);
-    else setAt(i, { label: before.current });
-  }
 
   return (
     <div>
@@ -83,15 +60,7 @@ function ListEditor({
                 <button type="button" className="px-1 text-[10px] leading-tight text-slate-400 hover:text-indigo-700 disabled:opacity-20" disabled={i === items.length - 1} onClick={() => move(i, 1)} aria-label="Bajar">▼</button>
               </div>
             )}
-            <input
-              className="input w-28 shrink-0"
-              list={`labels-${kind}`}
-              placeholder="Etiqueta"
-              value={it.label}
-              onFocus={() => { before.current = it.label; }}
-              onChange={(e) => setAt(i, { label: e.target.value })}
-              onBlur={(e) => void checkLabel(i, e.target.value)}
-            />
+            <LabelInput kind={kind} className="w-32 shrink-0" value={it.label} onChange={(v) => setAt(i, { label: v })} />
             <input
               className="input"
               type={type}
@@ -102,7 +71,6 @@ function ListEditor({
             <button type="button" className="btn-danger" onClick={() => onChange(items.filter((_, j) => j !== i))}>✕</button>
           </div>
         ))}
-        <datalist id={`labels-${kind}`}>{labels.map((l) => <option key={l} value={l} />)}</datalist>
         <button type="button" className="btn-ghost" onClick={() => onChange([...items, { label: labels[0] ?? "", value: "" }])}>
           + Añadir
         </button>

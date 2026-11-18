@@ -20,9 +20,18 @@ public class MainActivity extends BridgeActivity {
         handleShare(intent);
     }
 
-    /** «Compartir» → Añadir idea de regalo: se pasa el texto/enlace a la web. */
+    /** «Compartir» → Añadir idea de regalo: se pasa el texto/enlace a la web. Y abrir una ficha desde un aviso. */
     private void handleShare(Intent intent) {
-        if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) return;
+        if (intent == null) return;
+        String path = intent.getStringExtra("agendarioPath");
+        if (path != null) {
+            intent.removeExtra("agendarioPath");
+            JSObject o = new JSObject();
+            o.put("path", path);
+            MaterialYouPlugin.deliverOpen(o);
+            return;
+        }
+        if (!Intent.ACTION_SEND.equals(intent.getAction())) return;
         String text = intent.getStringExtra(Intent.EXTRA_TEXT);
         if (text == null) return;
         JSObject data = new JSObject();

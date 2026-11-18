@@ -111,6 +111,20 @@ public class MaterialYouPlugin extends Plugin {
         else pendingShare = data;
     }
 
+    static JSObject pendingOpen = null;
+
+    static void deliverOpen(JSObject data) {
+        if (instance != null && instance.hasListeners("open")) instance.notifyListeners("open", data, true);
+        else pendingOpen = data;
+    }
+
+    @PluginMethod
+    public void consumeOpen(PluginCall call) {
+        JSObject r = pendingOpen != null ? pendingOpen : new JSObject();
+        pendingOpen = null;
+        call.resolve(r);
+    }
+
     @PluginMethod
     public void consumeShare(PluginCall call) {
         JSObject r = pendingShare != null ? pendingShare : new JSObject();

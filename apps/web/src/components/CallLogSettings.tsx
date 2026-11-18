@@ -62,6 +62,14 @@ export function CallLogSettings({ Section }: { Section: (p: { icon: string; titl
               <button className="btn-ghost mt-2 block border border-amber-300 bg-white text-sm" onClick={() => void getCallLog()?.openBatterySettings()}>🔋 Abrir el ajuste de batería</button>
             </div>
           )}
+          <label className="flex items-start gap-2 rounded-xl bg-slate-50 p-3">
+            <input type="checkbox" className="mt-0.5 h-4 w-4" checked={st.notify !== false} onChange={(e) => void getCallLog()?.setNotify({ enabled: e.target.checked }).then(setSt)} />
+            <span>
+              <span className="font-medium">Al colgar, preguntarme si quiero apuntar algo</span>
+              <span className="block text-xs text-slate-500">Aviso con «Escribir nota» (se contesta desde la propia notificación) y «Abrir ficha». Solo con contactos y llamadas atendidas de más de 30 segundos.</span>
+              {st.notify !== false && st.notifyAllowed === false && <span className="mt-1 block text-xs text-amber-800">⚠️ Agendario no tiene permiso para mostrar notificaciones: desmarca y vuelve a marcar, o actívalo en los ajustes de Android.</span>}
+            </span>
+          </label>
           <div className="flex flex-wrap gap-2">
             <button className="btn-ghost border border-slate-200" onClick={() => void getCallLog()?.syncNow().then(refresh)}>🔄 Enviar ahora</button>
             <button className="btn-ghost text-red-700" onClick={() => void getCallLog()?.disable().then(setSt)}>Desactivar</button>

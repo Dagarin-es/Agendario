@@ -1,7 +1,7 @@
 import { keepInView } from "../lib/keepInView";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import {
   dateTypeLabels,
   isGeolocated,
@@ -23,6 +23,7 @@ import { addressLine, MapLinks, MiniMap } from "../components/MapLinks";
 import { MapPickerButton } from "../components/AddressSearch";
 import { VisibilityBadge } from "../components/VisibilityBadge";
 import { PhotoCropper } from "../components/PhotoCropper";
+import { EmojiPicker } from "../components/EmojiPicker";
 import { QuickActions, useEmailHref, useUserPrefs } from "../components/QuickActions";
 import { Interactions, type InteractionPrefill } from "../components/Interactions";
 import { HistoryIcon } from "../components/HistoryIcon";
@@ -111,7 +112,9 @@ export function ContactDetailPage() {
   const [lastCall, setLastCall] = useState<{ phone: string; at: number } | null>(null);
   const [askCall, setAskCall] = useState(false);
   const [prefill, setPrefill] = useState<InteractionPrefill | null>(null);
-  const [showLog, setShowLog] = useState(false);
+  const [params] = useSearchParams();
+  const openCall = params.get("call");
+  const [showLog, setShowLog] = useState(!!openCall || false);
   useEffect(() => {
     if (!lastCall) return;
     const onVis = () => document.visibilityState === "visible" && Date.now() - lastCall.at > 3000 && setAskCall(true);
@@ -260,7 +263,7 @@ export function ContactDetailPage() {
             </button>
             {showLog && (
               <div className="mt-2">
-                <Interactions c={c} embedded prefill={prefill} onPrefillUsed={() => setPrefill(null)} />
+                <Interactions c={c} embedded prefill={prefill} onPrefillUsed={() => setPrefill(null)} openId={openCall} />
               </div>
             )}
           </div>
@@ -342,11 +345,16 @@ export function ContactDetailPage() {
 
       {/* Celebraciones */}
       <div>
+        {/* Mosaico: dos columnas independientes, cada recuadro pegado al de encima (en el móvil, uno tras otro) */}
         <div className="grid items-start gap-4 md:grid-cols-2">
-          <GiftIdeas contactId={c.id} ideas={c.giftIdeas} />
-          <ImportantDates c={c} onChange={refresh} />
-          <Relationships c={c} onChange={refresh} />
-          <GiftsReceived contactId={c.id} gifts={c.giftsReceived} />
+          <div className="flex min-w-0 flex-col gap-4">
+            <GiftIdeas contactId={c.id} ideas={c.giftIdeas} />
+            <Relationships c={c} onChange={refresh} />
+          </div>
+          <div className="flex min-w-0 flex-col gap-4">
+            <ImportantDates c={c} onChange={refresh} />
+            <GiftsReceived contactId={c.id} gifts={c.giftsReceived} />
+          </div>
         </div>
       </div>
 
@@ -358,13 +366,11 @@ export function ContactDetailPage() {
   );
 }
 
-const emojiChoices = ["🎂", "🎉", "🎁", "💍", "❤️", "🌹", "🍾", "🎓", "⭐", "🙏", "🕯️", "📅"];
 
 /** Por fecha (personal): ¿lleva regalo? y emoji para el calendario. */
 function EventControls({ c, eventKey, defaultGift, onChange }: { c: ContactDetail; eventKey: string; defaultGift: boolean; onChange: () => void }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [custom, setCustom] = useState("");
   const cur = c.prefs.events?.[eventKey] ?? {};
   const gift = cur.gift ?? defaultGift;
   const save = useMutation({
@@ -390,18 +396,9 @@ function EventControls({ c, eventKey, defaultGift, onChange }: { c: ContactDetai
       </button>
       {open && <span className="fixed inset-0 z-10" onClick={() => setOpen(false)} />}
       {open && (
-        <span ref={keepInView} className="absolute right-0 top-full z-20 mt-1 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+        <span ref={keepInView} className="absolute right-0 top-full z-20 mt-1 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
           <span className="mb-1 block text-[11px] text-slate-500">Emoji en el calendario</span>
-          <span className="grid grid-cols-6 gap-1">
-            {emojiChoices.map((e) => (
-              <button key={e} type="button" className={`rounded-lg p-1 text-lg hover:bg-slate-100 ${cur.emoji === e ? "bg-indigo-100" : ""}`} onClick={() => { save.mutate({ emoji: e }); setOpen(false); }}>{e}</button>
-            ))}
-          </span>
-          <span className="mt-2 flex gap-1">
-            <input className="input py-1 text-sm" placeholder="Otro…" value={custom} maxLength={8} onChange={(e) => setCustom(e.target.value)} />
-            <button type="button" className="btn-primary px-2 py-1 text-xs" disabled={!custom.trim()} onClick={() => { save.mutate({ emoji: custom.trim() }); setOpen(false); setCustom(""); }}>OK</button>
-          </span>
-          {cur.emoji && <button type="button" className="mt-1 text-xs text-slate-500 hover:underline" onClick={() => { save.mutate({ emoji: "" }); setOpen(false); }}>Quitar emoji</button>}
+          <EmojiPicker value={cur.emoji} onPick={(e) => { save.mutate({ emoji: e }); setOpen(false); }} onClear={() => { save.mutate({ emoji: "" }); setOpen(false); }} />
         </span>
       )}
     </span>
@@ -427,6 +424,13 @@ function ImportantDates({ c, onChange }: { c: ContactDetail; onChange: () => voi
     onError: (e) => showAlert("No se ha podido guardar", (e as Error).message),
   });
   const remove = useMutation({ mutationFn: (sub: string) => api.del(`/contacts/${c.id}/dates/${sub}`), onSuccess: onChange });
+  const [editing, setEditing] = useState<string | null>(null); // id de la fecha o "birthday"
+  const saveDate = useMutation({
+    mutationFn: ({ id, label, date }: { id: string; label: string; date: string }) =>
+      id === "birthday" ? api.patch(`/contacts/${c.id}`, { birthday: date }) : api.patch(`/contacts/${c.id}/dates/${id}`, { label, date }),
+    onSuccess: () => { setEditing(null); onChange(); qc.invalidateQueries({ queryKey: ["upcoming"] }); qc.invalidateQueries({ queryKey: ["gifts-overview"] }); },
+    onError: (e) => showAlert("No se ha podido guardar", (e as Error).message),
+  });
 
   if (!c.canEdit && c.importantDates.length === 0) return null;
   return (
@@ -448,12 +452,15 @@ function ImportantDates({ c, onChange }: { c: ContactDetail; onChange: () => voi
           </div>
         </form>
       )}
-      {c.birthday && (
+      {c.birthday && (editing === "birthday" ? (
+        <DateEditForm label="Cumpleaños" fixedLabel date={c.birthday} busy={saveDate.isPending} onCancel={() => setEditing(null)} onSave={(label, date) => saveDate.mutate({ id: "birthday", label, date })} />
+      ) : (
         <div className="mb-2 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm">
           <span className="flex-1">{c.prefs.events?.birthday?.emoji ?? "🎂"} Cumpleaños <span className="text-slate-500">· {formatPartialDate(c.birthday)}</span></span>
           <EventControls c={c} eventKey="birthday" defaultGift onChange={onChange} />
+          {c.canEdit && <button className="btn-ghost px-1.5 py-1 text-xs" title="Editar" onClick={() => setEditing("birthday")}>✏️</button>}
         </div>
-      )}
+      ))}
       {showAuto && (
         <div className="mb-2 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm">
           <span className={`flex-1 ${c.prefs.autoSaint ? "" : "text-slate-400 line-through"}`}>
@@ -465,15 +472,48 @@ function ImportantDates({ c, onChange }: { c: ContactDetail; onChange: () => voi
       )}
       {c.importantDates.length === 0 && !adding && !showAuto && !c.birthday && <p className="text-sm text-slate-500">Ninguna. El cumpleaños va en los datos del contacto.</p>}
       <ul className="space-y-1">
-        {c.importantDates.map((d) => (
+        {c.importantDates.map((d) => editing === d.id ? (
+          <li key={d.id}><DateEditForm label={d.label} date={d.date} busy={saveDate.isPending} onCancel={() => setEditing(null)} onSave={(label, date) => saveDate.mutate({ id: d.id, label, date })} /></li>
+        ) : (
           <li key={d.id} className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm hover:bg-slate-50">
             <span className="flex-1">{c.prefs.events?.[`date:${d.id}`]?.emoji ? `${c.prefs.events[`date:${d.id}`]!.emoji} ` : ""}{d.label} <span className="text-slate-500">· {formatPartialDate(d.date)}</span></span>
             <EventControls c={c} eventKey={`date:${d.id}`} defaultGift={["anniversary", "saint_day"].includes(d.type)} onChange={onChange} />
+            {c.canEdit && <button className="btn-ghost px-1.5 py-1 text-xs" title="Editar" onClick={() => setEditing(d.id)}>✏️</button>}
             {c.canEdit && <button className="btn-danger text-xs" onClick={() => remove.mutate(d.id)}>✕</button>}
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+/** Editar una fecha: nombre, día, mes y año (opcional; sin año no se calcula la edad). */
+function DateEditForm({ label, date, fixedLabel, busy, onSave, onCancel }: { label: string; date: string; fixedLabel?: boolean; busy: boolean; onSave: (label: string, date: string) => void; onCancel: () => void }) {
+  const m0 = date.match(/^(\d{4}|-)-?(\d{2})-(\d{2})$/);
+  const [name, setName] = useState(label);
+  const [year, setYear] = useState(m0 && m0[1] !== "-" ? m0[1]! : "");
+  const [month, setMonth] = useState(m0 ? Number(m0[2]) : 1);
+  const [day, setDay] = useState(m0 ? Number(m0[3]) : 1);
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  const valid = name.trim() && (!year || /^\d{4}$/.test(year));
+  const submit = () => valid && onSave(name.trim(), `${year ? year : "-"}-${p2(month)}-${p2(day)}`);
+  return (
+    <form className="mb-2 grid grid-cols-[1fr_auto_auto] gap-2 rounded-lg bg-indigo-50/60 p-3 text-sm" onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); submit(); }} onKeyDown={(e) => e.key === "Escape" && onCancel()}>
+      <input className="input col-span-3" value={name} disabled={fixedLabel} onChange={(e) => setName(e.target.value)} placeholder="Nombre de la fecha" autoFocus={!fixedLabel} />
+      <select className="input" value={day} onChange={(e) => setDay(Number(e.target.value))} aria-label="Día">
+        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{d}</option>)}
+      </select>
+      <select className="input" value={month} onChange={(e) => setMonth(Number(e.target.value))} aria-label="Mes">
+        {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+      </select>
+      <input className="input w-24" inputMode="numeric" maxLength={4} placeholder="Año" value={year} onChange={(e) => setYear(e.target.value.replace(/\D/g, ""))} aria-label="Año (opcional)" />
+      <div className="col-span-3 flex justify-end gap-2">
+        <button type="button" className="btn-ghost" onClick={onCancel}>Cancelar</button>
+        <button className="btn-primary" disabled={!valid || busy}>{busy ? "Guardando…" : "Guardar"}</button>
+      </div>
+    </form>
   );
 }
 

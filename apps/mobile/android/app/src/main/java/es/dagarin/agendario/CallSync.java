@@ -94,6 +94,7 @@ public final class CallSync {
         if (server.isEmpty() || token.isEmpty()) return true;
         long since = p.getLong("since", System.currentTimeMillis());
         int added = 0, read = 0, unmatched = 0, skipped = 0;
+        JSONObject lastItem = null;
         try {
             while (true) {
                 JSONArray calls = new JSONArray();
@@ -134,9 +135,23 @@ public final class CallSync {
                 added += res.optInt("added", 0);
                 unmatched += res.optInt("unmatched", 0);
                 skipped += res.optInt("skipped", 0);
+                JSONArray items = res.optJSONArray("items");
+                if (items != null && items.length() > 0) lastItem = items.optJSONObject(items.length() - 1);
                 since = last;
                 p.edit().putLong("since", since).apply();
                 if (calls.length() < BATCH) break;
+            }
+            // Aviso para apuntar algo: solo la última llamada, si es reciente, atendida y de más de 30 s
+            if (lastItem != null && p.getBoolean("notify", true) && !"missed".equals(lastItem.optString("type")) && lastItem.optInt("durationSec") > 30) {
+                long callEnd = System.currentTimeMillis();
+                try {
+                    SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
+                    Date at = f.parse(lastItem.optString("at"));
+                    if (at != null) callEnd = at.getTime() + lastItem.optInt("durationSec") * 1000L;
+                } catch (Exception ignored) {
+                    // si no se entiende la fecha, se avisa igualmente
+                }
+                if (System.currentTimeMillis() - callEnd < 15 * 60_000L) CallNotify.show(ctx, lastItem);
             }
             p.edit().putLong("lastSyncAt", System.currentTimeMillis()).putInt("lastAdded", added).putInt("lastRead", read)
                 .putInt("lastUnmatched", unmatched).putInt("lastSkipped", skipped).putString("lastError", "").apply();

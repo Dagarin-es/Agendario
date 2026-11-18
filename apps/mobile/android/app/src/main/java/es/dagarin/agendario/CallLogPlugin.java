@@ -20,7 +20,10 @@ import com.getcapacitor.annotation.PermissionCallback;
 /** Registro de llamadas: activar, primera carga, estado y ajuste de batería. */
 @CapacitorPlugin(
     name = "CallLog",
-    permissions = { @Permission(alias = "calls", strings = { Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_PHONE_STATE }) }
+    permissions = {
+        @Permission(alias = "calls", strings = { Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_PHONE_STATE }),
+        @Permission(alias = "notify", strings = { "android.permission.POST_NOTIFICATIONS" })
+    }
 )
 public class CallLogPlugin extends Plugin {
 
@@ -37,6 +40,8 @@ public class CallLogPlugin extends Plugin {
         r.put("lastUnmatched", p.getInt("lastUnmatched", 0));
         r.put("lastSkipped", p.getInt("lastSkipped", 0));
         r.put("since", p.getLong("since", 0));
+        r.put("notify", p.getBoolean("notify", true));
+        r.put("notifyAllowed", CallNotify.allowed(ctx));
         PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
         r.put("batteryOptimized", pm != null && !pm.isIgnoringBatteryOptimizations(ctx.getPackageName()));
         return r;
@@ -91,6 +96,27 @@ public class CallLogPlugin extends Plugin {
             .apply();
         CallSync.schedule(getContext());
         CallSync.now(getContext(), 0);
+        if (android.os.Build.VERSION.SDK_INT >= 33 && CallSync.prefs(getContext()).getBoolean("notify", true) && getPermissionState("notify") != PermissionState.GRANTED) {
+            requestPermissionForAlias("notify", call, "notifyDone");
+            return;
+        }
+        call.resolve(status());
+    }
+
+    /** Aviso al colgar para apuntar algo (pide el permiso de notificaciones en Android 13+). */
+    @PluginMethod
+    public void setNotify(PluginCall call) {
+        boolean on = Boolean.TRUE.equals(call.getBoolean("enabled", true));
+        CallSync.prefs(getContext()).edit().putBoolean("notify", on).apply();
+        if (on && android.os.Build.VERSION.SDK_INT >= 33 && getPermissionState("notify") != PermissionState.GRANTED) {
+            requestPermissionForAlias("notify", call, "notifyDone");
+            return;
+        }
+        call.resolve(status());
+    }
+
+    @PermissionCallback
+    private void notifyDone(PluginCall call) {
         call.resolve(status());
     }
 

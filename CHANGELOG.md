@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 0.16.0-beta
+- **Etiquetas de teléfonos, emails y webs**: desplegable propio con la lista completa al tocar (las tuyas, las habituales y las que ya usan tus contactos), filtro al escribir y «+ Crear "…"». Si sales escribiendo una nueva, pregunta si se crea.
+- **Fechas importantes**: botón ✏️ para editar nombre, día, mes y año (opcional), también el cumpleaños. **Selector de emoji completo**: buscador, recientes, categorías y escribir o pegar cualquiera.
+- **Ficha**: los recuadros de Ideas, Fechas, Relaciones y Regalos recibidos van en mosaico (cada uno pegado al de encima).
+- **App Android**: aviso al colgar con un contacto «¿Quieres apuntar algo?», con «Escribir nota» desde la propia notificación y «Abrir ficha» (solo llamadas atendidas de más de 30 s; desactivable en Aplicaciones externas).
+- **App Android**: índice de iniciales a la derecha, translúcido, pegado al borde; se toca o se desliza el dedo y una burbuja enseña la letra.
+- **App Android**: incluye todo lo de la 0.15 (logotipos transparentes, recorte de fotos, relaciones nuevas, «Duplicados» oculto sin duplicados, arreglos del mapa y los menús).
+
 ## 0.15.0-beta (servidor y web; la APK sigue en la 0.14.2)
 - **Logotipos transparentes**: las imágenes con transparencia se guardan en PNG y se ven transparentes (con un fondo claro suave detrás, también en modo oscuro), centradas con margen para que el círculo no corte las esquinas. Se envían también en PNG a Fastmail y a la agenda del móvil. Las fotos normales siguen en JPEG.
 - **Recortar la foto** al subirla (contactos y tu foto de perfil): arrastrar para encuadrar, acercar y girar, con la vista previa en círculo.
