@@ -1,3 +1,4 @@
+import { keepInView } from "../lib/keepInView";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router";
@@ -21,6 +22,7 @@ import { ItemTag } from "../components/ItemTag";
 import { addressLine, MapLinks, MiniMap } from "../components/MapLinks";
 import { MapPickerButton } from "../components/AddressSearch";
 import { VisibilityBadge } from "../components/VisibilityBadge";
+import { PhotoCropper } from "../components/PhotoCropper";
 import { QuickActions, useEmailHref, useUserPrefs } from "../components/QuickActions";
 import { Interactions, type InteractionPrefill } from "../components/Interactions";
 import { HistoryIcon } from "../components/HistoryIcon";
@@ -126,6 +128,7 @@ export function ContactDetailPage() {
     qc.invalidateQueries({ queryKey: ["upcoming"] });
   };
 
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const uploadPhoto = useMutation({
     mutationFn: (file: File) => {
       const fd = new FormData();
@@ -165,7 +168,8 @@ export function ContactDetailPage() {
             </span>
           )}
         </button>
-        <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && uploadPhoto.mutate(e.target.files[0])} />
+        <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) setCropFile(f); e.target.value = ""; }} />
+        {cropFile && <PhotoCropper file={cropFile} onCancel={() => setCropFile(null)} onDone={(f) => { setCropFile(null); uploadPhoto.mutate(f); }} />}
         <div className="self-center sm:self-start">
             <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold leading-tight">
               {c.displayName}
@@ -386,7 +390,7 @@ function EventControls({ c, eventKey, defaultGift, onChange }: { c: ContactDetai
       </button>
       {open && <span className="fixed inset-0 z-10" onClick={() => setOpen(false)} />}
       {open && (
-        <span className="absolute right-0 top-full z-20 mt-1 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+        <span ref={keepInView} className="absolute right-0 top-full z-20 mt-1 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
           <span className="mb-1 block text-[11px] text-slate-500">Emoji en el calendario</span>
           <span className="grid grid-cols-6 gap-1">
             {emojiChoices.map((e) => (

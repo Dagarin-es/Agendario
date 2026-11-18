@@ -19,7 +19,7 @@ import { DavError, deleteCard, discoverAddressBooks, fetchCards, listCards, putC
 import { recordHistory } from "./history.js";
 import { cleanupItemTags, ensureItemIds, itemIdsOf, itemTagsFor } from "./items.js";
 import { deleteContacts } from "./merge.js";
-import { deletePhoto, readPhoto, savePhoto } from "./photos.js";
+import { deletePhoto, readPhoto, savePhoto, vcardPhotoType } from "./photos.js";
 import { addTags, expandTagIds, tagsForContacts } from "./tags.js";
 import { logicalLines, parseProp, parseVCard, type ParsedContact } from "./vcard-parse.js";
 import { nameTokens, normalizeEmail, normalizePhone } from "./duplicates.js";
@@ -102,8 +102,8 @@ export async function buildVCard(row: ContactRow, items: Items, uid: string, ext
   const lines = vcardCore(row, items, uid);
   if (row.photoKey) {
     try {
-      const jpeg = await readPhoto(row.photoKey, "full");
-      lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${Buffer.from(jpeg).toString("base64")}`);
+      const img = await readPhoto(row.photoKey, "full");
+      lines.push(`PHOTO;ENCODING=b;TYPE=${vcardPhotoType(img)}:${Buffer.from(img).toString("base64")}`);
     } catch {
       /* sin foto si no se puede leer */
     }

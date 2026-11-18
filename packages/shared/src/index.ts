@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
 export * from "./themes";
 
-export const APP_VERSION = "0.14.2-beta";
+export const APP_VERSION = "0.15.0-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------
@@ -58,6 +58,12 @@ export const relationshipTypes = [
   "sibling",
   "grandparent",
   "grandchild",
+  "cousin",
+  "uncle",
+  "nephew",
+  "sibling_in_law",
+  "parent_in_law",
+  "child_in_law",
   "relative",
   "friend",
   "colleague",
@@ -75,6 +81,12 @@ export const relationshipLabels: Record<RelationshipType, string> = {
   sibling: "Hermano/a de",
   grandparent: "Abuelo/a de",
   grandchild: "Nieto/a de",
+  cousin: "Primo/a de",
+  uncle: "Tío/a de",
+  nephew: "Sobrino/a de",
+  sibling_in_law: "Cuñado/a de",
+  parent_in_law: "Suegro/a de",
+  child_in_law: "Yerno/nuera de",
   relative: "Familiar de",
   friend: "Amigo/a de",
   colleague: "Compañero/a de trabajo de",
@@ -92,6 +104,12 @@ export const relationshipInverse: Record<RelationshipType, RelationshipType> = {
   sibling: "sibling",
   grandparent: "grandchild",
   grandchild: "grandparent",
+  cousin: "cousin",
+  uncle: "nephew",
+  nephew: "uncle",
+  sibling_in_law: "sibling_in_law",
+  parent_in_law: "child_in_law",
+  child_in_law: "parent_in_law",
   relative: "relative",
   friend: "friend",
   colleague: "colleague",

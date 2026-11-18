@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { Modal, useAlert, useConfirm } from "./Dialogs";
 import { ContactPicker } from "./ContactPicker";
 import { UserAvatar } from "./UserAvatar";
+import { PhotoCropper } from "./PhotoCropper";
 import { Link } from "react-router";
 import { useQuery as useQ } from "@tanstack/react-query";
 import type { Contact } from "@agendario/shared";
@@ -43,6 +44,7 @@ function Profile({ me }: { me: User }) {
   const qc = useQueryClient();
   const showAlert = useAlert();
   const [picking, setPicking] = useState(false);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const done = (u: User) => qc.setQueryData(["me"], u);
   const fail = (e: unknown) => showAlert("No se ha podido guardar", (e as Error).message);
   const upload = useMutation({
@@ -59,7 +61,7 @@ function Profile({ me }: { me: User }) {
         <div className="flex flex-wrap gap-2">
           <label className="btn-ghost cursor-pointer border border-slate-200 bg-white text-sm">
             {upload.isPending ? "Subiendo…" : me.avatarOwn ? "Cambiar foto" : "Subir foto"}
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); e.target.value = ""; }} />
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setCropFile(f); e.target.value = ""; }} />
           </label>
           {me.avatarOwn && <button className="btn-ghost text-sm text-red-700" onClick={() => remove.mutate()}>Quitar foto</button>}
         </div>
@@ -71,6 +73,7 @@ function Profile({ me }: { me: User }) {
         </p>
         <p className="text-xs text-slate-500">Si marcas tu propia ficha y no subes foto, se usa la de esa ficha.</p>
       </div>
+      {cropFile && <PhotoCropper file={cropFile} onCancel={() => setCropFile(null)} onDone={(f) => { setCropFile(null); upload.mutate(f); }} />}
       {picking && <ContactPicker title="¿Cuál es tu ficha?" initial={me.name} onClose={() => setPicking(false)} onPick={(c) => { setPicking(false); setCard.mutate(c.id); }} />}
     </div>
   );

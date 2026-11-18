@@ -1,3 +1,4 @@
+import { keepInView } from "../lib/keepInView";
 /**
  * Marco de la app de Android con Material 3 (Material You): barra superior, píldora de navegación
  * inferior flotante (los destinos al alcance del pulgar; tu foto abre la hoja con el resto), botón flotante.
@@ -144,10 +145,12 @@ export function AppShell() {
     return () => window.removeEventListener("agendario-share", on);
   }, [nav]);
 
+  // «Duplicados» solo aparece cuando los hay (o si estás en esa pantalla)
+  const visibleTabs = tabs.filter((t) => t.to !== "/duplicates" || dupCount > 0 || location.pathname.startsWith("/duplicates"));
   const badge = (to: string) => (to === "/duplicates" ? dupCount || null : to === "/upcoming" ? gifts.count + pending || null : null);
   const navItems = (
     <>
-      {tabs.map((t) => (
+      {visibleTabs.map((t) => (
         <NavLink key={t.to} to={t.to} end={"end" in t} onClick={() => void haptic()} className="m3-nav-item">
           {({ isActive }) => (
             <>
@@ -225,7 +228,7 @@ export function AppShell() {
         </nav>
       ) : (
         /* Píldora de navegación flotante translúcida; se esconde con el teclado abierto */
-        <nav className={`m3-pill fixed bottom-[calc(12px+var(--sab))] left-1/2 z-20 grid w-[min(calc(100vw-24px),460px)] -translate-x-1/2 grid-cols-5 transition-[opacity,transform] duration-200 ${kb ? "pointer-events-none translate-y-24 opacity-0" : ""}`} aria-label="Navegación principal">
+        <nav className={`m3-pill fixed bottom-[calc(12px+var(--sab))] left-1/2 z-20 grid w-[min(calc(100vw-24px),460px)] -translate-x-1/2 transition-[opacity,transform] duration-200 ${kb ? "pointer-events-none translate-y-24 opacity-0" : ""}`} aria-label="Navegación principal" style={{ gridTemplateColumns: `repeat(${visibleTabs.length + 1}, minmax(0, 1fr))` }}>
           {navItems}
         </nav>
       )}
@@ -249,7 +252,7 @@ function SortMenu() {
       </button>
       {open && <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />}
       {open && (
-        <div role="menu" className="m3-sheet absolute right-0 top-full z-40 mt-1 w-56 overflow-hidden rounded-2xl py-1 shadow-lg ring-1 ring-black/5">
+        <div ref={keepInView} role="menu" className="m3-sheet absolute right-0 top-full z-40 mt-1 w-56 overflow-hidden rounded-2xl py-1 shadow-lg ring-1 ring-black/5">
           {sortOptions.map((o) => (
             <button key={o.id} role="menuitemradio" aria-checked={sort === o.id} className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm ${sort === o.id ? "font-semibold text-indigo-800" : "text-slate-700"} active:bg-indigo-100`} onClick={() => { setSort(o.id); setOpen(false); }}>
               {o.label} {sort === o.id && <span aria-hidden="true">✓</span>}

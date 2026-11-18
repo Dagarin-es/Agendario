@@ -1,3 +1,4 @@
+import { keepInView } from "../lib/keepInView";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { TagLite } from "@agendario/shared";
@@ -42,7 +43,7 @@ export function ItemTag({ contactId, itemId, current, contactTags }: { contactId
       </button>
       {open && <span className="fixed inset-0 z-10" onClick={() => setOpen(false)} />}
       {open && (
-        <span className="absolute left-0 top-full z-20 mt-1 block w-60 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-lg">
+        <span ref={keepInView} className="absolute left-0 top-full z-20 mt-1 block w-60 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-lg">
           <span className="mb-1 block text-[11px] text-slate-500">Asociar a la etiqueta:</span>
           <span className="flex flex-wrap gap-1">
             {contactTags.map((t) => (

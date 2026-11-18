@@ -5,7 +5,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { adminUserCreateSchema, adminUserPatchSchema, changePasswordSchema, loginSchema, registerSchema, registrationModes, type AdminUser, type RegistrationMode, type User } from "@agendario/shared";
 import { getSetting, setSetting } from "../lib/settings.js";
-import { deletePhoto, MAX_UPLOAD_BYTES, readPhoto, savePhoto } from "../lib/photos.js";
+import { deletePhoto, MAX_UPLOAD_BYTES, photoType, readPhoto, savePhoto } from "../lib/photos.js";
 import { config } from "../config.js";
 import { db, schema } from "../db/index.js";
 import {
@@ -104,7 +104,7 @@ export const authRoutes = new Hono<AppEnv>()
     const key = await avatarKey(c.get("user").id);
     if (!key) throw new HTTPException(404, { message: "Sin foto" });
     const data = await readPhoto(key, c.req.valid("query").size);
-    return c.body(new Uint8Array(data), 200, { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=86400", ETag: `"${key}"` });
+    return c.body(new Uint8Array(data), 200, { "Content-Type": photoType(key), "Cache-Control": "private, max-age=86400", ETag: `"${key}"` });
   })
   .put("/avatar", requireAuth, async (c) => {
     const me = c.get("user");

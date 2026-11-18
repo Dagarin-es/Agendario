@@ -9,7 +9,7 @@ import { getAccess } from "../lib/access.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import { giftOverview, occasionsFor } from "../lib/events.js";
 import { imageForLink, linkPreview, saveImageFromUrl } from "../lib/linkpreview.js";
-import { deletePhoto, MAX_UPLOAD_BYTES, readPhoto, savePhoto } from "../lib/photos.js";
+import { deletePhoto, MAX_UPLOAD_BYTES, photoType, readPhoto, savePhoto } from "../lib/photos.js";
 
 const gi = schema.giftIdeas;
 const gr = schema.giftsReceived;
@@ -99,7 +99,7 @@ export const giftRoutes = new Hono<AppEnv>()
     const [row] = await db.select({ imageKey: gi.imageKey }).from(gi).where(and(eq(gi.id, c.req.valid("param").id), eq(gi.userId, user.id)));
     if (!row?.imageKey) throw new HTTPException(404, { message: "Sin imagen" });
     const data = await readPhoto(row.imageKey, c.req.valid("query").size);
-    return c.body(new Uint8Array(data), 200, { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=604800", ETag: `"${row.imageKey}"` });
+    return c.body(new Uint8Array(data), 200, { "Content-Type": photoType(row.imageKey), "Cache-Control": "private, max-age=604800", ETag: `"${row.imageKey}"` });
   })
   // Subir una imagen (multipart «photo») o sacarla de nuevo de la web del enlace (JSON {fromLink:true} o {url})
   .put("/gift-ideas/:id/image", idParam, async (c) => {

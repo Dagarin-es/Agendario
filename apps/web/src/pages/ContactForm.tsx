@@ -1,3 +1,4 @@
+import { PhotoCropper } from "../components/PhotoCropper";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
@@ -134,6 +135,7 @@ export function ContactFormPage() {
   const [orgName, setOrgName] = useState(search.get("orgName") ?? ""); // nombre del contacto enlazado como empresa
   const [tags, setTags] = useState<TagLite[]>([]);
   const [photo, setPhoto] = useState<File | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -224,7 +226,8 @@ export function ContactFormPage() {
             )}
             <span className="absolute inset-0 hidden items-center justify-center rounded-full bg-black/40 text-xs text-white group-hover:flex">Cambiar</span>
           </button>
-          <input ref={photoRef} type="file" accept="image/*" hidden onChange={(e) => { setPhoto(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+          <input ref={photoRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) setCropFile(f); e.target.value = ""; }} />
+          {cropFile && <PhotoCropper file={cropFile} onCancel={() => setCropFile(null)} onDone={(f) => { setCropFile(null); setPhoto(f); }} />}
           {photo ? (
             <button type="button" className="text-xs text-slate-500 hover:text-red-600" onClick={() => setPhoto(null)}>Quitar foto nueva</button>
           ) : (

@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 0.15.0-beta (servidor y web; la APK sigue en la 0.14.2)
+- **Logotipos transparentes**: las imágenes con transparencia se guardan en PNG y se ven transparentes (con un fondo claro suave detrás, también en modo oscuro), centradas con margen para que el círculo no corte las esquinas. Se envían también en PNG a Fastmail y a la agenda del móvil. Las fotos normales siguen en JPEG.
+- **Recortar la foto** al subirla (contactos y tu foto de perfil): arrastrar para encuadrar, acercar y girar, con la vista previa en círculo.
+- **Relaciones nuevas**: primo/a, tío/a ↔ sobrino/a, cuñado/a y suegro/a ↔ yerno/nuera (con su inversa automática).
+- **«Duplicados»** solo aparece en las pestañas cuando hay duplicados.
+- Corregido: buscar una dirección en el mapa desde la edición del contacto guardaba la ficha y salía de la edición.
+- Corregido: los menús desplegables (como «Abrir con…» del mapa) ya no se salen de la pantalla en el móvil.
+
 ## 0.14.2-beta
 - **Registro de llamadas**: corregida la primera carga «desde una fecha», que se ignoraba y solo leía las llamadas a partir de ese momento. La sección enseña cuántas llamadas se leyeron, cuántas se guardaron, cuántas ya estaban y cuántas eran de números que no son contactos.
 - **Ventanas en el móvil**: ya no quedan pegadas a los bordes (registro de llamadas, Acerca de, imagen e idea de regalo).

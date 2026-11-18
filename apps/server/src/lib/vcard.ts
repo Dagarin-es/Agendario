@@ -78,7 +78,7 @@ export function toVCard(c: VCardContact): string {
   }
   if (c.notes) lines.push(`NOTE:${esc(c.notes)}`);
   if (c.categories?.length) lines.push(`CATEGORIES:${c.categories.map(esc).join(",")}`);
-  if (c.photoJpeg) lines.push(`PHOTO:data:image/jpeg;base64,${c.photoJpeg.toString("base64")}`);
+  if (c.photoJpeg) lines.push(`PHOTO:data:image/${c.photoJpeg[0] === 0x89 ? "png" : "jpeg"};base64,${c.photoJpeg.toString("base64")}`);
   for (const x of c.extra ?? []) lines.push(`${x.name}:${esc(x.value)}`);
   lines.push(`REV:${c.updatedAt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`);
   lines.push("END:VCARD");

@@ -1,3 +1,4 @@
+import { keepInView } from "../lib/keepInView";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
@@ -63,7 +64,7 @@ function MoreMenu() {
         <span className="hidden sm:inline">Menú</span>
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-lg">
+        <div ref={keepInView} className="absolute right-0 top-full z-20 mt-1 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-lg">
           <Link to="/settings" className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
             <UserAvatar me={me} size={40} />
             <span className="min-w-0">
@@ -91,6 +92,7 @@ export function Layout() {
   const dupCount = useDuplicateCount();
   useColorThemeFromPrefs();
   const icon = useThemeIcon();
+  const location = useLocation();
   // Altura real de la cabecera: las barras fijas de cada página se pegan justo debajo
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -126,12 +128,15 @@ export function Layout() {
             )}
             {pendingGifts > 0 && <span className="ml-1 rounded-full bg-rose-500 px-1.5 py-px text-[10px] font-semibold text-white">🛍️{pendingGifts}</span>}
           </NavLink>
-          <NavLink to="/duplicates" className={link("violet")} title="Buscar y combinar duplicados">
-            Duplicados
-            {dupCount > 0 && (
-              <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-px text-[10px] font-semibold text-white">{dupCount}</span>
-            )}
-          </NavLink>
+          {/* Solo cuando hay duplicados (o se está en esa pantalla) */}
+          {(dupCount > 0 || location.pathname.startsWith("/duplicates")) && (
+            <NavLink to="/duplicates" className={link("violet")} title="Buscar y combinar duplicados">
+              Duplicados
+              {dupCount > 0 && (
+                <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-px text-[10px] font-semibold text-white">{dupCount}</span>
+              )}
+            </NavLink>
+          )}
         </nav>
         <MoreMenu />
       </header>

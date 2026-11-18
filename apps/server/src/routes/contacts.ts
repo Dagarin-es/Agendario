@@ -38,7 +38,7 @@ import { addTags, assertOwnTags, expandTagIds, tagsForContacts } from "../lib/ta
 import { deleteContacts, syncOrgName } from "../lib/merge.js";
 import { idsWithHistory, rawContact, recordHistory } from "../lib/history.js";
 import { contactPrefsOf, interactionsOf } from "../lib/personal.js";
-import { deletePhoto, MAX_UPLOAD_BYTES, readPhoto, savePhoto } from "../lib/photos.js";
+import { deletePhoto, MAX_UPLOAD_BYTES, photoType, readPhoto, savePhoto } from "../lib/photos.js";
 
 const c = schema.contacts;
 
@@ -395,7 +395,7 @@ export const contactRoutes = new Hono<AppEnv>()
     if (!row.contact.photoKey) throw new HTTPException(404, { message: "Sin foto" });
     const data = await readPhoto(row.contact.photoKey, ctx.req.valid("query").size);
     return ctx.body(new Uint8Array(data), 200, {
-      "Content-Type": "image/jpeg",
+      "Content-Type": photoType(row.contact.photoKey),
       "Cache-Control": "private, max-age=86400",
       ETag: `"${row.contact.photoKey}"`,
     });

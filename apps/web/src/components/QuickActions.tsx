@@ -1,3 +1,4 @@
+import { keepInView } from "../lib/keepInView";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import {
@@ -61,7 +62,7 @@ function Split({ href, label, icon, children, onMain, disabled }: { href: string
       </button>
       {open && <span className="fixed inset-0 z-10" onClick={() => setOpen(false)} />}
       {open && (
-        <span className="absolute left-0 top-full z-20 mt-1 block w-72 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-left text-sm text-slate-700 shadow-lg" onClick={() => setOpen(false)}>
+        <span ref={keepInView} className="absolute left-0 top-full z-20 mt-1 block w-72 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-left text-sm text-slate-700 shadow-lg" onClick={() => setOpen(false)}>
           {children}
         </span>
       )}

@@ -1,3 +1,4 @@
+import { keepInView } from "../lib/keepInView";
 import { lazy, Suspense, useState } from "react";
 import { copyText } from "../lib/clipboard";
 import { geoStatusLabels, isGeolocated, type Address, type GeoStatus } from "@agendario/shared";
@@ -65,7 +66,7 @@ export function MapLinks({ address }: { address: Address }) {
       </button>
       {open && <span className="fixed inset-0 z-10" onClick={() => setOpen(false)} />}
       {open && (
-        <span className="absolute right-0 top-full z-20 mt-1 block w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-lg">
+        <span ref={keepInView} className="absolute right-0 top-full z-20 mt-1 block w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-lg">
           <span className="block px-4 pb-1 pt-1.5 text-[11px] font-semibold uppercase text-slate-400">Abrir con…</span>
           {others.map((app) => (
             <a key={app} href={linkFor(app, address)} {...ext} className="block px-4 py-2 hover:bg-slate-50" onClick={() => setOpen(false)}>

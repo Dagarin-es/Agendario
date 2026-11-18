@@ -127,6 +127,13 @@
       "when": 1795005912703,
       "tag": "0017_gift_images_calls",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795023482998,
+      "tag": "0018_more_relations",
+      "breakpoints": true
     }
   ]
 }

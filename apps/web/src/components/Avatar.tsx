@@ -14,7 +14,8 @@ export function Avatar({
         alt=""
         loading="lazy"
         decoding="async"
-        style={style}
+        // Fondo claro detrás: los logotipos transparentes se ven bien también en modo oscuro
+        style={{ ...style, background: "#f1f5f9" }}
         className="shrink-0 rounded-full object-cover"
       />
     );

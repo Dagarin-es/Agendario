@@ -1,3 +1,4 @@
+import { keepInView } from "../lib/keepInView";
 import { sortOptions, useSortPref, type SortId } from "../lib/sort";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
@@ -332,7 +333,7 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
               </button>
               {selMenu && <div className="fixed inset-0 z-10" onClick={() => setSelMenu(false)} />}
               {selMenu && (
-                <div className="absolute left-0 top-full z-20 mt-1 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-lg">
+                <div ref={keepInView} className="absolute left-0 top-full z-20 mt-1 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-lg">
                   <button className="block w-full px-4 py-2.5 text-left hover:bg-slate-50" onClick={() => { addToSelection(visible); setSelMenu(false); }}>
                     Los de esta página ({visible.length})
                   </button>
