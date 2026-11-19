@@ -3,7 +3,8 @@
  */
 import { randomBytes } from "node:crypto";
 import { zValidator } from "@hono/zod-validator";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
+import { visibleContacts } from "../lib/access.js";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -12,13 +13,27 @@ import { db, schema } from "../db/index.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import { parsePartial } from "../lib/dates.js";
 import { sources } from "../lib/events.js";
-import { deletePhoto, MAX_UPLOAD_BYTES, photoType, readPhoto, savePhoto } from "../lib/photos.js";
+import { deletePhoto, photoType, readPhoto, storeUpload } from "../lib/photos.js";
 import { deleteSetting, getSetting, setSetting } from "../lib/settings.js";
 
 const pe = schema.personalEvents;
 const idParam = zValidator("param", z.object({ id: z.string().uuid() }));
 
-function toEvent(r: typeof pe.$inferSelect): PersonalEvent {
+type Linked = PersonalEvent["contacts"][number];
+
+/** Datos mínimos de los contactos relacionados que el usuario puede ver (los borrados o ajenos desaparecen). */
+async function linkedContacts(userId: string, rows: (typeof pe.$inferSelect)[]): Promise<Map<string, Linked>> {
+  const ids = [...new Set(rows.flatMap((r) => r.contactIds ?? []))];
+  if (!ids.length) return new Map();
+  const c = schema.contacts;
+  const found = await db
+    .select({ id: c.id, displayName: c.displayName, photoKey: c.photoKey, updatedAt: c.updatedAt })
+    .from(c)
+    .where(and(inArray(c.id, ids), visibleContacts(userId)));
+  return new Map(found.map((x) => [x.id, { id: x.id, displayName: x.displayName, hasPhoto: !!x.photoKey, updatedAt: x.updatedAt.toISOString() }]));
+}
+
+function toEvent(r: typeof pe.$inferSelect, linked: Map<string, Linked> = new Map()): PersonalEvent {
   return {
     id: r.id,
     title: r.title,
@@ -28,6 +43,7 @@ function toEvent(r: typeof pe.$inferSelect): PersonalEvent {
     description: r.description,
     comment: r.comment,
     hasPhoto: !!r.photoKey,
+    contacts: (r.contactIds ?? []).map((id) => linked.get(id)).filter((x): x is Linked => !!x),
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
   };
@@ -43,17 +59,25 @@ export const personalEventRoutes = new Hono<AppEnv>()
   .use(requireAuth)
   .get("/", async (c) => {
     const rows = await db.select().from(pe).where(eq(pe.userId, c.get("user").id)).orderBy(desc(pe.date));
-    return c.json(rows.map(toEvent));
+    const linked = await linkedContacts(c.get("user").id, rows);
+    return c.json(rows.map((r) => toEvent(r, linked)));
   })
   .post("/", zValidator("json", personalEventInputSchema), async (c) => {
-    const [row] = await db.insert(pe).values({ ...c.req.valid("json"), userId: c.get("user").id }).returning();
-    return c.json(toEvent(row!), 201);
+    const userId = c.get("user").id;
+    const body = c.req.valid("json");
+    const [row] = await db.insert(pe).values({ ...body, contactIds: [...new Set(body.contactIds)], userId }).returning();
+    return c.json(toEvent(row!, await linkedContacts(userId, [row!])), 201);
   })
   .patch("/:id", idParam, zValidator("json", personalEventInputSchema.partial()), async (c) => {
     const { id } = c.req.valid("param");
     await own(id, c.get("user").id);
-    const [row] = await db.update(pe).set({ ...c.req.valid("json"), updatedAt: new Date() }).where(eq(pe.id, id)).returning();
-    return c.json(toEvent(row!));
+    const body = c.req.valid("json");
+    const [row] = await db
+      .update(pe)
+      .set({ ...body, ...(body.contactIds ? { contactIds: [...new Set(body.contactIds)] } : {}), updatedAt: new Date() })
+      .where(eq(pe.id, id))
+      .returning();
+    return c.json(toEvent(row!, await linkedContacts(c.get("user").id, [row!])));
   })
   .delete("/:id", idParam, async (c) => {
     const { id } = c.req.valid("param");
@@ -71,16 +95,7 @@ export const personalEventRoutes = new Hono<AppEnv>()
   .put("/:id/photo", idParam, async (c) => {
     const { id } = c.req.valid("param");
     const row = await own(id, c.get("user").id);
-    const form = await c.req.parseBody();
-    const file = form["photo"];
-    if (!(file instanceof File)) throw new HTTPException(400, { message: "Falta el campo 'photo'" });
-    if (file.size > MAX_UPLOAD_BYTES) throw new HTTPException(413, { message: "La imagen es demasiado grande" });
-    let key: string;
-    try {
-      key = await savePhoto(Buffer.from(await file.arrayBuffer()));
-    } catch {
-      throw new HTTPException(400, { message: "No es una imagen válida" });
-    }
+    const key = await storeUpload(c);
     await db.update(pe).set({ photoKey: key, updatedAt: new Date() }).where(eq(pe.id, id));
     if (row.photoKey) await deletePhoto(row.photoKey).catch(() => {});
     return c.json({ ok: true });

@@ -1,3 +1,4 @@
+import { ForcedPasswordChange } from "./UsersSettings";
 import { keepInView } from "../lib/keepInView";
 /**
  * Marco de la app de Android con Material 3 (Material You): barra superior, píldora de navegación
@@ -10,7 +11,7 @@ import { APP_NAME, APP_VERSION } from "@agendario/shared";
 import { useDuplicateCount } from "./Layout";
 import { useLogout, useMe } from "../lib/auth";
 import { useGiftsToBuy, usePendingGifts } from "../lib/gifts";
-import { getServer, setServer } from "../lib/platform";
+import { getServer, manualUrl, setServer } from "../lib/platform";
 import { haptic } from "../lib/native";
 import { ModeSelector, useColorThemeFromPrefs, useThemeIcon } from "./Personalize";
 import { UserAvatar } from "./UserAvatar";
@@ -190,11 +191,12 @@ export function AppShell() {
       </header>
 
       <OfflineBanner />
-      {me?.mustChangePassword && (
-        <Link to="/settings" className="mx-4 mt-2 rounded-2xl bg-amber-100 px-4 py-3 text-sm text-amber-900">🔑 Estás usando una contraseña provisional: cámbiala en Ajustes.</Link>
-      )}
 
-      {twoPane ? (
+      {me?.mustChangePassword ? (
+        <main className="flex-1 px-4 py-4">
+          <ForcedPasswordChange me={me} />
+        </main>
+      ) : twoPane ? (
         <main className="grid flex-1 grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
           <div className="h-[calc(100dvh-var(--header-h,56px))] overflow-y-auto border-r border-slate-200/70 px-3 pb-6" style={{ ["--header-h" as string]: "0px" }}>
             <ContactListPage pane />
@@ -306,6 +308,7 @@ function MoreSheet({ onClose, onAbout }: { onClose: () => void; onAbout: () => v
           <div className="my-1 h-px bg-slate-200" />
           <button className={item} onClick={() => { setServer(null); void logout().then(() => window.location.reload()); }}>🔁 Cambiar de servidor</button>
           <button className={item} onClick={onAbout}>📒 Acerca de {APP_NAME}</button>
+          <a className={item} href={manualUrl()} target="_blank" rel="noopener">📘 Manual (PDF)</a>
           <button className={`${item} text-red-700`} onClick={() => void logout()}>🚪 Salir</button>
           <p className="mt-2 px-4 text-xs text-slate-400">{APP_NAME} {APP_VERSION}</p>
         </div>

@@ -148,6 +148,20 @@
       "when": 1795130000000,
       "tag": "0020_personal_events_cover",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795140000000,
+      "tag": "0021_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795150000000,
+      "tag": "0022_personal_event_contacts",
+      "breakpoints": true
     }
   ]
 }

@@ -69,7 +69,28 @@ export const sessions = pgTable("sessions", {
     .references(() => users.id, { onDelete: "cascade" }),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+  /** Hash del token de imágenes de la app (solo permite leer fotos y descargas) */
+  mediaId: text("media_id"),
+}, (t) => [index("sessions_media_idx").on(t.mediaId), index("sessions_user_idx").on(t.userId)]);
+
+/** Contraseñas de aplicación (DAVx⁵, Outlook…): solo valen para CardDAV, se pueden revocar una a una. */
+export const appPasswords = pgTable(
+  "app_passwords",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /** Hash argon2 de la contraseña (nunca se guarda en claro) */
+    hash: text("hash").notNull(),
+    /** Primeros caracteres, para reconocerla en la lista */
+    hint: text("hint").notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("app_passwords_user_idx").on(t.userId)],
+);
 
 // ---------- Grupos (para compartir con varias personas a la vez) ----------
 
@@ -183,6 +204,8 @@ export const personalEvents = pgTable(
     /** Comentario personal extenso */
     comment: text("comment"),
     photoKey: text("photo_key"),
+    /** Contactos relacionados con la efeméride (quien estuvo, a quien se lo debes…) */
+    contactIds: jsonb("contact_ids").$type<string[]>().default([]), // admite nulo: copias de la 0.18 no lo traen
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

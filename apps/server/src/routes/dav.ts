@@ -7,7 +7,8 @@
  *  /dav/addressbooks/<user>/        libretas: «all» (todos) y una por etiqueta publicada
  *  /dav/addressbooks/<user>/<book>/<nombre>.vcf   contacto
  *
- * Autenticación básica con el email y la contraseña de Agendario. Solo los contactos propios.
+ * Autenticación básica con el email y una contraseña de aplicación (o la de la cuenta mientras no
+ * haya ninguna). Solo los contactos propios.
  * En una libreta de etiqueta van los contactos con esa etiqueta (o sus subetiquetas) y, de cada
  * uno, los datos de esa etiqueta y los que no tienen etiqueta. Lo creado en el móvil recibe la
  * etiqueta de la libreta; lo borrado en el móvil va a la papelera de Agendario.
@@ -17,17 +18,19 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Hono, type Context } from "hono";
 import { userPrefsSchema } from "@agendario/shared";
 import { db, schema } from "../db/index.js";
-import { verifyPassword } from "../lib/auth.js";
+import { verifyOrDummy, verifyPassword } from "../lib/auth.js";
+import { checkLimit, clientIp, registerFail, registerSuccess } from "../lib/ratelimit.js";
 import { recordHistory } from "../lib/history.js";
 import { cleanupItemTags, ensureItemIds, itemIdsOf, itemTagsFor } from "../lib/items.js";
 import { deleteContacts } from "../lib/merge.js";
 import { savePhoto } from "../lib/photos.js";
-import { addTags, expandTagIds, tagsForContacts } from "../lib/tags.js";
+import { addTags, ensureTagsByName, expandTagIds, tagsForContacts } from "../lib/tags.js";
 import { buildVCard, exportedItems, mergeFromRemote, readRemote, type Items } from "../lib/sync.js";
 
 const c = schema.contacts;
 const u = schema.users;
 const dr = schema.davResources;
+const ap = schema.appPasswords;
 type ContactRow = typeof c.$inferSelect;
 type DavUser = { id: string; name: string };
 
@@ -35,7 +38,16 @@ type DavUser = { id: string; name: string };
 
 const authCache = new Map<string, { user: DavUser; until: number }>();
 
-async function authenticate(ctx: Context): Promise<DavUser | null> {
+/** Olvida los accesos CardDAV en caché de un usuario (al cambiar su contraseña o sus contraseñas de aplicación). */
+export function forgetDavCredentials(userId: string) {
+  for (const [k, v] of authCache) if (v.user.id === userId) authCache.delete(k);
+}
+
+/**
+ * Usuario de Agendario + una de sus contraseñas de aplicación. Mientras no haya creado ninguna,
+ * vale también la contraseña de la cuenta (compatibilidad); en cuanto crea una, solo las de aplicación.
+ */
+async function authenticate(ctx: Context): Promise<DavUser | null | "limited"> {
   const h = ctx.req.header("authorization");
   const m = h?.match(/^Basic (.+)$/i);
   if (!m) return null;
@@ -47,8 +59,26 @@ async function authenticate(ctx: Context): Promise<DavUser | null> {
   if (i < 0) return null;
   const email = raw.slice(0, i);
   const password = raw.slice(i + 1);
+  const ip = clientIp(ctx);
+  if (checkLimit(email, ip)) return "limited";
   const [row] = await db.select().from(u).where(sql`lower(${u.email}) = lower(${email})`);
-  if (!row || row.disabled || !(await verifyPassword(row.passwordHash, password))) return null;
+  let ok = false;
+  if (row && !row.disabled) {
+    const appPw = await db.select({ id: ap.id, hash: ap.hash }).from(ap).where(eq(ap.userId, row.id));
+    for (const p of appPw) {
+      if (await verifyPassword(p.hash, password)) {
+        ok = true;
+        await db.update(ap).set({ lastUsedAt: new Date() }).where(eq(ap.id, p.id));
+        break;
+      }
+    }
+    if (!ok && appPw.length === 0) ok = await verifyPassword(row.passwordHash, password);
+  } else await verifyOrDummy(undefined, password);
+  if (!ok || !row) {
+    registerFail(email, ip);
+    return null;
+  }
+  registerSuccess(email);
   const user = { id: row.id, name: row.name };
   authCache.set(key, { user, until: Date.now() + 5 * 60_000 });
   return user;
@@ -86,18 +116,37 @@ async function booksOf(userId: string): Promise<Book[]> {
   return out;
 }
 
+/** Ruta completa de cada etiqueta del usuario («Familia › Primos»). */
+async function tagPaths(userId: string): Promise<Map<string, string>> {
+  const all = await db.select({ id: schema.tags.id, name: schema.tags.name, parentId: schema.tags.parentId }).from(schema.tags).where(eq(schema.tags.userId, userId));
+  const byId = new Map(all.map((t) => [t.id, t]));
+  const out = new Map<string, string>();
+  for (const t of all) {
+    const parts: string[] = [];
+    for (let x: typeof t | undefined = t, n = 0; x && n < 10; x = x.parentId ? byId.get(x.parentId) : undefined, n++) parts.unshift(x.name);
+    out.set(t.id, parts.join(" › "));
+  }
+  return out;
+}
+
+/** Línea CATEGORIES del vCard: las etiquetas del contacto, que DAVx⁵ muestra como grupos. */
+const categoriesLine = (cats: string[]) => (cats.length ? `CATEGORIES:${cats.map((x) => x.replace(/\\/g, "\\\\").replace(/,/g, "\\,").replace(/;/g, "\\;")).join(",")}` : "");
+
 /** Contactos de una libreta con lo que se publica de cada uno. */
 async function bookContents(userId: string, book: Book) {
   const rows = await db.select().from(c).where(and(eq(c.ownerId, userId), isNull(c.deletedAt)));
   const ids = rows.map((r) => r.id);
-  const tagMap = book.tagIds ? await tagsForContacts(ids, userId) : null;
-  const inBook = book.tagIds ? rows.filter((r) => (tagMap!.get(r.id) ?? []).some((t) => book.tagIds!.has(t.id))) : rows;
+  const tagMap = await tagsForContacts(ids, userId);
+  const paths = await tagPaths(userId);
+  const inBook = book.tagIds ? rows.filter((r) => (tagMap.get(r.id) ?? []).some((t) => book.tagIds!.has(t.id))) : rows;
   const itemTags = await itemTagsFor(inBook.map((r) => r.id), userId);
   const names = new Map((await db.select().from(dr).where(inArray(dr.contactId, inBook.length ? inBook.map((r) => r.id) : ["00000000-0000-0000-0000-000000000000"]))).map((r) => [r.contactId, r.name]));
   return inBook.map((row) => {
     const items: Items = book.tagIds ? exportedItems(row, itemTags.get(row.id), book.tagIds) : { phones: row.phones, emails: row.emails, urls: row.urls, addresses: row.addresses };
-    const etag = `"${createHash("sha256").update(`${row.id}|${row.revision}|${row.updatedAt.toISOString()}|${row.photoKey ?? ""}|${JSON.stringify(items)}`).digest("hex").slice(0, 24)}"`;
-    return { row, items, etag, name: names.get(row.id) ?? `${row.id}.vcf` };
+    const categories = (tagMap.get(row.id) ?? []).map((t) => paths.get(t.id) ?? t.name).sort((a, b) => a.localeCompare(b, "es"));
+    // La ETag incluye las etiquetas: al cambiarlas (o al actualizar a la 1.0) el móvil vuelve a descargar el contacto
+    const etag = `"${createHash("sha256").update(`v2|${row.id}|${row.revision}|${row.updatedAt.toISOString()}|${row.photoKey ?? ""}|${JSON.stringify(items)}|${categories.join("\n")}`).digest("hex").slice(0, 24)}"`;
+    return { row, items, categories, etag, name: names.get(row.id) ?? `${row.id}.vcf` };
   });
 }
 
@@ -137,7 +186,44 @@ const ctagOf = (list: { etag: string }[]) => createHash("sha256").update(list.ma
 
 // ---------------------------------------------------------------- escritura
 
-async function applyCard(user: DavUser, book: Book, name: string, text: string, existing: ContactRow | null) {
+/** Id de la etiqueta con esa ruta («Familia › Primos»), creando las que falten (y sus padres). */
+async function ensureTagPath(userId: string, path: string, cache: Map<string, string>): Promise<string | null> {
+  const parts = path.split(/\s*›\s*/).map((x) => x.trim().slice(0, 50)).filter(Boolean);
+  if (!parts.length) return null;
+  let parentId: string | null = null;
+  for (const name of parts) {
+    const [id] = await ensureTagsByName([name], userId, cache);
+    if (!id) return null;
+    // Las etiquetas nuevas quedan dentro de su padre; las que ya existían no se mueven
+    if (parentId) await db.update(schema.tags).set({ parentId }).where(and(eq(schema.tags.id, id), isNull(schema.tags.parentId), sql`${schema.tags.createdAt} > now() - interval '5 seconds'`));
+    parentId = id;
+  }
+  return parentId;
+}
+
+/**
+ * Grupos del móvil → etiquetas. Si el vCard trae CATEGORIES, las etiquetas del contacto pasan a ser
+ * exactamente esas (más la de la libreta). Si no la trae, solo se interpreta como «sin grupos» cuando
+ * el cliente es DAVx⁵ (que omite la línea al quitar el último grupo); otros clientes la omiten
+ * porque no saben de grupos, y entonces no se toca nada.
+ */
+async function applyCategories(userId: string, contactId: string, book: Book, text: string, cats: string[], davx5: boolean) {
+  const hasLine = /^CATEGORIES[;:]/im.test(text.replace(/\r\n[ \t]/g, ""));
+  if (!hasLine && !davx5) return;
+  const cache = new Map<string, string>();
+  const want = new Set<string>();
+  for (const cat of cats) {
+    const id = await ensureTagPath(userId, cat, cache);
+    if (id) want.add(id);
+  }
+  if (book.newTag) want.add(book.newTag);
+  const mine = (await tagsForContacts([contactId], userId)).get(contactId) ?? [];
+  const remove = mine.filter((t) => !want.has(t.id)).map((t) => t.id);
+  if (remove.length) await db.delete(schema.contactTags).where(and(eq(schema.contactTags.contactId, contactId), inArray(schema.contactTags.tagId, remove)));
+  await addTags(contactId, [...want].filter((id) => !mine.some((t) => t.id === id)));
+}
+
+async function applyCard(user: DavUser, book: Book, name: string, text: string, existing: ContactRow | null, davx5 = false) {
   const remote = readRemote({ href: name, etag: "", data: text });
   const p = remote.parsed;
   const source = "Servidor CardDAV (móvil)";
@@ -160,6 +246,7 @@ async function applyCard(user: DavUser, book: Book, name: string, text: string, 
       })
       .returning();
     if (book.newTag) await addTags(created!.id, [book.newTag]);
+    await applyCategories(user.id, created!.id, book, text, p.categories, davx5);
     await db.insert(dr).values({ contactId: created!.id, name }).onConflictDoUpdate({ target: dr.contactId, set: { name } });
     await recordHistory(db, { contactId: created!.id, userId: user.id, action: "create", after: created!, meta: { source } });
     return created!;
@@ -179,6 +266,7 @@ async function applyCard(user: DavUser, book: Book, name: string, text: string, 
     .returning();
   await recordHistory(db, { contactId: existing.id, userId: user.id, action: "update", before: existing, after: after!, meta: { source } });
   await cleanupItemTags(existing.id, itemIdsOf(after!));
+  await applyCategories(user.id, existing.id, book, text, p.categories, davx5);
   return after!;
 }
 
@@ -192,8 +280,10 @@ davRoutes.all("*", async (ctx) => {
   if (method === "OPTIONS")
     return new Response(null, { status: 200, headers: { DAV: "1, 3, addressbook", Allow: "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, REPORT" } });
 
-  const user = await authenticate(ctx);
-  if (!user) return unauthorized();
+  const auth = await authenticate(ctx);
+  if (auth === "limited") return new Response("Demasiados intentos fallidos; espera unos minutos", { status: 429, headers: { "Retry-After": "900" } });
+  if (!auth) return unauthorized();
+  const user = auth;
 
   const parts = path.replace(/^\/dav\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
   const depth = ctx.req.header("depth") ?? "0";
@@ -235,7 +325,7 @@ davRoutes.all("*", async (ctx) => {
       const list = wanted ? contents.filter((x) => wanted.has(x.name)) : contents;
       const res: string[] = [];
       for (const x of list) {
-        const card = await buildVCard(x.row, x.items, x.row.id, "");
+        const card = await buildVCard(x.row, x.items, x.row.id, categoriesLine(x.categories));
         res.push(response(bookHref(user.id, book.id) + encodeURIComponent(x.name), `<d:getetag>${x.etag}</d:getetag><card:address-data>${esc(card)}</card:address-data>`));
       }
       return xmlResponse(multistatus(res));
@@ -250,7 +340,7 @@ davRoutes.all("*", async (ctx) => {
 
   if (method === "GET" || method === "HEAD") {
     if (!item) return new Response("No encontrado", { status: 404 });
-    const card = await buildVCard(item.row, item.items, item.row.id, "");
+    const card = await buildVCard(item.row, item.items, item.row.id, categoriesLine(item.categories));
     return new Response(method === "HEAD" ? null : card, { status: 200, headers: { "Content-Type": "text/vcard; charset=utf-8", ETag: item.etag } });
   }
   if (method === "PROPFIND") {
@@ -267,7 +357,7 @@ davRoutes.all("*", async (ctx) => {
     if (/^(KIND|X-ADDRESSBOOKSERVER-KIND):\s*group/im.test(text.replace(/\r/g, ""))) return new Response(null, { status: 403 }); // grupos: no
     // Un contacto propio que no está en esta libreta (p. ej. le quitaron la etiqueta) se vuelve a crear
     const existing = item?.row ?? null;
-    const saved = await applyCard(user, book, name, text, existing);
+    const saved = await applyCard(user, book, name, text, existing, /DAVx5|DAVdroid/i.test(ctx.req.header("user-agent") ?? ""));
     const fresh = (await bookContents(user.id, book)).find((x) => x.row.id === saved.id);
     return new Response(null, { status: existing ? 204 : 201, headers: fresh ? { ETag: fresh.etag } : {} });
   }

@@ -1,8 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
-  APP_NAME,
-  APP_VERSION,
   backupDestLabels,
   backupDestTypes,
   messagingAppLabels,

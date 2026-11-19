@@ -38,7 +38,7 @@ import { addTags, assertOwnTags, expandTagIds, tagsForContacts } from "../lib/ta
 import { deleteContacts, syncOrgName } from "../lib/merge.js";
 import { idsWithHistory, rawContact, recordHistory } from "../lib/history.js";
 import { contactPrefsOf, interactionsOf } from "../lib/personal.js";
-import { deletePhoto, MAX_UPLOAD_BYTES, photoType, readPhoto, saveCover, savePhoto } from "../lib/photos.js";
+import { deletePhoto, photoType, readPhoto, saveCover, storeUpload } from "../lib/photos.js";
 
 const c = schema.contacts;
 
@@ -419,17 +419,7 @@ export const contactRoutes = new Hono<AppEnv>()
     const user = ctx.get("user");
     const { id } = ctx.req.valid("param");
     await requireEdit(id, user.id);
-    const form = await ctx.req.parseBody();
-    const file = form["photo"];
-    if (!(file instanceof File)) throw new HTTPException(400, { message: "Falta el campo 'photo'" });
-    if (file.size > MAX_UPLOAD_BYTES) throw new HTTPException(413, { message: "La imagen es demasiado grande" });
-
-    let key: string;
-    try {
-      key = await savePhoto(Buffer.from(await file.arrayBuffer()));
-    } catch {
-      throw new HTTPException(400, { message: "No es una imagen válida" });
-    }
+    const key = await storeUpload(ctx);
     const old = await rawContact(id);
     const [after] = await db.update(c).set({ photoKey: key }).where(eq(c.id, id)).returning();
     await recordHistory(db, { contactId: id, userId: user.id, action: "update", before: old, after });
@@ -468,16 +458,7 @@ export const contactRoutes = new Hono<AppEnv>()
     const user = ctx.get("user");
     const { id } = ctx.req.valid("param");
     await requireEdit(id, user.id);
-    const form = await ctx.req.parseBody();
-    const file = form["photo"];
-    if (!(file instanceof File)) throw new HTTPException(400, { message: "Falta el campo 'photo'" });
-    if (file.size > MAX_UPLOAD_BYTES) throw new HTTPException(413, { message: "La imagen es demasiado grande" });
-    let key: string;
-    try {
-      key = await saveCover(Buffer.from(await file.arrayBuffer()));
-    } catch {
-      throw new HTTPException(400, { message: "No es una imagen válida" });
-    }
+    const key = await storeUpload(ctx, saveCover);
     const old = await rawContact(id);
     await db.update(c).set({ coverKey: key }).where(eq(c.id, id));
     await touchContact(id);

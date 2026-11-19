@@ -1,18 +1,15 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, count, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import {
-  dateTypeLabels,
   exportSelectionSchema,
   groupInputSchema,
   groupMemberSchema,
   type Group,
-  type UpcomingEvent,
 } from "@agendario/shared";
 import { db, schema } from "../db/index.js";
-import { visibleContacts } from "../lib/access.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import { eventsBetween, pendingGifts } from "../lib/events.js";
 import { expandTagIds } from "../lib/tags.js";

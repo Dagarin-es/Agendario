@@ -73,9 +73,9 @@ export function GiftsPage() {
       <h1 className="sr-only">Regalos</h1>
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-slate-500">{data ? `${data.length} ${data.length === 1 ? "persona" : "personas"} con fechas de regalo` : ""}</p>
-        <label className="flex items-center gap-2 text-sm text-slate-600">
-          Ordenar por
-          <select className="input w-auto py-1.5" value={sort} onChange={(e) => pick(e.target.value as Sort)}>
+        <label className="flex shrink-0 items-center gap-2 text-sm text-slate-600">
+          <span className="hidden sm:inline">Ordenar por</span>
+          <select className="input w-auto py-1.5" aria-label="Ordenar por" value={sort} onChange={(e) => pick(e.target.value as Sort)}>
             <option value="next">Próximas fechas</option>
             <option value="name">Nombre</option>
           </select>

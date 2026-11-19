@@ -1,3 +1,5 @@
+import type { Context } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -54,6 +56,21 @@ export async function saveCover(input: Buffer): Promise<string> {
   await writeFile(file(key, "full"), await base.clone().resize(1600, 1600, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer());
   await writeFile(file(key, "thumb"), await base.clone().resize(800, 800, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 78 }).toBuffer());
   return key;
+}
+
+/**
+ * Lee la imagen subida en el campo «photo» (multipart), comprueba su tamaño y la guarda con `save`
+ * (foto normal por defecto, o portada). Devuelve la clave del fichero.
+ */
+export async function storeUpload(ctx: Context, save: (b: Buffer) => Promise<string> = savePhoto): Promise<string> {
+  const file = (await ctx.req.parseBody())["photo"];
+  if (!(file instanceof File)) throw new HTTPException(400, { message: "Falta el campo 'photo'" });
+  if (file.size > MAX_UPLOAD_BYTES) throw new HTTPException(413, { message: "La imagen es demasiado grande" });
+  try {
+    return await save(Buffer.from(await file.arrayBuffer()));
+  } catch {
+    throw new HTTPException(400, { message: "No es una imagen válida" });
+  }
 }
 
 export function readPhoto(key: string, size: PhotoSize) {

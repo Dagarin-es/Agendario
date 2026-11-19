@@ -1,5 +1,17 @@
 # Historial de cambios
 
+## 1.0.0 — primera versión estable
+Agendario deja atrás la beta.
+- **Contraseñas de aplicación** (Ajustes → Sincronización): crea una para cada dispositivo o programa (DAVx⁵, el Mac, Outlook…), con nombre, se ven una sola vez y se pueden quitar una a una. En cuanto creas la primera, CardDAV ya no acepta la contraseña de tu cuenta.
+- **Grupos en el móvil**: el servidor CardDAV envía tus etiquetas como categorías («Familia › Primos» para las subetiquetas). Con DAVx⁵ en modo «categorías» aparecen como grupos en la app Contactos, y añadir o quitar a alguien de un grupo en el móvil cambia su etiqueta en Agendario. Tras actualizar, el móvil vuelve a descargar los contactos solo.
+- **Efemérides**: contactos relacionados (varios) en cada efeméride; la ficha del contacto muestra sus efemérides; botón «Aceptar» en la ventana de la efeméride.
+- **Relaciones**: en lugar de una lista interminable, buscador para elegir a la persona (también en el móvil).
+- **Manual en PDF** en el menú, debajo de «Acerca de».
+- **Seguridad**: freno a la fuerza bruta en el inicio de sesión y CardDAV; mismo tiempo de respuesta exista o no el email; token de imágenes aparte en la app (el de la sesión ya no va en direcciones); cambiar la contraseña cierra las demás sesiones y hay botón «Cerrar sesión en los demás dispositivos»; la contraseña provisional se cambia antes de nada; cerrar sesión en la app cierra también la sesión en el servidor; cabeceras CSP/Permissions-Policy/Referrer-Policy; protección SSRF ampliada; las sesiones caducadas se borran solas; la app de Android ya no entra en las copias de seguridad de Android (allí estaría su token).
+- **Licencia**: GNU AGPL v3 o posterior (`LICENSE`).
+- Limpieza de código (subida de imágenes unificada, importaciones sobrantes) y margen en los selectores.
+- ⚠️ Actualiza también la APK: la 1.0 del servidor ya no acepta la forma antigua de cargar fotos de las APK anteriores.
+
 ## 0.18.0-beta
 - **Efemérides**: la pestaña Fechas tiene ahora dos pestañas, «Eventos» (lo de siempre) y «Efemérides»: tus fechas personales sin contacto (un coche nuevo, un ascenso, un viaje…) con emoji, foto, descripción y un comentario personal largo que solo ves tú. Las que se recuerdan cada año salen también en el calendario de Eventos con su emoji y «hace N años».
 - **Calendario para suscribirse** (Ajustes → Sincronización): enlace privado .ics para ver tus fechas en Google Calendar, iPhone, Mac, Fastmail u Outlook; eliges si incluye Eventos, Efemérides o ambos; el enlace se puede cambiar o quitar. También «Descargar .ics». El comentario personal y las fotos nunca salen de Agendario.

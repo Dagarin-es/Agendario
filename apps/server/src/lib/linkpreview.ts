@@ -14,10 +14,19 @@ const MAX_HTML = 2 * 1024 * 1024;
 const MAX_IMG = 8 * 1024 * 1024;
 
 /** No se leen direcciones de la red local (evita usar el servidor para curiosear la LAN). */
-function privateAddr(ip: string) {
-  if (ip.includes(":")) return ip === "::1" || /^f[cd]/i.test(ip) || /^fe80/i.test(ip) || ip.startsWith("::ffff:127.");
+function privateAddr(ip: string): boolean {
+  const v4mapped = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+  if (v4mapped) return privateAddr(v4mapped[1]!);
+  if (ip.includes(":")) {
+    const x = ip.toLowerCase();
+    return x === "::" || x === "::1" || /^f[cd]/.test(x) || /^fe[89ab]/.test(x) || /^ff/.test(x) || x.startsWith("64:ff9b:") || x.startsWith("2001:db8");
+  }
   const [a, b] = ip.split(".").map(Number) as [number, number];
-  return a === 10 || a === 127 || a === 0 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254) || (a === 100 && b >= 64 && b <= 127);
+  return (
+    a === 0 || a === 10 || a === 127 || a >= 224 ||
+    (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) || (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19))
+  );
 }
 
 async function safeUrl(raw: string): Promise<URL> {

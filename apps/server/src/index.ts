@@ -29,13 +29,36 @@ import { davRoutes } from "./routes/dav.js";
 import { startSyncScheduler } from "./lib/sync.js";
 import { runUpgrades } from "./lib/upgrades.js";
 import { startPurgeJob } from "./lib/history.js";
+import { startSessionCleanup } from "./lib/auth.js";
 import { startBackupScheduler } from "./lib/backup.js";
 import { exportRoutes, groupRoutes, upcomingRoutes } from "./routes/misc.js";
 
 const app = new Hono();
 
 app.use(logger());
-app.use(secureHeaders({ crossOriginResourcePolicy: false }));
+app.use(
+  secureHeaders({
+    crossOriginResourcePolicy: false,
+    // Solo código propio; imágenes propias y de los mapas (OpenStreetMap, Esri); sin incrustar en otras webs
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:", "https://tile.openstreetmap.org", "https://server.arcgisonline.com"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "data:"],
+      workerSrc: ["'self'"],
+      manifestSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+    },
+    xFrameOptions: "DENY",
+    referrerPolicy: "same-origin",
+    permissionsPolicy: { camera: false, microphone: false, payment: false, usb: false, geolocation: ["self"] },
+  }),
+);
 
 // ---------- API ----------
 // La app de Android carga la interfaz desde el propio móvil (https://localhost) y llama a este servidor
@@ -107,6 +130,7 @@ const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`Agendario escuchando en http://0.0.0.0:${info.port}`);
 });
 startPurgeJob();
+startSessionCleanup();
 startBackupScheduler();
 startSyncScheduler();
 

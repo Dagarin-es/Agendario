@@ -9,8 +9,6 @@ import { ContactPicker } from "../components/ContactPicker";
 import { AddressSearch, MapPickerButton, useGeocoder } from "../components/AddressSearch";
 import { TagEditor } from "../components/Tags";
 import { Avatar } from "../components/Avatar";
-import { useConfirm } from "../components/Dialogs";
-import { useUserPrefs } from "../components/QuickActions";
 
 const empty: ContactInput = {
   givenName: "", familyName: "", displayName: "", nickname: "", organization: "", organizationContactId: null, jobTitle: "",

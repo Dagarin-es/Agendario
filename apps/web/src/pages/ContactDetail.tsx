@@ -23,6 +23,8 @@ import { ItemTag } from "../components/ItemTag";
 import { addressLine, MapLinks, MiniMap } from "../components/MapLinks";
 import { MapPickerButton } from "../components/AddressSearch";
 import { VisibilityBadge } from "../components/VisibilityBadge";
+import { ContactPicker } from "../components/ContactPicker";
+import { usePersonalEvents } from "../components/PersonalEvents";
 import { PhotoCropper } from "../components/PhotoCropper";
 import { PhotoViewer, viewerBtn } from "../components/PhotoViewer";
 import { apiUrl } from "../lib/platform";
@@ -411,6 +413,7 @@ export function ContactDetailPage() {
           <div className="flex min-w-0 flex-col gap-4">
             <ImportantDates c={c} onChange={refresh} />
             <GiftsReceived contactId={c.id} gifts={c.giftsReceived} />
+            <LinkedPersonalEvents contactId={c.id} />
           </div>
         </div>
       </div>
@@ -578,14 +581,12 @@ function Relationships({ c, onChange }: { c: ContactDetail; onChange: () => void
   const showAlert = useAlert();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<{ type: RelationshipType; relatedContactId: string }>({ type: "partner", relatedContactId: "" });
-  const { data: all } = useQuery({
-    queryKey: ["contacts", ""],
-    queryFn: () => api.get<ContactSummary[]>("/contacts"),
-    enabled: adding,
-  });
+  // Persona relacionada: con buscador (en el móvil una lista de cientos de nombres no se puede usar)
+  const [picked, setPicked] = useState<ContactSummary | null>(null);
+  const [picking, setPicking] = useState(false);
   const add = useMutation({
     mutationFn: () => api.post(`/contacts/${c.id}/relationships`, draft),
-    onSuccess: () => { setAdding(false); onChange(); },
+    onSuccess: () => { setAdding(false); setPicked(null); setDraft({ type: "partner", relatedContactId: "" }); onChange(); },
     onError: (e) => showAlert("No se ha podido guardar", (e as Error).message),
   });
   const remove = useMutation({ mutationFn: (sub: string) => api.del(`/contacts/${c.id}/relationships/${sub}`), onSuccess: onChange });
@@ -602,13 +603,28 @@ function Relationships({ c, onChange }: { c: ContactDetail; onChange: () => void
           <select className="input" value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as RelationshipType })}>
             {relationshipTypes.map((t) => <option key={t} value={t}>{relationshipLabels[t]}</option>)}
           </select>
-          <select className="input" value={draft.relatedContactId} required onChange={(e) => setDraft({ ...draft, relatedContactId: e.target.value })}>
-            <option value="">Contacto…</option>
-            {all?.filter((x) => x.id !== c.id).map((x) => <option key={x.id} value={x.id}>{x.displayName}</option>)}
-          </select>
+          <button type="button" className="input flex items-center gap-2 text-left" onClick={() => setPicking(true)}>
+            {picked ? (
+              <>
+                <Avatar id={picked.id} name={picked.displayName} hasPhoto={picked.hasPhoto} size={24} version={picked.updatedAt} />
+                <span className="min-w-0 flex-1 truncate">{picked.displayName}</span>
+                <span className="text-xs text-indigo-700">Cambiar</span>
+              </>
+            ) : (
+              <span className="flex-1 text-slate-500">🔎 Buscar a la persona…</span>
+            )}
+          </button>
+          {picking && (
+            <ContactPicker
+              title="¿Con quién?"
+              excludeId={c.id}
+              onClose={() => setPicking(false)}
+              onPick={(x) => { setPicked(x); setDraft({ ...draft, relatedContactId: x.id }); setPicking(false); }}
+            />
+          )}
           <div className="flex justify-end gap-2 sm:col-span-2">
-            <button type="button" className="btn-ghost" onClick={() => setAdding(false)}>Cancelar</button>
-            <button className="btn-primary">Guardar</button>
+            <button type="button" className="btn-ghost" onClick={() => { setAdding(false); setPicked(null); }}>Cancelar</button>
+            <button className="btn-primary" disabled={!draft.relatedContactId || add.isPending}>Guardar</button>
           </div>
         </form>
       )}
@@ -621,6 +637,29 @@ function Relationships({ c, onChange }: { c: ContactDetail; onChange: () => void
               <Link className="font-medium text-indigo-700" to={`/contacts/${r.relatedContactId}`}>{r.relatedName}</Link>
             </span>
             {c.canEdit && <button className="btn-danger text-xs" onClick={() => remove.mutate(r.id)}>✕</button>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Efemérides tuyas en las que aparece este contacto (solo si hay alguna). */
+function LinkedPersonalEvents({ contactId }: { contactId: string }) {
+  const { data } = usePersonalEvents();
+  const list = (data ?? []).filter((e) => e.contacts.some((p) => p.id === contactId));
+  if (!list.length) return null;
+  return (
+    <section className="card">
+      <h2 className="section-title">📔 Efemérides</h2>
+      <ul className="space-y-1.5">
+        {list.map((e) => (
+          <li key={e.id}>
+            <Link to={`/upcoming?vista=efemerides&e=${e.id}`} className="flex items-center gap-2 rounded-lg px-1 py-1 text-sm hover:bg-slate-50">
+              <span aria-hidden="true">{e.emoji || "⭐"}</span>
+              <span className="min-w-0 flex-1 truncate font-medium">{e.title}</span>
+              <span className="shrink-0 text-xs text-slate-500">{formatPartialDate(e.date)}</span>
+            </Link>
           </li>
         ))}
       </ul>

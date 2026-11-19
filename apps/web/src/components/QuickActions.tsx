@@ -8,7 +8,6 @@ import {
   type ContactDetail,
   type ContactPrefs,
   type LabeledValue,
-  type MessagingApp,
   type UserPrefs,
 } from "@agendario/shared";
 import { api } from "../lib/api";

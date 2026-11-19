@@ -4,7 +4,7 @@ import type { User } from "@agendario/shared";
 import { APP_VERSION } from "@agendario/shared";
 import { BetaBadge } from "../components/BetaBadge";
 import { api } from "../lib/api";
-import { getServer, isApp, setServer, setToken } from "../lib/platform";
+import { getServer, isApp, setMediaToken, setServer, setToken } from "../lib/platform";
 
 export function LoginPage() {
   const qc = useQueryClient();
@@ -24,9 +24,9 @@ export function LoginPage() {
     setBusy(true);
     try {
       const user = registering
-        ? await api.post<User & { token?: string }>("/auth/register", form)
-        : await api.post<User & { token?: string }>("/auth/login", { email: form.email, password: form.password });
-      if (user.token) { setToken(user.token); void import("../lib/native").then((n) => n.configureCallLog()); } // app de Android
+        ? await api.post<User & { token?: string; mediaToken?: string }>("/auth/register", form)
+        : await api.post<User & { token?: string; mediaToken?: string }>("/auth/login", { email: form.email, password: form.password });
+      if (user.token) { setToken(user.token); setMediaToken(user.mediaToken); void import("../lib/native").then((n) => n.configureCallLog()); } // app de Android
       qc.setQueryData(["me"], user);
     } catch (err) {
       setError((err as Error).message);

@@ -12,8 +12,20 @@ import type { Contact } from "@agendario/shared";
 
 type SectionT = (p: { title: string; icon: string; desc?: string; children: ReactNode }) => ReactNode;
 
+/** Pantalla única mientras la contraseña sea provisional (el servidor no deja hacer nada más). */
+export function ForcedPasswordChange({ me }: { me: User }) {
+  const Plain: SectionT = ({ title, icon, desc, children }) => (
+    <section className="card mx-auto max-w-xl space-y-3">
+      <h2 className="text-lg font-semibold">{icon} {title}</h2>
+      {desc && <p className="text-sm text-slate-500">{desc}</p>}
+      {children}
+    </section>
+  );
+  return <AccountSettings Section={Plain} me={me} forced />;
+}
+
 /** Mi cuenta: cambiar la contraseña (para todos). */
-export function AccountSettings({ Section, me }: { Section: SectionT; me: User }) {
+export function AccountSettings({ Section, me, forced }: { Section: SectionT; me: User; forced?: boolean }) {
   const qc = useQueryClient();
   const [f, setF] = useState({ current: "", password: "", repeat: "" });
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -24,7 +36,7 @@ export function AccountSettings({ Section, me }: { Section: SectionT; me: User }
   });
   return (
     <Section icon="👤" title="Mi cuenta" desc={`${me.name} · ${me.email}`}>
-      <Profile me={me} />
+      {!forced && <Profile me={me} />}
       {me.mustChangePassword && <p className="rounded-lg bg-amber-50 p-2.5 text-sm text-amber-900 ring-1 ring-amber-200">Estás usando una contraseña provisional: cámbiala ahora.</p>}
       <form className="grid gap-2 sm:grid-cols-3" onSubmit={(e) => { e.preventDefault(); setMsg(null); if (f.password !== f.repeat) return setMsg({ ok: false, text: "Las contraseñas nuevas no coinciden" }); save.mutate(); }}>
         <input className="input" type="password" autoComplete="current-password" placeholder="Contraseña actual" value={f.current} onChange={(e) => setF({ ...f, current: e.target.value })} />
@@ -35,6 +47,7 @@ export function AccountSettings({ Section, me }: { Section: SectionT; me: User }
           {msg && <span className={`text-sm ${msg.ok ? "text-emerald-700" : "text-red-600"}`}>{msg.text}</span>}
         </div>
       </form>
+      {!forced && <CloseOtherSessions />}
     </Section>
   );
 }
@@ -209,5 +222,23 @@ function PasswordDialog({ user, self, onClose, onSave }: { user: AdminUser; self
         <p className="text-xs text-slate-500">{self ? "Es tu propia contraseña." : "Será provisional: se le pedirá cambiarla y se cerrarán sus sesiones abiertas."}</p>
       </div>
     </Modal>
+  );
+}
+
+/** Cerrar la sesión en los demás navegadores y móviles (por si te dejaste una abierta). */
+function CloseOtherSessions() {
+  const confirm = useConfirm();
+  const [done, setDone] = useState(false);
+  const close = useMutation({ mutationFn: () => api.post("/auth/sessions/close-others"), onSuccess: () => setDone(true) });
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3 text-sm">
+      <button
+        className="btn-ghost border border-slate-200"
+        onClick={async () => (await confirm({ title: "¿Cerrar las demás sesiones?", message: "Se cerrará la sesión en todos los demás navegadores y en la app de los móviles (tendrán que volver a entrar). Esta sesión sigue abierta.", confirmText: "Cerrar las demás" })) && close.mutate()}
+      >
+        🚪 Cerrar sesión en los demás dispositivos
+      </button>
+      {done && <span className="text-emerald-700">Hecho: solo queda abierta esta sesión.</span>}
+    </div>
   );
 }

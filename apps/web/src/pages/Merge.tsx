@@ -4,7 +4,6 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import type { Address, ContactDetail, LabeledValue } from "@agendario/shared";
 import { Avatar } from "../components/Avatar";
 import { AddressSearch, useGeocoder } from "../components/AddressSearch";
-import { TagChip } from "../components/Tags";
 import { LabelInput, useItemLabels } from "../components/LabelInput";
 import { api } from "../lib/api";
 import { formatPartialDate } from "../lib/format";

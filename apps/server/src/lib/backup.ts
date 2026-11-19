@@ -60,6 +60,7 @@ export async function jobExists(id: string) {
 /** Tablas en orden de dependencias (para restaurar). Las sesiones no se copian. */
 const TABLES = [
   "users",
+  "app_passwords",
   "groups",
   "group_members",
   "contacts",

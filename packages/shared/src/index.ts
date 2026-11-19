@@ -2,11 +2,11 @@ import { z } from "zod";
 export { saintDateFor } from "./santoral";
 
 // ---------- Versión ----------
-// Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
+// IS_BETA = true muestra la etiqueta «Beta» (desde la 1.0, false).
 export * from "./themes";
 
-export const APP_VERSION = "0.18.0-beta";
-export const IS_BETA = true;
+export const APP_VERSION = "1.0.0";
+export const IS_BETA = false;
 
 // ---------- Enumeraciones ----------
 
@@ -593,6 +593,8 @@ export const personalEventInputSchema = z.object({
   description: z.string().max(500).nullable().optional(),
   /** Comentario personal extenso */
   comment: z.string().max(20000).nullable().optional(),
+  /** Contactos relacionados */
+  contactIds: z.array(z.string().uuid()).max(50).default([]),
 });
 export type PersonalEventInput = z.infer<typeof personalEventInputSchema>;
 
@@ -605,8 +607,21 @@ export interface PersonalEvent {
   description: string | null;
   comment: string | null;
   hasPhoto: boolean;
+  /** Contactos relacionados (solo los que el usuario puede ver) */
+  contacts: { id: string; displayName: string; hasPhoto: boolean; updatedAt: string }[];
   createdAt: string;
   updatedAt: string;
+}
+
+// ---------- Contraseñas de aplicación (CardDAV) ----------
+
+export interface AppPassword {
+  id: string;
+  name: string;
+  /** Primeros caracteres, para reconocerla */
+  hint: string;
+  lastUsedAt: string | null;
+  createdAt: string;
 }
 
 // ---------- Calendario suscribible (.ics) ----------

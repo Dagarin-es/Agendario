@@ -1,6 +1,6 @@
 {
   "name": "@agendario/mobile",
-  "version": "0.18.0-beta",
+  "version": "1.0.0",
   "private": true,
   "description": "App de Android de Agendario (Capacitor). La interfaz es la misma web compilada en modo app.",
   "scripts": {
@@ -18,5 +18,6 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0"
-  }
+  },
+  "license": "AGPL-3.0-or-later"
 }

@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@agendario/shared";
 import { api, ApiError } from "./api";
-import { setToken } from "./platform";
+import { setMediaToken, setToken } from "./platform";
 
 export function useMe(enabled = true) {
   return useQuery({
@@ -9,7 +9,9 @@ export function useMe(enabled = true) {
     enabled,
     queryFn: async () => {
       try {
-        return await api.get<User>("/auth/me");
+        const me = await api.get<User & { mediaToken?: string }>("/auth/me");
+        if (me.mediaToken) setMediaToken(me.mediaToken); // app de Android: token para fotos y descargas
+        return me;
       } catch (e) {
         if (e instanceof ApiError && e.status === 401) return null;
         throw e;

@@ -12,8 +12,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
-        name: "Agendario (Beta)",
-        short_name: "Agendario (Beta)",
+        name: "Agendario",
+        short_name: "Agendario",
         description: "Agenda de contactos vitaminada, sincronizada, con recordatorios de regalos, copias automáticas y búsqueda de duplicados",
         lang: "es",
         theme_color: "#4338ca",

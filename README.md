@@ -1,14 +1,14 @@
-# Agendario · Beta
+# Agendario
 
 <img src="design/icons/agendario-libreta.svg" alt="" width="72">
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> ⚠️ **Versión beta (0.18.0-beta).** Funciona, pero puede tener fallos y cambiar entre versiones. Haz copias de seguridad (ver más abajo) antes de confiarle tus contactos de verdad.
+> **Tus contactos, tu servidor.** Versión estable 1.0.0 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
 
-Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **contactos compartidos** entre usuarios y **fotos**, pensada para crecer hasta tener apps de escritorio y móvil, sincronización con Google/Outlook/CardDAV y copias cifradas.
+Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **efemérides**, **contactos compartidos** entre usuarios, **fotos y portadas**, servidor **CardDAV** (con grupos) para el móvil y calendario **.ics** suscribible.
 
-Esta es la **versión 0.18.0-beta**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
+Esta es la **versión 1.0.0**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
 
 ---
 
@@ -57,7 +57,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-0.18.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.0.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -91,7 +91,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-0.18.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.0.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -99,7 +99,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-0.18.0-beta.zip
+unzip agendario-1.0.0.zip
 cd agendario
 ```
 
@@ -143,7 +143,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-0.18.0-beta.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-1.0.0.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -206,7 +206,7 @@ Para instalar la PWA en el móvil y usarla fuera de casa **hace falta HTTPS**: l
 
 ### App Android (APK)
 
-1. Pasa `agendario-0.18.0-beta.apk` al móvil (Drive, Telegram, cable…) y ábrelo.
+1. Pasa `agendario-1.0.0.apk` al móvil (Drive, Telegram, cable…) y ábrelo.
 2. Android pedirá permiso para **instalar apps de origen desconocido** desde esa aplicación (Archivos, Chrome…): actívalo solo para ella.
 3. Abre **Agendario**, escribe la dirección de tu servidor (la **https** de Nginx Proxy Manager; en casa vale `http://IP:3002`) y entra con tu usuario.
 
@@ -229,7 +229,7 @@ storePassword=LA_CONTRASEÑA
 keyAlias=agendario
 ```
 
-La versión de la APK sale sola de `APP_VERSION` (0.18.0-beta → código 1200).
+La versión de la APK sale sola de `APP_VERSION` (1.0.0 → código 1200).
 
 **Registro de llamadas**: en ⚙️ Ajustes → Aplicaciones externas → «Activar el registro de llamadas». Android pide permiso para leer el registro de llamadas y el estado del teléfono. Si las llamadas tardan en aparecer, quita a Agendario de la optimización de batería (la app te lleva al ajuste).
 
@@ -367,7 +367,7 @@ Para otro servidor (Nextcloud, Radicale, iCloud con contraseña de app…) elige
 
 Agendario es también un servidor CardDAV en `https://TU_DOMINIO/dav/`. En **⚙️ Ajustes → CardDAV** eliges qué libretas verá el móvil: «Agendario» con todo y, si quieres, una por etiqueta (incluye sus subetiquetas).
 
-- **Android**: instala **DAVx⁵** → Añadir cuenta → *Acceder con URL y nombre de usuario* → `https://TU_DOMINIO/dav/`, tu email y tu contraseña de Agendario. Marca las libretas.
+- **Android**: instala **DAVx⁵** → Añadir cuenta → *Acceder con URL y nombre de usuario* → `https://TU_DOMINIO/dav/`, tu email y una **contraseña de aplicación** (Ajustes → Sincronización → Contraseñas de aplicación). Marca las libretas y en «Método de grupos» elige «categorías»: tus etiquetas aparecen como grupos.
 - **iPhone/iPad**: Ajustes → Contactos → Cuentas → Añadir cuenta → Otra → *Añadir cuenta CardDAV*: servidor `TU_DOMINIO`, tu email y contraseña.
 - **Mac**: Contactos → Ajustes → Cuentas → + → *Otra cuenta de Contactos* → CardDAV, manual, servidor `https://TU_DOMINIO/dav/`.
 
@@ -593,7 +593,7 @@ npm run db:generate
 
 ## Hoja de ruta
 
-Mientras el proyecto sea beta, la web muestra la etiqueta «Beta». Para quitarla al publicar la versión estable, cambia `IS_BETA` y `APP_VERSION` en `packages/shared/src/index.ts` (y `APP_VERSION` en el `Dockerfile`).
+Desde la 1.0 `IS_BETA = false` (sin etiqueta «Beta»). La versión está en `APP_VERSION` de `packages/shared/src/index.ts` (y en el `Dockerfile`).
 
 1. ✅ **Fase 1**: servidor, usuarios, contactos compartidos, fotos, regalos, fechas, relaciones y PWA.
    - ✅ 0.2: etiquetas personales con filtro e importación de .vcf (ficheros y carpetas).
@@ -608,3 +608,15 @@ Mientras el proyecto sea beta, la web muestra la etiqueta «Beta». Para quitarl
 4. Google: solo traer las fotos de perfil (`scripts/fotos-google.py`). Sin sincronización con Google ni Outlook.
 5. **Fase 5**: ✅ app Android con Capacitor (0.12). Pendiente: iOS y Tauri (Mac/Windows).
 6. Más adelante: historial de interacciones, "mantener el contacto" y préstamos.
+
+
+## Seguridad
+
+- Contraseñas con **argon2**; sesiones con token aleatorio guardado solo como hash; cookies `HttpOnly` + `SameSite=Lax` (+ `Secure` con `SECURE_COOKIES=true`).
+- **Freno a la fuerza bruta**: 10 fallos por cuenta o 30 por IP en 15 minutos bloquean el inicio de sesión y CardDAV durante un rato. Mismo tiempo de respuesta exista o no el email.
+- **Contraseñas de aplicación** para CardDAV (DAVx⁵, Mac, Outlook…): una por dispositivo, revocables. En cuanto creas una, CardDAV deja de aceptar la contraseña de la cuenta.
+- La app de Android usa un **token de imágenes** aparte (solo sirve para leer fotos y descargas), así el token de sesión nunca va en una URL. Copias de la app excluidas de las copias de Android.
+- Cambiar la contraseña cierra las demás sesiones; también hay «Cerrar sesión en los demás dispositivos». Las contraseñas provisionales obligan a cambiarlas antes de usar nada más.
+- Cabeceras de seguridad (CSP solo con código propio, sin incrustar en otras webs, `Referrer-Policy`, `Permissions-Policy`).
+- Las vistas previas de enlaces no pueden leer direcciones de la red local (protección SSRF).
+- Ningún secreto en el código: el `.env`, el keystore de Android y las credenciales de Google quedan fuera del repositorio.

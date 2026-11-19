@@ -1,6 +1,6 @@
 {
   "name": "@agendario/web",
-  "version": "0.18.0-beta",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "build": "tsc -p . && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p .",
-    "build:app": "tsc -p . && vite build --mode app --outDir dist-app --emptyOutDir"
+    "build:app": "tsc -p . && vite build --mode app --outDir dist-app --emptyOutDir && node -e \"require('fs').rmSync('dist-app/manual',{recursive:true,force:true})\""
   },
   "dependencies": {
     "@capacitor/app": "^8.1.2",
@@ -36,5 +36,6 @@
     "typescript": "^5.9.0",
     "vite": "^7.0.0",
     "vite-plugin-pwa": "^1.0.0"
-  }
+  },
+  "license": "AGPL-3.0-or-later"
 }

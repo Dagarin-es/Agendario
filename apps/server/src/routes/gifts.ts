@@ -9,7 +9,7 @@ import { getAccess } from "../lib/access.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import { giftOverview, occasionsFor } from "../lib/events.js";
 import { imageForLink, linkPreview, saveImageFromUrl } from "../lib/linkpreview.js";
-import { deletePhoto, MAX_UPLOAD_BYTES, photoType, readPhoto, savePhoto } from "../lib/photos.js";
+import { deletePhoto, photoType, readPhoto, storeUpload } from "../lib/photos.js";
 
 const gi = schema.giftIdeas;
 const gr = schema.giftsReceived;
@@ -109,14 +109,7 @@ export const giftRoutes = new Hono<AppEnv>()
     if (!old) throw new HTTPException(404, { message: "Idea no encontrada" });
     let key: string | null = null;
     if ((c.req.header("content-type") ?? "").includes("multipart")) {
-      const file = (await c.req.parseBody())["photo"];
-      if (!(file instanceof File)) throw new HTTPException(400, { message: "Falta el campo 'photo'" });
-      if (file.size > MAX_UPLOAD_BYTES) throw new HTTPException(413, { message: "La imagen es demasiado grande" });
-      try {
-        key = await savePhoto(Buffer.from(await file.arrayBuffer()));
-      } catch {
-        throw new HTTPException(400, { message: "No es una imagen válida" });
-      }
+      key = await storeUpload(c);
     } else {
       const body = (await c.req.json().catch(() => ({}))) as { url?: string };
       try {

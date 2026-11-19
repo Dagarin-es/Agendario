@@ -1,9 +1,11 @@
+import { manualUrl } from "../lib/platform";
+import { ForcedPasswordChange } from "./UsersSettings";
 import { keepInView } from "../lib/keepInView";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { APP_NAME, APP_VERSION, type DuplicateGroup } from "@agendario/shared";
-import { api, apiUrl } from "../lib/api";
+import { api } from "../lib/api";
 import { useLogout, useMe } from "../lib/auth";
 import { BetaBadge } from "./BetaBadge";
 import { useGiftsToBuy, usePendingGifts } from "../lib/gifts";
@@ -80,6 +82,7 @@ function MoreMenu() {
           <Link to="/settings" className={item}>⚙️ Ajustes</Link>
           <div className="my-1 border-t border-slate-100" />
           <button className={item} onClick={() => { setOpen(false); setAbout(true); }}>📒 Acerca de Agendario</button>
+          <a className={item} href={manualUrl()} target="_blank" rel="noopener" onClick={() => setOpen(false)}>📘 Manual (PDF)</a>
           <button className={`${item} text-red-700`} onClick={logout}>🚪 Salir</button>
         </div>
       )}
@@ -110,7 +113,7 @@ export function Layout() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-5xl flex-col">
       <header ref={headerRef} className="sticky top-0 z-10 flex items-center gap-1 border-b border-slate-200 bg-white px-3 py-3 sm:gap-2 sm:px-4">
-        <Link to="/" className="mr-1 flex shrink-0 items-center gap-2" title={`${APP_NAME} · versión beta`}>
+        <Link to="/" className="mr-1 flex shrink-0 items-center gap-2" title={APP_NAME}>
           <img src={icon} alt="" className="h-9 w-9" />
           <span className="hidden flex-col items-start leading-none md:flex">
             <span className="text-[17px] font-semibold tracking-tight text-indigo-900">{APP_NAME}</span>
@@ -141,13 +144,8 @@ export function Layout() {
         <MoreMenu />
       </header>
       <OfflineBanner />
-      {me?.mustChangePassword && (
-        <Link to="/settings" className="mx-4 mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
-          🔑 Estás usando una contraseña provisional. <strong>Cámbiala en Ajustes → Mi cuenta.</strong>
-        </Link>
-      )}
       <main className="flex-1 p-4 pb-10">
-        <Outlet />
+        {me?.mustChangePassword ? <ForcedPasswordChange me={me} /> : <Outlet />}
       </main>
       {/* Versión: siempre visible, abajo a la derecha */}
       <div className="pointer-events-none fixed bottom-2 right-2.5 z-0 select-none rounded-md bg-white/85 px-2 py-0.5 text-xs font-medium text-slate-500 ring-1 ring-slate-200">

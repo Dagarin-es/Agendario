@@ -4,6 +4,9 @@ import type { PersonalEvent, PersonalEventInput } from "@agendario/shared";
 import { api } from "../lib/api";
 import { formatPartialDate } from "../lib/format";
 import { apiUrl } from "../lib/platform";
+import { Link } from "react-router";
+import { Avatar } from "./Avatar";
+import { ContactPicker } from "./ContactPicker";
 import { Modal, useAlert, useConfirm } from "./Dialogs";
 import { EmojiPicker } from "./EmojiPicker";
 import { PhotoViewer } from "./PhotoViewer";
@@ -107,6 +110,14 @@ export function PersonalEventsView({ openId, onOpen }: { openId: string | null; 
                     {formatPartialDate(e.date)}{a ? ` · ${a}` : ""}
                   </span>
                   {e.description && <span className="block truncate text-xs text-slate-500">{e.description}</span>}
+                  {e.contacts.length > 0 && (
+                    <span className="mt-1 flex items-center -space-x-1.5">
+                      {e.contacts.slice(0, 5).map((p) => (
+                        <span key={p.id} className="rounded-full ring-2 ring-white"><Avatar id={p.id} name={p.displayName} hasPhoto={p.hasPhoto} size={20} version={p.updatedAt} /></span>
+                      ))}
+                      {e.contacts.length > 5 && <span className="pl-2.5 text-xs text-slate-500">+{e.contacts.length - 5}</span>}
+                    </span>
+                  )}
                 </span>
                 {e.yearly && (
                   <span className={`shrink-0 text-right text-xs font-semibold ${nx.daysLeft <= 7 ? "text-rose-600" : "text-slate-500"}`}>
@@ -148,6 +159,19 @@ function EventDetail({ e, onClose, onEdit }: { e: PersonalEvent; onClose: () => 
           {e.yearly && <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-800">Cada año · {nx.daysLeft === 0 ? "¡hoy!" : `próximo en ${nx.daysLeft} días`}{nx.years ? ` (${nx.years} ${nx.years === 1 ? "año" : "años"})` : ""}</span>}
         </div>
         {e.description && <p className="font-medium text-slate-700">{e.description}</p>}
+        {e.contacts.length > 0 && (
+          <div>
+            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">👥 Personas</div>
+            <div className="flex flex-wrap gap-2">
+              {e.contacts.map((p) => (
+                <Link key={p.id} to={`/contacts/${p.id}`} onClick={onClose} className="flex items-center gap-2 rounded-full bg-slate-100 py-1 pl-1 pr-3 text-sm hover:bg-indigo-50">
+                  <Avatar id={p.id} name={p.displayName} hasPhoto={p.hasPhoto} size={26} version={p.updatedAt} />
+                  {p.displayName}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
         {e.comment && (
           <div className="rounded-2xl bg-amber-50/70 p-4 text-[15px] leading-relaxed text-slate-800 ring-1 ring-amber-100">
             <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-800">🔒 Comentario personal</div>
@@ -161,7 +185,8 @@ function EventDetail({ e, onClose, onEdit }: { e: PersonalEvent; onClose: () => 
           >
             🗑️ Borrar
           </button>
-          <button className="btn-primary" onClick={onEdit}>✏️ Editar</button>
+          <button className="btn-ghost border border-slate-200" onClick={onEdit}>✏️ Editar</button>
+          <button className="btn-primary" onClick={onClose}>Aceptar</button>
         </div>
       </div>
       {zoom && <PhotoViewer src={personalPhoto(e, "full")} alt={e.title} onClose={() => setZoom(false)} />}
@@ -183,6 +208,8 @@ function EventForm({ initial, onClose, onSaved }: { initial: PersonalEvent | nul
   const [yearly, setYearly] = useState(initial?.yearly ?? true);
   const [description, setDescription] = useState(initial?.description ?? "");
   const [comment, setComment] = useState(initial?.comment ?? "");
+  const [people, setPeople] = useState<PersonalEvent["contacts"]>(initial?.contacts ?? []);
+  const [picking, setPicking] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
   const [dropPhoto, setDropPhoto] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -198,6 +225,7 @@ function EventForm({ initial, onClose, onSaved }: { initial: PersonalEvent | nul
         yearly,
         description: description.trim() || null,
         comment: comment.trim() || null,
+        contactIds: people.map((p) => p.id),
       };
       const ev = initial ? await api.patch<PersonalEvent>(`/personal-events/${initial.id}`, body) : await api.post<PersonalEvent>("/personal-events", body);
       if (photo) {
@@ -247,6 +275,29 @@ function EventForm({ initial, onClose, onSaved }: { initial: PersonalEvent | nul
         <div>
           <textarea className="input min-h-36 py-2 leading-relaxed" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comentario personal: cómo fue, qué sentiste, a quién se lo contaste primero…" maxLength={20000} />
           <p className="mt-1 text-xs text-slate-500">🔒 Solo lo ves tú: no sale en el calendario suscrito.</p>
+        </div>
+        <div>
+          <span className="mb-1.5 block text-sm font-medium text-slate-700">👥 Personas relacionadas</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {people.map((p) => (
+              <span key={p.id} className="flex items-center gap-1.5 rounded-full bg-slate-100 py-1 pl-1 pr-1.5 text-sm">
+                <Avatar id={p.id} name={p.displayName} hasPhoto={p.hasPhoto} size={24} version={p.updatedAt} />
+                {p.displayName}
+                <button type="button" className="ml-0.5 flex h-6 w-6 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200" onClick={() => setPeople(people.filter((x) => x.id !== p.id))} aria-label={`Quitar a ${p.displayName}`}>✕</button>
+              </span>
+            ))}
+            <button type="button" className="rounded-full border border-dashed border-slate-300 px-3 py-1.5 text-sm text-indigo-700 hover:bg-indigo-50" onClick={() => setPicking(true)}>+ Añadir persona</button>
+          </div>
+          {picking && (
+            <ContactPicker
+              title="¿Quién está relacionado?"
+              onClose={() => setPicking(false)}
+              onPick={(x) => {
+                if (!people.some((p) => p.id === x.id)) setPeople([...people, { id: x.id, displayName: x.displayName, hasPhoto: x.hasPhoto, updatedAt: x.updatedAt }]);
+                setPicking(false);
+              }}
+            />
+          )}
         </div>
         <div className="flex items-center gap-3">
           {hasPhoto && (
