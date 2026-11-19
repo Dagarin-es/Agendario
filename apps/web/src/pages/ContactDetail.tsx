@@ -1,3 +1,4 @@
+import { capLabel } from "../lib/text";
 import { keepInView } from "../lib/keepInView";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -23,12 +24,14 @@ import { addressLine, MapLinks, MiniMap } from "../components/MapLinks";
 import { MapPickerButton } from "../components/AddressSearch";
 import { VisibilityBadge } from "../components/VisibilityBadge";
 import { PhotoCropper } from "../components/PhotoCropper";
+import { PhotoViewer, viewerBtn } from "../components/PhotoViewer";
+import { apiUrl } from "../lib/platform";
 import { EmojiPicker } from "../components/EmojiPicker";
 import { QuickActions, useEmailHref, useUserPrefs } from "../components/QuickActions";
 import { Interactions, type InteractionPrefill } from "../components/Interactions";
 import { HistoryIcon } from "../components/HistoryIcon";
 import { telLink } from "../lib/links";
-import { api } from "../lib/api";
+import { api, photoUrl } from "../lib/api";
 import { useAlert, useConfirm } from "../components/Dialogs";
 import { formatPartialDate } from "../lib/format";
 
@@ -82,7 +85,7 @@ function Employees({ c }: { c: ContactDetail }) {
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex gap-3 py-1.5 text-sm">
-      <span className="w-24 shrink-0 pt-0.5 text-slate-500">{label || "—"}</span>
+      <span className="w-24 shrink-0 pt-0.5 text-slate-500">{capLabel(label) || "—"}</span>
       <div className="min-w-0 flex-1 break-words">{children}</div>
     </div>
   );
@@ -141,7 +144,21 @@ export function ContactDetailPage() {
     onSuccess: refresh,
     onError: (e) => showAlert("No se ha podido subir la foto", (e as Error).message),
   });
-  const removePhoto = useMutation({ mutationFn: () => api.del(`/contacts/${id}/photo`), onSuccess: refresh });
+  const removePhoto = useMutation({ mutationFn: () => api.del(`/contacts/${id}/photo`), onSuccess: () => { setViewer(null); refresh(); } });
+  // Visor de la foto y de la portada; la portada se recorta apaisada (3:1)
+  const [viewer, setViewer] = useState<"photo" | "cover" | null>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const uploadCover = useMutation({
+    mutationFn: (file: File) => {
+      const fd = new FormData();
+      fd.append("photo", file);
+      return api.put(`/contacts/${id}/cover`, fd);
+    },
+    onSuccess: refresh,
+    onError: (e) => showAlert("No se ha podido subir la portada", (e as Error).message),
+  });
+  const removeCover = useMutation({ mutationFn: () => api.del(`/contacts/${id}/cover`), onSuccess: () => { setViewer(null); refresh(); } });
   const remove = useMutation({
     mutationFn: () => api.del(`/contacts/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["contacts"] }); qc.invalidateQueries({ queryKey: ["trash"] }); nav("/", { replace: true }); },
@@ -156,23 +173,63 @@ export function ContactDetailPage() {
   return (
     <div className="space-y-4">
       {/* Cabecera compacta: foto a la izquierda, todo lo demás a la derecha */}
-      <section className="detail-head card grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-3">
+      <section className={`detail-head card grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-3 ${c.hasCover ? "overflow-hidden" : ""}`}>
+        {c.hasCover && (
+          <button
+            type="button"
+            className="detail-cover col-span-2 -mx-4 -mt-4 block overflow-hidden"
+            style={{ width: "calc(100% + 2rem)", height: "min(240px, 33vw)" }}
+            onClick={() => setViewer("cover")}
+            aria-label="Ver la portada"
+          >
+            <img src={apiUrl(`/contacts/${c.id}/cover?size=thumb&v=${encodeURIComponent(c.updatedAt)}`)} srcSet={`${apiUrl(`/contacts/${c.id}/cover?size=thumb&v=${encodeURIComponent(c.updatedAt)}`)} 800w, ${apiUrl(`/contacts/${c.id}/cover?size=full&v=${encodeURIComponent(c.updatedAt)}`)} 1600w`} sizes="(min-width: 900px) 900px, 100vw" alt="" className="h-full w-full object-cover" />
+          </button>
+        )}
         <button
-          className="detail-photo group relative shrink-0 rounded-full sm:row-span-2"
-          disabled={!c.canEdit}
-          onClick={() => fileRef.current?.click()}
-          title={c.canEdit ? "Cambiar foto" : undefined}
+          className={`detail-photo group relative shrink-0 rounded-full sm:row-span-2 ${c.hasCover ? "cover-photo -mt-12" : ""}`}
+          disabled={!c.canEdit && !c.hasPhoto}
+          onClick={() => (c.hasPhoto ? setViewer("photo") : fileRef.current?.click())}
+          title={c.hasPhoto ? "Ver la foto" : c.canEdit ? "Poner foto" : undefined}
         >
           <span className="sm:hidden"><Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} size={72} version={c.updatedAt} /></span>
           <span className="hidden sm:block"><Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} size={104} version={c.updatedAt} /></span>
           {c.canEdit && (
             <span className="absolute inset-0 hidden items-center justify-center rounded-full bg-black/40 text-xs text-white group-hover:flex">
-              {uploadPhoto.isPending ? "Subiendo…" : "Cambiar"}
+              {uploadPhoto.isPending ? "Subiendo…" : c.hasPhoto ? "Ver" : "Poner foto"}
             </span>
           )}
         </button>
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) setCropFile(f); e.target.value = ""; }} />
-        {cropFile && <PhotoCropper file={cropFile} onCancel={() => setCropFile(null)} onDone={(f) => { setCropFile(null); uploadPhoto.mutate(f); }} />}
+        {cropFile && <PhotoCropper file={cropFile} onCancel={() => setCropFile(null)} onDone={(f) => { setCropFile(null); setViewer(null); uploadPhoto.mutate(f); }} />}
+        <input ref={coverRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) setCoverFile(f); e.target.value = ""; }} />
+        {coverFile && <PhotoCropper file={coverFile} aspect={3} title="Encuadrar la portada" onCancel={() => setCoverFile(null)} onDone={(f) => { setCoverFile(null); setViewer(null); uploadCover.mutate(f); }} />}
+        {viewer === "photo" && c.hasPhoto && (
+          <PhotoViewer
+            src={photoUrl(c.id, "full", c.updatedAt)}
+            alt={c.displayName}
+            round
+            onClose={() => setViewer(null)}
+            actions={c.canEdit && (
+              <>
+                <button className={viewerBtn} onClick={() => fileRef.current?.click()}>📷 Cambiar foto</button>
+                <button className={viewerBtn} onClick={() => removePhoto.mutate()}>🗑️ Quitar foto</button>
+              </>
+            )}
+          />
+        )}
+        {viewer === "cover" && c.hasCover && (
+          <PhotoViewer
+            src={apiUrl(`/contacts/${c.id}/cover?size=full&v=${encodeURIComponent(c.updatedAt)}`)}
+            alt={`Portada de ${c.displayName}`}
+            onClose={() => setViewer(null)}
+            actions={c.canEdit && (
+              <>
+                <button className={viewerBtn} onClick={() => coverRef.current?.click()}>🖼️ Cambiar portada</button>
+                <button className={viewerBtn} onClick={() => removeCover.mutate()}>🗑️ Quitar portada</button>
+              </>
+            )}
+          />
+        )}
         <div className="detail-name self-center sm:self-start">
             <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold leading-tight">
               {c.displayName}
@@ -224,9 +281,9 @@ export function ContactDetailPage() {
             <Link to={`/contacts/${c.id}/history`} className={smallBtn} title="Historial de cambios">
               <HistoryIcon className="h-4 w-4" /> Historial{c.historyCount > 0 && <span className="text-slate-400">({c.historyCount})</span>}
             </Link>
-            {c.canEdit && c.hasPhoto && (
-              <button className={smallBtn} onClick={() => removePhoto.mutate()} title="Quitar la foto">
-                <span aria-hidden="true">🖼️</span> Quitar foto
+            {c.canEdit && !c.hasCover && (
+              <button className={smallBtn} onClick={() => coverRef.current?.click()} title="Imagen apaisada detrás de la cabecera (solo se ve en Agendario)">
+                <span aria-hidden="true">🖼️</span> {uploadCover.isPending ? "Subiendo…" : "Portada"}
               </button>
             )}
             {c.isMine && (
@@ -294,7 +351,7 @@ export function ContactDetailPage() {
                   {c.addresses.map((a, i) => (
                     <div key={`a${i}`} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3 sm:flex-row">
                       <div className="min-w-0 flex-1 text-sm">
-                        <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">{a.label || "Dirección"}</div>
+                        <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">{capLabel(a.label ?? "") || "Dirección"}</div>
                         <span className="inline-flex flex-wrap items-center gap-1.5">
                           <span>{addressLine(a)}</span>
                           {isGeolocated(a) && <span title="Dirección geolocalizada">📍</span>}

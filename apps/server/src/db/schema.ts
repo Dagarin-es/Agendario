@@ -120,6 +120,8 @@ export const contacts = pgTable(
     addresses: jsonb("addresses").$type<Address[]>().notNull().default([]),
     notes: text("notes").notNull().default(""),
     photoKey: text("photo_key"), // nombre del fichero en /data/photos
+    /** Portada (imagen apaisada tras la cabecera de la ficha). Solo en Agendario: no hay campo estándar. */
+    coverKey: text("cover_key"),
     // UID del vCard de origen (importación). Sirve para detectar duplicados al reimportar.
     vcardUid: text("vcard_uid"),
     // UIDs de los contactos fusionados en este (para no recrearlos al reimportar).
@@ -163,6 +165,29 @@ export const importantDates = pgTable("important_dates", {
   date: text("date").notNull(), // YYYY-MM-DD o --MM-DD
   remindDaysBefore: integer("remind_days_before").notNull().default(7),
 });
+
+/** Efemérides: fechas personales del usuario sin contacto (coche nuevo, un ascenso…). */
+export const personalEvents = pgTable(
+  "personal_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    date: text("date").notNull(), // YYYY-MM-DD o --MM-DD
+    emoji: text("emoji"),
+    /** Se recuerda cada año (aniversario) además de quedar como recuerdo */
+    yearly: boolean("yearly").notNull().default(true),
+    description: text("description"),
+    /** Comentario personal extenso */
+    comment: text("comment"),
+    photoKey: text("photo_key"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("personal_events_user_idx").on(t.userId)],
+);
 
 export const relationships = pgTable(
   "relationships",

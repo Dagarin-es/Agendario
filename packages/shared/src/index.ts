@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // Mientras sea beta, IS_BETA = true: la web muestra la etiqueta «Beta».
 export * from "./themes";
 
-export const APP_VERSION = "0.17.0-beta";
+export const APP_VERSION = "0.18.0-beta";
 export const IS_BETA = true;
 
 // ---------- Enumeraciones ----------
@@ -282,6 +282,8 @@ export interface ContactSummary {
 
 export interface Contact extends ContactSummary, ContactInput {
   createdAt: string;
+  /** Tiene portada (imagen apaisada tras la cabecera; solo en Agendario). */
+  hasCover?: boolean;
   /** Contacto enlazado como empresa (si lo hay y puedes verlo). */
   organizationContact: { id: string; displayName: string; hasPhoto: boolean } | null;
 }
@@ -578,6 +580,45 @@ export interface ContactDetail extends Contact {
   historyCount: number;
   /** Si es una empresa: contactos que la tienen enlazada */
   employees: { id: string; displayName: string; jobTitle: string; hasPhoto: boolean; updatedAt: string; phone?: string; email?: string }[];
+}
+
+// ---------- Efemérides (fechas personales del usuario, sin contacto) ----------
+
+export const personalEventInputSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  date: partialDate,
+  emoji: z.string().max(16).nullable().optional(),
+  /** Se recuerda cada año (aparece también en el calendario de Eventos) */
+  yearly: z.boolean().default(true),
+  description: z.string().max(500).nullable().optional(),
+  /** Comentario personal extenso */
+  comment: z.string().max(20000).nullable().optional(),
+});
+export type PersonalEventInput = z.infer<typeof personalEventInputSchema>;
+
+export interface PersonalEvent {
+  id: string;
+  title: string;
+  date: string;
+  emoji: string | null;
+  yearly: boolean;
+  description: string | null;
+  comment: string | null;
+  hasPhoto: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------- Calendario suscribible (.ics) ----------
+
+export const calendarFeedSchema = z.object({
+  events: z.boolean().default(true),
+  personal: z.boolean().default(true),
+});
+export type CalendarFeedOptions = z.infer<typeof calendarFeedSchema>;
+export interface CalendarFeed extends CalendarFeedOptions {
+  /** Ruta privada del calendario (sin el servidor); null si no hay enlace creado */
+  path: string | null;
 }
 
 // ---------- Próximas fechas ----------

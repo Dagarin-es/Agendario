@@ -65,6 +65,7 @@ const TABLES = [
   "contacts",
   "contact_shares",
   "important_dates",
+  "personal_events",
   "relationships",
   "gift_ideas",
   "gifts_received",

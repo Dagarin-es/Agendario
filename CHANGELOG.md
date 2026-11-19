@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 0.18.0-beta
+- **Efemérides**: la pestaña Fechas tiene ahora dos pestañas, «Eventos» (lo de siempre) y «Efemérides»: tus fechas personales sin contacto (un coche nuevo, un ascenso, un viaje…) con emoji, foto, descripción y un comentario personal largo que solo ves tú. Las que se recuerdan cada año salen también en el calendario de Eventos con su emoji y «hace N años».
+- **Calendario para suscribirse** (Ajustes → Sincronización): enlace privado .ics para ver tus fechas en Google Calendar, iPhone, Mac, Fastmail u Outlook; eliges si incluye Eventos, Efemérides o ambos; el enlace se puede cambiar o quitar. También «Descargar .ics». El comentario personal y las fotos nunca salen de Agendario.
+- **Ver la foto en grande**: tocar la foto de un contacto la abre a pantalla completa (zoom con dos dedos o doble toque; se cierra deslizando hacia abajo). Cambiar o quitar la foto está en el visor.
+- **Portada**: imagen apaisada detrás de la cabecera de la ficha (botón «Portada», con recorte 3:1). Solo se ve en Agendario (no existe un campo estándar en vCard/CardDAV), pero va en las copias de seguridad y en los .vcf que exporta Agendario.
+- **Búsqueda por teléfono**: busca solo en los números (antes se colaban contactos por las cifras de identificadores internos) y entiende «0034…» como «+34…».
+- **Desplegables de etiquetas** (móvil, casa, trabajo…): flecha más grande y fácil de tocar; los tipos se muestran con mayúscula inicial («instagram» → «Instagram»).
+- **App: aviso tras la llamada**: si falta el permiso de notificaciones (p. ej. el registro se activó antes de existir el aviso), la app lo pide al abrirse; en Ajustes → Aplicaciones externas se ve si están permitidas, con botón «Permitir notificaciones».
+
 ## 0.17.0-beta
 - **Varias copias de seguridad**: en Ajustes → Copias, cada copia va en su pestaña con el nombre que le pongas (p. ej. «NAS» por NFS y «Drive» por Google Drive), con su destino, contraseña, programación y registro propios. «+ Nueva copia» añade todas las que quieras; cada una se puede renombrar o quitar. La copia que ya tenías pasa a ser la primera pestaña («Copia principal»), sin perder nada.
 - **Buscador**: corregido que al escribir desaparecieran el campo y el teclado en el móvil.

@@ -38,7 +38,7 @@ import { addTags, assertOwnTags, expandTagIds, tagsForContacts } from "../lib/ta
 import { deleteContacts, syncOrgName } from "../lib/merge.js";
 import { idsWithHistory, rawContact, recordHistory } from "../lib/history.js";
 import { contactPrefsOf, interactionsOf } from "../lib/personal.js";
-import { deletePhoto, MAX_UPLOAD_BYTES, photoType, readPhoto, savePhoto } from "../lib/photos.js";
+import { deletePhoto, MAX_UPLOAD_BYTES, photoType, readPhoto, saveCover, savePhoto } from "../lib/photos.js";
 
 const c = schema.contacts;
 
@@ -119,6 +119,7 @@ function toContact(r: Row, userId: string, tags: TagLite[] = [], org: OrgContact
     addresses: x.addresses,
     notes: x.notes,
     createdAt: x.createdAt.toISOString(),
+    hasCover: !!x.coverKey,
   };
 }
 
@@ -296,7 +297,10 @@ export const contactRoutes = new Hono<AppEnv>()
           sql`${foldSql(c.organization)} LIKE ${term}`,
           sql`${foldSql(c.nickname)} LIKE ${term}`,
           sql`${foldSql(sql`${c.emails}::text`)} LIKE ${term}`,
-          ...(digits.length >= 3 ? [sql`regexp_replace(${c.phones}::text, '[^0-9]', '', 'g') LIKE ${"%" + digits + "%"}`] : []),
+          // Solo las cifras de cada número (no las de los identificadores internos); «0034…» = «+34…»
+          ...(digits.length >= 3
+            ? [sql`EXISTS (SELECT 1 FROM jsonb_array_elements(${c.phones}) AS ph WHERE regexp_replace(ph->>'value', '[^0-9]', '', 'g') LIKE ${"%" + digits.replace(/^00/, "") + "%"})`]
+            : []),
         )
       : undefined;
     const rows = await db
@@ -443,6 +447,52 @@ export const contactRoutes = new Hono<AppEnv>()
     await recordHistory(db, { contactId: id, userId: user.id, action: "update", before: old, after });
     await touchContact(id);
     if (old?.photoKey) await deletePhoto(old.photoKey);
+    return ctx.body(null, 204);
+  })
+
+  // ---------- Portada (solo en Agendario: no hay campo estándar en vCard/CardDAV) ----------
+  .get("/:id/cover", idParam, zValidator("query", z.object({ size: z.enum(["full", "thumb"]).default("full") })), async (ctx) => {
+    const user = ctx.get("user");
+    const { id } = ctx.req.valid("param");
+    const row = await loadContact(id, user.id);
+    if (!row.contact.coverKey) throw new HTTPException(404, { message: "Sin portada" });
+    const data = await readPhoto(row.contact.coverKey, ctx.req.valid("query").size);
+    return ctx.body(new Uint8Array(data), 200, {
+      "Content-Type": "image/jpeg",
+      "Cache-Control": "private, max-age=86400",
+      ETag: `"${row.contact.coverKey}"`,
+    });
+  })
+
+  .put("/:id/cover", idParam, async (ctx) => {
+    const user = ctx.get("user");
+    const { id } = ctx.req.valid("param");
+    await requireEdit(id, user.id);
+    const form = await ctx.req.parseBody();
+    const file = form["photo"];
+    if (!(file instanceof File)) throw new HTTPException(400, { message: "Falta el campo 'photo'" });
+    if (file.size > MAX_UPLOAD_BYTES) throw new HTTPException(413, { message: "La imagen es demasiado grande" });
+    let key: string;
+    try {
+      key = await saveCover(Buffer.from(await file.arrayBuffer()));
+    } catch {
+      throw new HTTPException(400, { message: "No es una imagen válida" });
+    }
+    const old = await rawContact(id);
+    await db.update(c).set({ coverKey: key }).where(eq(c.id, id));
+    await touchContact(id);
+    if (old?.coverKey) await deletePhoto(old.coverKey);
+    return ctx.json({ ok: true });
+  })
+
+  .delete("/:id/cover", idParam, async (ctx) => {
+    const user = ctx.get("user");
+    const { id } = ctx.req.valid("param");
+    await requireEdit(id, user.id);
+    const old = await rawContact(id);
+    await db.update(c).set({ coverKey: null }).where(eq(c.id, id));
+    await touchContact(id);
+    if (old?.coverKey) await deletePhoto(old.coverKey);
     return ctx.body(null, 204);
   })
 

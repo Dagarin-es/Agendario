@@ -106,6 +106,9 @@ export async function mergeContacts(userId: string, req: MergeRequest) {
   } else if (remove.photoKey) {
     photosToDelete.push(remove.photoKey);
   }
+  // Portada: se queda la del principal; si no tiene, la del otro
+  const coverKey = keep.coverKey ?? remove.coverKey ?? null;
+  if (keep.coverKey && remove.coverKey) photosToDelete.push(remove.coverKey);
 
   const mergedUids = [
     ...new Set([...keep.mergedUids, ...remove.mergedUids, `urn:uuid:${remove.id}`, ...(remove.vcardUid ? [remove.vcardUid] : [])]),
@@ -117,6 +120,7 @@ export async function mergeContacts(userId: string, req: MergeRequest) {
       .set({
         ...values,
         photoKey,
+        coverKey,
         vcardUid: keep.vcardUid ?? remove.vcardUid,
         mergedUids,
         updatedAt: new Date(),

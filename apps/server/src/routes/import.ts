@@ -5,7 +5,7 @@ import { importRequestSchema, occasions, type ImportResult, type Occasion } from
 import { db, schema } from "../db/index.js";
 import { rawContact, recordHistory } from "../lib/history.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
-import { deletePhoto, savePhoto } from "../lib/photos.js";
+import { deletePhoto, saveCover, savePhoto } from "../lib/photos.js";
 import { addTags, assertOwnTags, ensureTagsByName } from "../lib/tags.js";
 import { parseVCard, type ParsedContact } from "../lib/vcard-parse.js";
 import { cleanupItemTags, ensureItemIds, itemIdsOf } from "../lib/items.js";
@@ -99,6 +99,7 @@ export const importRoutes = new Hono<AppEnv>()
 
         let photoKey: string | null = null;
         if (p.photo) photoKey = await savePhoto(p.photo).catch(() => null);
+        const coverKey = p.cover ? await saveCover(p.cover).catch(() => null) : null;
 
         let contactId: string;
         if (existing) {
@@ -109,6 +110,7 @@ export const importRoutes = new Hono<AppEnv>()
             .set({
               ...vals,
               ...(photoKey ? { photoKey } : {}),
+              ...(coverKey ? { coverKey } : {}),
               updatedAt: new Date(),
               revision: sql`${c.revision} + 1`,
             })
@@ -116,6 +118,7 @@ export const importRoutes = new Hono<AppEnv>()
             .returning();
           await recordHistory(db, { contactId: existing.id, userId: user.id, action: "update", before, after, meta: { source: "Importación de vCard" } });
           if (photoKey && existing.photoKey) await deletePhoto(existing.photoKey);
+          if (coverKey && before?.coverKey) await deletePhoto(before.coverKey);
           await cleanupItemTags(existing.id, itemIdsOf(vals)); // los datos se sustituyen: fuera las etiquetas antiguas
           contactId = existing.id;
           result.updated++;
@@ -127,6 +130,7 @@ export const importRoutes = new Hono<AppEnv>()
               ownerId: user.id,
               visibility: req.visibility,
               photoKey,
+              coverKey,
               vcardUid: p.uid,
             })
             .returning();

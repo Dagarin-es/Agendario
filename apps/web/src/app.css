@@ -99,3 +99,6 @@
 }
 .dark .m3-index { border-color: rgb(255 255 255 / .08); }
 .kb-open .letter-index { display: none; }
+
+/* Foto de perfil sobre la portada: borde del color de la tarjeta */
+.cover-photo { border-radius: 9999px; box-shadow: 0 0 0 4px var(--app-container, var(--color-white, #fff)); }

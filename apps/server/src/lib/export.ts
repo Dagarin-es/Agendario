@@ -46,6 +46,9 @@ export async function buildVcf(userId: string, ids: string[] | null, withGifts: 
         name: "X-CONTACTOS-GIFT",
         value: JSON.stringify({ title: x.title, url: x.url, given: x.given, givenAt: x.givenAt, occasion: x.occasion, notes: x.notes }),
       }));
+    // Portada: campo propio de Agendario (las demás apps lo ignoran); así exportar e importar no la pierde
+    const cover = r.coverKey ? await readPhoto(r.coverKey, "full").catch(() => null) : null;
+    if (cover) extra.push({ name: "X-AGENDARIO-COVER", value: `data:image/jpeg;base64,${cover.toString("base64")}` });
     out += toVCard({ ...r, photoJpeg: photo, extra, categories: tagMap.get(r.id)?.map((t) => t.name) });
   }
   return { vcf: out, count: rows.length };

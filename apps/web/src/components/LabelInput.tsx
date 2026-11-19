@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
+import { capLabel } from "../lib/text";
+export { capLabel };
 import { keepInView } from "../lib/keepInView";
 import { useConfirm } from "./Dialogs";
 import { useUserPrefs } from "./QuickActions";
@@ -13,6 +15,7 @@ const defaults: Record<LabelKind, string[]> = {
   urls: ["Web", "Instagram", "LinkedIn", "Facebook", "X"],
 };
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
 
 /**
  * Lista completa de etiquetas: las guardadas por el usuario, las habituales y las que ya usan sus contactos.
@@ -28,7 +31,7 @@ export function useItemLabels(kind: LabelKind) {
   const labels = useMemo(() => {
     const out: string[] = [];
     for (const l of [...(prefs?.itemLabels[kind] ?? []), ...defaults[kind], ...(used?.[kind] ?? [])]) {
-      if (l.trim() && !out.some((x) => same(x, l))) out.push(l.trim());
+      if (l.trim() && !out.some((x) => same(x, l))) out.push(capLabel(l));
     }
     return out;
   }, [prefs, used, kind]);
@@ -88,9 +91,10 @@ export function LabelInput({ kind, value, onChange, className = "" }: { kind: La
   return (
     <span className={`relative inline-block ${className}`}>
       <input
-        className="input w-full py-1 pr-6 text-sm"
+        className="input w-full py-1 pr-9 text-sm"
         placeholder="Etiqueta"
-        value={value}
+        // Mientras no se escribe, se muestra con la escritura de la lista («móvil» → «Móvil»)
+        value={typed ? value : (labels.find((l) => same(l, value)) ?? capLabel(value))}
         role="combobox"
         aria-expanded={open}
         aria-autocomplete="list"
@@ -106,7 +110,16 @@ export function LabelInput({ kind, value, onChange, className = "" }: { kind: La
         }}
         onBlur={() => void setTimeout(() => void leave(), 120)}
       />
-      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400" aria-hidden="true">▾</span>
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label="Mostrar etiquetas"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => { if (!open) before.current = value; setOpen(!open); setTyped(false); setHi(0); }}
+        className="absolute inset-y-0 right-0 flex w-9 items-center justify-center rounded-r-xl text-slate-500 hover:text-slate-800"
+      >
+        <svg viewBox="0 0 20 20" className={`h-5 w-5 transition-transform ${open ? "rotate-180" : ""}`} fill="currentColor" aria-hidden="true"><path d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4Z" /></svg>
+      </button>
       {open && options.length > 0 && (
         <span
           ref={keepInView}

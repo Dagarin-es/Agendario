@@ -82,7 +82,10 @@ export async function offlineGet(path: string): Promise<unknown> {
       if (tag && !c.tags.some((t) => t.id === tag)) return false;
       if (!q) return true;
       const hay = norm([c.displayName, c.organization, c.nickname, ...c.phones.map((x) => x.value), ...c.emails.map((x) => x.value)].filter(Boolean).join(" "));
-      return q.split(/\s+/).every((w) => hay.includes(w));
+      if (q.split(/\s+/).every((w) => hay.includes(w))) return true;
+      // Teléfono sin espacios/guiones (como en el servidor)
+      const digits = q.replace(/\D/g, "").replace(/^00/, "");
+      return digits.length >= 3 && c.phones.some((x) => x.value.replace(/\D/g, "").includes(digits));
     });
   }
   return undefined;

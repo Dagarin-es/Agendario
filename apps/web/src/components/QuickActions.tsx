@@ -1,3 +1,4 @@
+import { capLabel } from "../lib/text";
 import { keepInView } from "../lib/keepInView";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
@@ -80,7 +81,7 @@ function ItemRow({ href, item, isDefault, onDefault, onUse }: { href: string; it
     <span className="flex items-center hover:bg-slate-50">
       <a href={href} {...(isWebLink(href) ? { target: "_blank", rel: "noreferrer" } : {})} onClick={onUse} className="min-w-0 flex-1 px-4 py-2">
         <span className="block truncate">{item.value}</span>
-        {item.label && <span className="block text-xs text-slate-400">{item.label}</span>}
+        {item.label && <span className="block text-xs text-slate-400">{capLabel(item.label)}</span>}
       </a>
       <button
         type="button"

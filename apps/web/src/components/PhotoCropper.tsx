@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "./Dialogs";
 
-const OUT = 1024; // lado del recorte final
-
 /**
- * Recortar una foto en cuadrado antes de subirla: arrastrar para encuadrar, acercar (rueda, pellizco
- * o barra) y girar. Conserva la transparencia (sale en PNG; el servidor la pasa a JPEG si no la tiene).
+ * Recortar una foto antes de subirla: arrastrar para encuadrar, acercar (rueda, pellizco o barra) y girar.
+ * Por defecto en cuadrado con vista en círculo (foto de perfil; conserva la transparencia en PNG).
+ * Con `aspect` (ancho/alto) recorta en rectángulo, p. ej. 3 para la portada (sale en JPEG).
  */
-export function PhotoCropper({ file, onCancel, onDone }: { file: File; onCancel: () => void; onDone: (f: File) => void }) {
+export function PhotoCropper({ file, onCancel, onDone, aspect = 1, title = "Encuadrar la foto" }: { file: File; onCancel: () => void; onDone: (f: File) => void; aspect?: number; title?: string }) {
+  const round = aspect === 1;
+  const OUTW = round ? 1024 : 1800;
+  const OUTH = Math.round(OUTW / aspect);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = useState(1);
   const [rot, setRot] = useState(0);
@@ -25,16 +27,16 @@ export function PhotoCropper({ file, onCancel, onDone }: { file: File; onCancel:
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  // Tamaño de la imagen (girada) para que cubra el cuadrado con zoom 1
+  // Tamaño de la imagen (girada) para que cubra el recorte con zoom 1
   const rotated = rot % 180 !== 0;
   const iw = img ? (rotated ? img.naturalHeight : img.naturalWidth) : 1;
   const ih = img ? (rotated ? img.naturalWidth : img.naturalHeight) : 1;
-  const cover = (side: number) => (side / Math.min(iw, ih)) * zoom;
+  const cover = (w: number) => Math.max(w / iw, w / aspect / ih) * zoom;
 
-  const clampOff = (o: { x: number; y: number }, side: number) => {
-    const s = cover(side);
-    const mx = Math.max(0, (iw * s - side) / 2);
-    const my = Math.max(0, (ih * s - side) / 2);
+  const clampOff = (o: { x: number; y: number }, w: number) => {
+    const s = cover(w);
+    const mx = Math.max(0, (iw * s - w) / 2);
+    const my = Math.max(0, (ih * s - w / aspect) / 2);
     return { x: Math.min(mx, Math.max(-mx, o.x)), y: Math.min(my, Math.max(-my, o.y)) };
   };
   const side = () => box.current?.clientWidth ?? 300;
@@ -69,27 +71,28 @@ export function PhotoCropper({ file, onCancel, onDone }: { file: File; onCancel:
     if (!img) return;
     setBusy(true);
     const c = document.createElement("canvas");
-    c.width = c.height = OUT;
+    c.width = OUTW;
+    c.height = OUTH;
     const ctx = c.getContext("2d")!;
-    const k = OUT / side();
-    const s = cover(OUT);
-    ctx.translate(OUT / 2 + off.x * k, OUT / 2 + off.y * k);
+    const k = OUTW / side();
+    const s = cover(OUTW);
+    ctx.translate(OUTW / 2 + off.x * k, OUTH / 2 + off.y * k);
     ctx.rotate((rot * Math.PI) / 180);
     ctx.drawImage(img, (-img.naturalWidth * s) / 2, (-img.naturalHeight * s) / 2, img.naturalWidth * s, img.naturalHeight * s);
-    const blob = await new Promise<Blob | null>((r) => c.toBlob(r, "image/png"));
+    const blob = await new Promise<Blob | null>((r) => (round ? c.toBlob(r, "image/png") : c.toBlob(r, "image/jpeg", 0.9)));
     setBusy(false);
-    if (blob) onDone(new File([blob], "foto.png", { type: "image/png" }));
+    if (blob) onDone(new File([blob], round ? "foto.png" : "portada.jpg", { type: blob.type }));
   };
 
   const sz = side();
   const s = cover(sz);
   return (
-    <Modal title="Encuadrar la foto" onClose={onCancel}>
+    <Modal title={title} onClose={onCancel}>
       <div className="space-y-4 p-4">
         <div
           ref={box}
-          className="relative mx-auto aspect-square w-full max-w-[360px] touch-none select-none overflow-hidden rounded-2xl"
-          style={{ background: "repeating-conic-gradient(#e2e8f0 0% 25%, #f8fafc 0% 50%) 50% / 20px 20px", cursor: "grab" }}
+          className={`relative mx-auto w-full touch-none select-none overflow-hidden rounded-2xl ${round ? "max-w-[360px]" : "max-w-[560px]"}`}
+          style={{ aspectRatio: String(aspect), background: "repeating-conic-gradient(#e2e8f0 0% 25%, #f8fafc 0% 50%) 50% / 20px 20px", cursor: "grab" }}
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
@@ -109,8 +112,8 @@ export function PhotoCropper({ file, onCancel, onDone }: { file: File; onCancel:
               }}
             />
           )}
-          {/* Así se verá: círculo */}
-          <div className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-white/80" style={{ boxShadow: "0 0 0 9999px rgb(15 23 42 / .45)" }} />
+          {/* Así se verá: círculo (foto de perfil) o el rectángulo entero (portada) */}
+          {round && <div className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-white/80" style={{ boxShadow: "0 0 0 9999px rgb(15 23 42 / .45)" }} />}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-slate-500" aria-hidden="true">🔍</span>
@@ -120,7 +123,7 @@ export function PhotoCropper({ file, onCancel, onDone }: { file: File; onCancel:
         <p className="text-xs text-slate-500">Arrastra para encuadrar; acerca con la barra, la rueda del ratón o pellizcando.</p>
         <div className="flex justify-end gap-2">
           <button type="button" className="btn-ghost" onClick={onCancel}>Cancelar</button>
-          <button type="button" className="btn-primary" disabled={!img || busy} onClick={() => void save()}>{busy ? "Preparando…" : "Usar foto"}</button>
+          <button type="button" className="btn-primary" disabled={!img || busy} onClick={() => void save()}>{busy ? "Preparando…" : round ? "Usar foto" : "Usar imagen"}</button>
         </div>
       </div>
     </Modal>

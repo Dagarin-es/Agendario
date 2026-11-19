@@ -33,7 +33,7 @@ function occurrence(partial: string, year: number) {
   return { date: new Date(Date.UTC(year, month - 1, dd)), turning: born && year >= born ? year - born : null };
 }
 
-interface Source {
+export interface Source {
   gift?: boolean;
   emoji?: string;
   contactId: string;
@@ -48,7 +48,7 @@ interface Source {
 }
 
 /** Todas las fechas recurrentes que ve el usuario. */
-async function sources(userId: string, onlyContact?: string): Promise<Source[]> {
+export async function sources(userId: string, onlyContact?: string): Promise<Source[]> {
   const prefs = await userPrefsOf(userId);
   const visible = visibleContacts(userId);
   const where = onlyContact ? and(visible, eq(ct.id, onlyContact)) : visible;

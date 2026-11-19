@@ -1,6 +1,6 @@
 {
   "name": "@agendario/web",
-  "version": "0.17.0-beta",
+  "version": "0.18.0-beta",
   "private": true,
   "type": "module",
   "scripts": {

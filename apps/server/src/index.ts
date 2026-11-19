@@ -1,3 +1,4 @@
+import { calendarRoutes, icsPublicRoutes, personalEventRoutes } from "./routes/calendar.js";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
@@ -64,6 +65,10 @@ const api = new Hono()
   .route("/geo", geoRoutes)
   .route("/backup", backupRoutes)
   .route("/sync", syncRoutes)
+  // Antes que las rutas montadas en «/» (que exigen sesión): el calendario suscrito entra con su token
+  .route("/ics", icsPublicRoutes)
+  .route("/personal-events", personalEventRoutes)
+  .route("/calendar", calendarRoutes)
   .route("/", historyRoutes)
   .route("/", personalRoutes)
   .route("/", giftRoutes);

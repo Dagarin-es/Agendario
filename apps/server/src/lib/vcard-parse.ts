@@ -33,6 +33,8 @@ export interface ParsedContact {
   notes: string;
   categories: string[];
   photo: Buffer | null;
+  /** Portada de Agendario (X-AGENDARIO-COVER); el resto de apps la ignoran */
+  cover: Buffer | null;
   gifts: ParsedGift[];
 }
 
@@ -260,7 +262,7 @@ export function parseVCard(text: string): ParsedContact {
   const out: ParsedContact = {
     uid: null, givenName: "", familyName: "", displayName: "", nickname: "", organization: "", jobTitle: "",
     birthday: null, anniversary: null, emails: [], phones: [], urls: [], addresses: [], notes: "",
-    categories: [], photo: null, gifts: [],
+    categories: [], photo: null, cover: null, gifts: [],
   };
   let fn = "";
   const notes: string[] = [];
@@ -348,6 +350,11 @@ export function parseVCard(text: string): ParsedContact {
           if (m) out.photo = Buffer.from(m[1]!.replace(/\s+/g, ""), "base64");
           // Las fotos por URL (http…) no se descargan.
         }
+        break;
+      }
+      case "X-AGENDARIO-COVER": {
+        const m = unescapeText(p.value).trim().match(/^data:image\/[\w.+-]+;base64,(.+)$/is);
+        if (m) out.cover = Buffer.from(m[1]!.replace(/\s+/g, ""), "base64");
         break;
       }
       case "X-CONTACTOS-GIFT": {

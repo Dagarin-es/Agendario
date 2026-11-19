@@ -25,6 +25,7 @@ import { useUserPrefs } from "../components/QuickActions";
 import { api, apiUrl } from "../lib/api";
 import { useMe } from "../lib/auth";
 import { copyText } from "../lib/clipboard";
+import { CalendarFeedSettings } from "../components/CalendarFeedSettings";
 import { SyncSettings } from "../components/SyncSettings";
 import { CardDavSettings } from "../components/CardDavSettings";
 import { AccountSettings, UsersSettings } from "../components/UsersSettings";
@@ -704,6 +705,7 @@ export function SettingsPage() {
         <>
           <SyncSettings Section={Section} />
           {me && <CardDavSettings Section={Section} me={me} />}
+          <CalendarFeedSettings Section={Section} />
           <Section icon="📇" title="Importar y exportar .vcf" desc="Para traer contactos de otra agenda o sacar una copia que abre cualquier programa de contactos.">
             <div className="flex flex-wrap gap-2">
               <Link to="/import" className="btn-ghost border border-slate-200">📥 Importar .vcf</Link>

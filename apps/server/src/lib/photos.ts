@@ -43,6 +43,19 @@ export async function savePhoto(input: Buffer): Promise<string> {
   return key;
 }
 
+/**
+ * Portada (imagen apaisada, ya recortada en el navegador): JPEG de hasta 1600 px de ancho
+ * y una versión de 800 px para pantallas pequeñas. Se lee con readPhoto como cualquier foto.
+ */
+export async function saveCover(input: Buffer): Promise<string> {
+  await mkdir(dir(), { recursive: true });
+  const key = "cv" + randomBytes(12).toString("hex");
+  const base = sharp(input, { failOn: "error" }).rotate().flatten({ background: "#ffffff" });
+  await writeFile(file(key, "full"), await base.clone().resize(1600, 1600, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer());
+  await writeFile(file(key, "thumb"), await base.clone().resize(800, 800, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 78 }).toBuffer());
+  return key;
+}
+
 export function readPhoto(key: string, size: PhotoSize) {
   return readFile(file(key, size));
 }

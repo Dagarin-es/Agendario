@@ -115,6 +115,16 @@ public class CallLogPlugin extends Plugin {
         call.resolve(status());
     }
 
+    /** Abre los ajustes de notificaciones de Agendario (si el permiso se denegó para siempre). */
+    @PluginMethod
+    public void openNotificationSettings(PluginCall call) {
+        android.content.Intent i = new android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getContext().getPackageName())
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        try { getContext().startActivity(i); } catch (Exception ignored) {}
+        call.resolve();
+    }
+
     @PermissionCallback
     private void notifyDone(PluginCall call) {
         call.resolve(status());

@@ -129,6 +129,7 @@ export interface CallLogStatus {
 }
 interface CallLogPlugin {
   getStatus(): Promise<CallLogStatus>;
+  openNotificationSettings(): Promise<void>;
   configure(o: { server: string; token: string }): Promise<CallLogStatus>;
   enable(o: { since: string }): Promise<CallLogStatus>;
   disable(): Promise<CallLogStatus>;
@@ -150,4 +151,17 @@ export async function configureCallLog() {
   const p = getCallLog();
   const token = getToken();
   if (p && token) await p.configure({ server: getServer(), token }).catch(() => undefined);
+  // Si el registro está activo con aviso tras la llamada pero falta el permiso de notificaciones
+  // (p. ej. se activó antes de existir el aviso), se pide al abrir la app; como mucho dos veces.
+  if (!p) return;
+  try {
+    const st = await p.getStatus();
+    const asked = Number(localStorage.getItem("agendario-notify-asked") ?? "0");
+    if (st.enabled && st.notify !== false && st.notifyAllowed === false && asked < 2) {
+      localStorage.setItem("agendario-notify-asked", String(asked + 1));
+      await p.setNotify({ enabled: true });
+    }
+  } catch {
+    /* sin plugin o sin almacenamiento: no pasa nada */
+  }
 }

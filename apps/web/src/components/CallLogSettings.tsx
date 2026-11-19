@@ -67,7 +67,18 @@ export function CallLogSettings({ Section }: { Section: (p: { icon: string; titl
             <span>
               <span className="font-medium">Al colgar, preguntarme si quiero apuntar algo</span>
               <span className="block text-xs text-slate-500">Aviso con «Escribir nota» (se contesta desde la propia notificación) y «Abrir ficha». Solo con contactos y llamadas atendidas de más de 30 segundos.</span>
-              {st.notify !== false && st.notifyAllowed === false && <span className="mt-1 block text-xs text-amber-800">⚠️ Agendario no tiene permiso para mostrar notificaciones: desmarca y vuelve a marcar, o actívalo en los ajustes de Android.</span>}
+              {st.notify !== false && st.notifyAllowed === false && (
+                <span className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-amber-800">
+                  ⚠️ Agendario no tiene permiso para mostrar notificaciones.
+                  <button type="button" className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-900" onClick={(e) => {
+                      e.preventDefault();
+                      const p = getCallLog();
+                      // Si Android ya no muestra la petición (denegada dos veces), se abren sus ajustes
+                      void p?.setNotify({ enabled: true }).then((r) => { setSt(r); if (r.notifyAllowed === false) void p.openNotificationSettings(); });
+                    }}>Permitir notificaciones</button>
+                </span>
+              )}
+              {st.notify !== false && st.notifyAllowed === true && <span className="mt-1 block text-xs text-emerald-700">✓ Notificaciones permitidas</span>}
             </span>
           </label>
           <div className="flex flex-wrap gap-2">

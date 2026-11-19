@@ -87,8 +87,8 @@ export async function purgeOld() {
   const gone = await db
     .delete(c)
     .where(and(isNotNull(c.deletedAt), lt(c.deletedAt, limit)))
-    .returning({ id: c.id, photoKey: c.photoKey });
-  for (const g of gone) if (g.photoKey) await deletePhoto(g.photoKey).catch(() => {});
+    .returning({ id: c.id, photoKey: c.photoKey, coverKey: c.coverKey });
+  for (const g of gone) for (const k of [g.photoKey, g.coverKey]) if (k) await deletePhoto(k).catch(() => {});
   if (hist.length || gone.length) console.log(`Limpieza: ${hist.length} cambios del historial y ${gone.length} contactos de la papelera eliminados`);
   return { history: hist.length, contacts: gone.length };
 }

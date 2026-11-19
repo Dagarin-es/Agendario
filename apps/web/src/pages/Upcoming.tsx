@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Link } from "react-router";
-import type { UpcomingEvent } from "@agendario/shared";
+import { Link, useSearchParams } from "react-router";
+import type { PersonalEvent, UpcomingEvent } from "@agendario/shared";
+import { PersonalEventsView, personalPhoto, usePersonalEvents } from "../components/PersonalEvents";
 import { usePendingGifts } from "../lib/gifts";
 import { Avatar } from "../components/Avatar";
 import { api } from "../lib/api";
@@ -44,6 +45,54 @@ function giftText(e: UpcomingEvent) {
   }
 }
 
+/** Efemérides anuales convertidas en eventos del calendario (sin contacto: clave «pe:<id>»). */
+function personalOccurrences(list: PersonalEvent[] | undefined, from: string, to: string, todayIso: string): UpcomingEvent[] {
+  const out: UpcomingEvent[] = [];
+  const t0 = new Date(`${todayIso}T00:00:00`);
+  for (const p of list ?? []) {
+    if (!p.yearly) continue;
+    const noYear = p.date.startsWith("--");
+    const y0 = noYear ? null : Number(p.date.slice(0, 4));
+    const mm = Number(p.date.slice(noYear ? 2 : 5, noYear ? 4 : 7));
+    const dd = Number(p.date.slice(noYear ? 5 : 8));
+    for (let y = Number(from.slice(0, 4)); y <= Number(to.slice(0, 4)); y++) {
+      const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+      const d = mm === 2 && dd === 29 && !leap ? 28 : dd;
+      const date = `${y}-${pad(mm)}-${pad(d)}`;
+      if (date < from || date > to || (y0 && y < y0)) continue;
+      out.push({
+        contactId: `pe:${p.id}`, contactName: p.title, hasPhoto: p.hasPhoto, label: "Efeméride", kind: "other", key: `pe:${p.id}`, date,
+        daysLeft: Math.round((new Date(`${date}T00:00:00`).getTime() - t0.getTime()) / 86_400_000),
+        turning: y0 ? y - y0 : null, openGiftIdeas: 0, gift: null, emoji: p.emoji || "⭐",
+      });
+    }
+  }
+  return out;
+}
+
+function PersonalRow({ e, p }: { e: UpcomingEvent; p?: PersonalEvent }) {
+  return (
+    <li>
+      <Link to={`/upcoming?vista=efemerides&e=${e.key.slice(3)}`} className="card flex items-center gap-3 hover:border-indigo-300">
+        {p?.hasPhoto ? (
+          <img src={personalPhoto(p, "thumb")} alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover" />
+        ) : (
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xl" aria-hidden="true">{e.emoji}</span>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="font-medium">{e.contactName}</div>
+          <div className="text-sm text-slate-500">
+            {e.emoji} Efeméride · {formatDate(e.date)}{e.turning ? ` · hace ${e.turning} ${e.turning === 1 ? "año" : "años"}` : ""}
+          </div>
+        </div>
+        <span className={`text-xs font-semibold ${e.daysLeft >= 0 && e.daysLeft <= 7 ? "text-rose-600" : "text-slate-500"}`}>
+          {e.daysLeft < 0 ? `Hace ${-e.daysLeft} d` : daysLabel(e.daysLeft)}
+        </span>
+      </Link>
+    </li>
+  );
+}
+
 function EventRow({ e }: { e: UpcomingEvent }) {
   const g = giftText(e);
   return (
@@ -69,7 +118,38 @@ function EventRow({ e }: { e: UpcomingEvent }) {
   );
 }
 
+/** Fechas: dos pestañas, «Eventos» (de tus contactos) y «Efemérides» (tus fechas personales). */
 export function UpcomingPage() {
+  const [sp, setSp] = useSearchParams();
+  const view = sp.get("vista") === "efemerides" ? "efemerides" : "eventos";
+  const go = (v: "eventos" | "efemerides", e?: string | null) => {
+    const n = new URLSearchParams();
+    if (v === "efemerides") n.set("vista", "efemerides");
+    if (e) n.set("e", e);
+    setSp(n, { replace: v === view });
+  };
+  return (
+    <div className="space-y-4">
+      <h1 className="sr-only">Fechas</h1>
+      <div className="flex gap-1 rounded-2xl bg-slate-100 p-1" role="tablist" aria-label="Fechas">
+        {([["eventos", "🎂 Eventos"], ["efemerides", "📔 Efemérides"]] as const).map(([k, t]) => (
+          <button
+            key={k}
+            role="tab"
+            aria-selected={view === k}
+            onClick={() => go(k)}
+            className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${view === k ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      {view === "eventos" ? <EventsView /> : <PersonalEventsView openId={sp.get("e")} onOpen={(id) => go("efemerides", id)} />}
+    </div>
+  );
+}
+
+function EventsView() {
   const qc = useQueryClient();
   const now = new Date();
   const [cursor, setCursor] = useState({ y: now.getFullYear(), m: now.getMonth() });
@@ -86,12 +166,25 @@ export function UpcomingPage() {
   const from = iso(grid[0]!);
   const to = iso(grid[41]!);
 
-  const { data: monthEvents } = useQuery({
+  const { data: contactMonth } = useQuery({
     queryKey: ["upcoming", "range", from, to],
     queryFn: () => api.get<UpcomingEvent[]>(`/upcoming/range?from=${from}&to=${to}`),
     placeholderData: (p) => p,
   });
-  const { data: next30, isLoading } = useQuery({ queryKey: ["upcoming", 30], queryFn: () => api.get<UpcomingEvent[]>(`/upcoming?days=30`) });
+  const { data: contactNext, isLoading } = useQuery({ queryKey: ["upcoming", 30], queryFn: () => api.get<UpcomingEvent[]>(`/upcoming?days=30`) });
+  // Las efemérides anuales también salen aquí, con su emoji
+  const { data: personal } = usePersonalEvents();
+  const personalById = useMemo(() => new Map((personal ?? []).map((p) => [p.id, p])), [personal]);
+  const byDate = (a: UpcomingEvent, b: UpcomingEvent) => a.date.localeCompare(b.date) || a.contactName.localeCompare(b.contactName, "es");
+  const monthEvents = useMemo(
+    () => (contactMonth ? [...contactMonth, ...personalOccurrences(personal, from, to, todayIso)].sort(byDate) : undefined),
+    [contactMonth, personal, from, to, todayIso],
+  );
+  const next30 = useMemo(() => {
+    if (!contactNext) return undefined;
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30);
+    return [...contactNext, ...personalOccurrences(personal, todayIso, iso(end), todayIso)].sort(byDate);
+  }, [contactNext, personal, todayIso]); // eslint-disable-line react-hooks/exhaustive-deps
   const { data: pending } = usePendingGifts();
   const markGiven = useMutation({
     mutationFn: (id: string) => api.patch(`/gift-ideas/${id}`, { status: "given" }),
@@ -124,8 +217,6 @@ export function UpcomingPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="sr-only">Fechas</h1>
-
       {/* Regalos comprados sin entregar cuya fecha ya pasó */}
       {pending && pending.length > 0 && (
         <div className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
@@ -219,7 +310,13 @@ export function UpcomingPage() {
       {isLoading && <p className="text-slate-500">Cargando…</p>}
       {!isLoading && list.length === 0 && <div className="card text-center text-slate-500">Nada en estas fechas.</div>}
       <ul className="space-y-2">
-        {list.map((e, i) => <EventRow key={`${e.contactId}-${e.key}-${e.date}-${i}`} e={e} />)}
+        {list.map((e, i) =>
+          e.key.startsWith("pe:") ? (
+            <PersonalRow key={`${e.key}-${e.date}-${i}`} e={e} p={personalById.get(e.key.slice(3))} />
+          ) : (
+            <EventRow key={`${e.contactId}-${e.key}-${e.date}-${i}`} e={e} />
+          ),
+        )}
       </ul>
       </div>
       </div>

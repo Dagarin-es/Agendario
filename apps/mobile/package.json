@@ -1,6 +1,6 @@
 {
   "name": "@agendario/mobile",
-  "version": "0.17.0-beta",
+  "version": "0.18.0-beta",
   "private": true,
   "description": "App de Android de Agendario (Capacitor). La interfaz es la misma web compilada en modo app.",
   "scripts": {

@@ -168,9 +168,9 @@ export const historyRoutes = new Hono<AppEnv>()
     const [gone] = await db
       .delete(c)
       .where(and(eq(c.id, id), eq(c.ownerId, user.id), isNotNull(c.deletedAt)))
-      .returning({ photoKey: c.photoKey });
+      .returning({ photoKey: c.photoKey, coverKey: c.coverKey });
     if (!gone) throw new HTTPException(404, { message: "No está en la papelera" });
-    if (gone.photoKey) await deletePhoto(gone.photoKey).catch(() => {});
+    for (const k of [gone.photoKey, gone.coverKey]) if (k) await deletePhoto(k).catch(() => {});
     return ctx.body(null, 204);
   })
 
@@ -179,8 +179,8 @@ export const historyRoutes = new Hono<AppEnv>()
     const gone = await db
       .delete(c)
       .where(and(eq(c.ownerId, user.id), isNotNull(c.deletedAt)))
-      .returning({ photoKey: c.photoKey });
-    for (const g of gone) if (g.photoKey) await deletePhoto(g.photoKey).catch(() => {});
+      .returning({ photoKey: c.photoKey, coverKey: c.coverKey });
+    for (const g of gone) for (const k of [g.photoKey, g.coverKey]) if (k) await deletePhoto(k).catch(() => {});
     return ctx.json({ deleted: gone.length });
   });
 
