@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // IS_BETA = true muestra la etiqueta «Beta» (desde la 1.0, false).
 export * from "./themes";
 
-export const APP_VERSION = "1.0.0";
+export const APP_VERSION = "1.1.0";
 export const IS_BETA = false;
 
 // ---------- Enumeraciones ----------
@@ -251,8 +251,15 @@ export const contactInputSchema = z.object({
   addresses: z.array(address).max(10).default([]),
   notes: z.string().max(10000).default(""),
   visibility: z.enum(visibilities).default("private"),
+  /** Nombre que ve el móvil por CardDAV (y por tanto WhatsApp): nombre y apellidos, apodo o nombre a mostrar */
+  mobileName: z.enum(["full", "nickname", "display"]).default("full"),
 });
 export type ContactInput = z.infer<typeof contactInputSchema>;
+export const mobileNameLabels: Record<ContactInput["mobileName"], string> = {
+  full: "Nombre y apellidos",
+  nickname: "Apodo",
+  display: "Nombre a mostrar",
+};
 export const contactPatchSchema = contactInputSchema.partial();
 
 export interface ContactSummary {
@@ -503,7 +510,56 @@ export interface CallImportResult {
   skipped: number;
   unmatched: number;
   /** Las llamadas guardadas (para el aviso «¿Quieres apuntar algo?» al colgar) */
-  items?: { interactionId: string; contactId: string; contactName: string; type: "in" | "out" | "missed"; durationSec: number; at: string }[];
+  items?: { interactionId: string; contactId: string; contactName: string; type: "in" | "out" | "missed"; durationSec: number; at: string; number: string }[];
+  /** Llamadas atendidas con números que no son contactos (para el aviso «¿Lo guardas?») */
+  unknown?: { unknownCallId: string; number: string; type: "in" | "out"; durationSec: number; at: string }[];
+}
+
+/** Lo que muestra la tarjeta de Agendario al sonar o marcar una llamada (app Android) */
+export interface CallLookup {
+  contactId: string | null;
+  name: string;
+  subtitle: string;
+  notes: { at: string; kind: string; text: string }[];
+  reminders: { id: string; kind: ReminderKind; text: string; dueAt: string }[];
+}
+
+/** Llamada con un número que no es contacto, con o sin nota */
+export interface UnknownCall {
+  id: string;
+  number: string;
+  type: "in" | "out";
+  occurredAt: string;
+  durationSec: number;
+  notes: string;
+}
+
+// ---------- Recordatorios ----------
+
+export const reminderKinds = ["call", "email", "message", "note", "other"] as const;
+export type ReminderKind = (typeof reminderKinds)[number];
+export const reminderKindLabels: Record<ReminderKind, string> = {
+  call: "Llamar",
+  email: "Enviar un correo",
+  message: "Enviar un mensaje",
+  note: "Anotar algo",
+  other: "Otra cosa",
+};
+export const reminderKindIcons: Record<ReminderKind, string> = { call: "📞", email: "✉️", message: "💬", note: "📝", other: "⏰" };
+
+export const reminderInputSchema = z.object({
+  contactId: z.string().uuid().nullable().default(null),
+  kind: z.enum(reminderKinds),
+  text: z.string().max(2000).default(""),
+  dueAt: z.string().datetime({ offset: true }),
+});
+export const reminderPatchSchema = reminderInputSchema.partial().extend({ done: z.boolean().optional() });
+export type ReminderInput = z.infer<typeof reminderInputSchema>;
+export interface Reminder extends ReminderInput {
+  id: string;
+  doneAt: string | null;
+  createdAt: string;
+  contact: { id: string; displayName: string; hasPhoto: boolean; updatedAt: string } | null;
 }
 
 export const giftReceivedInputSchema = z.object({
@@ -574,6 +630,8 @@ export interface ContactDetail extends Contact {
   itemTags: Record<string, TagLite>;
   /** Tus llamadas y apuntes con este contacto (privados). */
   interactions: Interaction[];
+  /** Tus recordatorios pendientes con este contacto (privados). */
+  reminders: Reminder[];
   /** Tus preferencias para este contacto (teléfono, email y app por defecto). */
   prefs: ContactPrefs;
   /** Número de cambios en el historial */

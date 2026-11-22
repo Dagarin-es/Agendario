@@ -1,3 +1,4 @@
+import { RemindersView, useOverdueCount } from "../components/Reminders";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -118,13 +119,17 @@ function EventRow({ e }: { e: UpcomingEvent }) {
   );
 }
 
-/** Fechas: dos pestañas, «Eventos» (de tus contactos) y «Efemérides» (tus fechas personales). */
+type View = "eventos" | "efemerides" | "recordatorios";
+
+/** Fechas: tres pestañas, «Eventos» (de tus contactos), «Efemérides» (tus fechas personales) y «Recordatorios». */
 export function UpcomingPage() {
   const [sp, setSp] = useSearchParams();
-  const view = sp.get("vista") === "efemerides" ? "efemerides" : "eventos";
-  const go = (v: "eventos" | "efemerides", e?: string | null) => {
+  const v = sp.get("vista");
+  const view: View = v === "efemerides" || v === "recordatorios" ? v : "eventos";
+  const overdue = useOverdueCount();
+  const go = (v: View, e?: string | null) => {
     const n = new URLSearchParams();
-    if (v === "efemerides") n.set("vista", "efemerides");
+    if (v !== "eventos") n.set("vista", v);
     if (e) n.set("e", e);
     setSp(n, { replace: v === view });
   };
@@ -132,19 +137,20 @@ export function UpcomingPage() {
     <div className="space-y-4">
       <h1 className="sr-only">Fechas</h1>
       <div className="flex gap-1 rounded-2xl bg-slate-100 p-1" role="tablist" aria-label="Fechas">
-        {([["eventos", "🎂 Eventos"], ["efemerides", "📔 Efemérides"]] as const).map(([k, t]) => (
+        {([["eventos", "🎂", "Eventos"], ["efemerides", "📔", "Efemérides"], ["recordatorios", "⏰", "Recordatorios"]] as const).map(([k, icon, t]) => (
           <button
             key={k}
             role="tab"
             aria-selected={view === k}
             onClick={() => go(k)}
-            className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${view === k ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+            className={`flex-1 whitespace-nowrap rounded-xl px-1.5 py-2 text-sm font-medium transition sm:px-3 ${view === k ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
           >
-            {t}
+            <span className="hidden sm:inline" aria-hidden="true">{icon} </span>{t}
+            {k === "recordatorios" && overdue > 0 && <span className="ml-1 rounded-full bg-red-600 px-1.5 py-px text-[10px] font-semibold text-white">{overdue}</span>}
           </button>
         ))}
       </div>
-      {view === "eventos" ? <EventsView /> : <PersonalEventsView openId={sp.get("e")} onOpen={(id) => go("efemerides", id)} />}
+      {view === "eventos" ? <EventsView /> : view === "recordatorios" ? <RemindersView /> : <PersonalEventsView openId={sp.get("e")} onOpen={(id) => go("efemerides", id)} />}
     </div>
   );
 }

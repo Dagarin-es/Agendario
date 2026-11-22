@@ -33,6 +33,20 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- «Compartir» una imagen desde la galería → foto o portada de un contacto -->
+        <activity-alias
+            android:name=".ShareImage"
+            android:targetActivity=".MainActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/share_image">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity-alias>
+
         <!-- Registro de llamadas: al colgar y tras reiniciar -->
         <receiver android:name=".PhoneStateReceiver" android:exported="true">
             <intent-filter>
@@ -40,6 +54,23 @@
             </intent-filter>
         </receiver>
         <receiver android:name=".NoteReplyReceiver" android:exported="false" />
+        <receiver android:name=".DismissReceiver" android:exported="false" />
+        <receiver android:name=".ReminderReceiver" android:exported="false" />
+        <receiver android:name=".ReminderActionReceiver" android:exported="false" />
+        <receiver android:name=".OutgoingCallReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
+            </intent-filter>
+        </receiver>
+        <!-- Burbuja y notificación «Anotar» mientras dura una llamada -->
+        <service
+            android:name=".CallOverlayService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Notas durante una llamada telefónica en curso (burbuja y notificación para anotar)" />
+        </service>
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -146,6 +177,13 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Tarjeta de notas al llamar y burbuja durante la llamada -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Recordatorios a su hora -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!-- Para ofrecer solo las apps de mensajería y correo instaladas -->
     <queries>

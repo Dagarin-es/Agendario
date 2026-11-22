@@ -121,6 +121,7 @@ if [ "$SUBIR" = s ]; then
   fi
   [ -n "$GIT_NAME" ] && git -C "$REPO" config user.name "$GIT_NAME"
   [ -n "$GIT_EMAIL" ] && git -C "$REPO" config user.email "$GIT_EMAIL"
+  git -C "$REPO" config http.postBuffer 524288000   # pushes grandes (manual PDF) sin error 408
   [ -n "$(git -C "$REPO" config user.name)" ] && [ -n "$(git -C "$REPO" config user.email)" ] || fallo "Git no sabe quién eres. Pon GIT_NAME y GIT_EMAIL en $CONF  o ejecuta:  git config --global user.name \"Tu nombre\"  y  git config --global user.email \"tu@correo\""
   gh -C "$REPO" ls-remote -q origin >/dev/null 2>&1 || fallo "No consigo hablar con GitHub desde $REPO (¿credenciales?). Prueba a mano:  cd $REPO && git ls-remote origin"
   case "$ZV" in

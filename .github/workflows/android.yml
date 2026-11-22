@@ -1,0 +1,101 @@
+# Compila y firma la APK de Agendario cada vez que se sube una etiqueta de versión (v1.1.0…)
+# y la adjunta, junto con el manual en PDF, a la Release de GitHub de esa versión.
+# Secretos necesarios (Settings → Secrets and variables → Actions):
+#   ANDROID_KEYSTORE_BASE64    → el fichero agendario-release.jks en base64
+#   ANDROID_KEYSTORE_PASSWORD  → contraseña del almacén (y de la clave)
+#   ANDROID_KEY_ALIAS          → alias de la clave
+# La clave nunca se guarda en el repositorio: solo existe durante la compilación.
+name: APK Android
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: SDK de Android
+        run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Dependencias
+        run: npm ci
+
+      - name: Web de la app
+        run: npm run build:app -w apps/web
+
+      - name: Capacitor
+        working-directory: apps/mobile
+        run: npx cap sync android
+
+      - name: Clave de firma
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KS" ]; then echo "::error::Falta el secreto ANDROID_KEYSTORE_BASE64"; exit 1; fi
+          echo "$KS" | base64 -d > "$RUNNER_TEMP/agendario-release.jks"
+          echo "AGENDARIO_KEYSTORE=$RUNNER_TEMP/agendario-release.jks" >> "$GITHUB_ENV"
+
+      - name: Compilar APK
+        working-directory: apps/mobile/android
+        env:
+          AGENDARIO_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          AGENDARIO_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon -q
+
+      - name: Comprobar la firma
+        run: |
+          APK=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          test -f "$APK" || { echo "::error::No se ha generado una APK firmada"; exit 1; }
+          SIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
+          FP=$("$SIGNER" verify --print-certs "$APK" | grep -m1 "SHA-256" | awk '{print $NF}')
+          # Huella pública del certificado de Agendario: si no coincide, la APK no se instalaría encima de la anterior
+          if [ "$FP" != "be1e6a4f1778dc1a05528f99dab3a298cc6665340a333e03a503a0a241bb0975" ]; then
+            echo "::error::La APK no está firmada con la clave de Agendario ($FP)"; exit 1
+          fi
+          V="${GITHUB_REF_NAME#v}"
+          [ "$GITHUB_REF_TYPE" = "tag" ] || V="dev"
+          mkdir -p out
+          cp "$APK" "out/agendario-$V.apk"
+          cp apps/web/public/manual/Agendario-Manual.pdf "out/Agendario-Manual-$V.pdf"
+          # Notas de la versión: su apartado del CHANGELOG
+          awk -v v="$V" '$0 ~ "^## " v {f=1; next} /^## / && f {exit} f' CHANGELOG.md > out/notas.md
+          echo "V=$V" >> "$GITHUB_ENV"
+
+      - name: Guardar como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: agendario-${{ env.V }}
+          path: out/*.apk
+
+      - name: Adjuntar a la Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Agendario ${{ env.V }}
+          body_path: out/notas.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          make_latest: ${{ !contains(github.ref_name, '-') }}
+          files: |
+            out/agendario-${{ env.V }}.apk
+            out/Agendario-Manual-${{ env.V }}.pdf

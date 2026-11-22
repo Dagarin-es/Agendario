@@ -22,7 +22,8 @@ import com.getcapacitor.annotation.PermissionCallback;
     name = "CallLog",
     permissions = {
         @Permission(alias = "calls", strings = { Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_PHONE_STATE }),
-        @Permission(alias = "notify", strings = { "android.permission.POST_NOTIFICATIONS" })
+        @Permission(alias = "notify", strings = { "android.permission.POST_NOTIFICATIONS" }),
+        @Permission(alias = "outgoing", strings = { "android.permission.PROCESS_OUTGOING_CALLS" })
     }
 )
 public class CallLogPlugin extends Plugin {
@@ -42,6 +43,10 @@ public class CallLogPlugin extends Plugin {
         r.put("since", p.getLong("since", 0));
         r.put("notify", p.getBoolean("notify", true));
         r.put("notifyAllowed", CallNotify.allowed(ctx));
+        r.put("unknownNotify", p.getBoolean("unknownNotify", true));
+        r.put("overlay", p.getBoolean("overlay", false));
+        r.put("overlayAllowed", CallOverlay.canDraw(ctx));
+        r.put("ongoing", p.getBoolean("ongoing", false));
         PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
         r.put("batteryOptimized", pm != null && !pm.isIgnoringBatteryOptimizations(ctx.getPackageName()));
         return r;
@@ -128,6 +133,50 @@ public class CallLogPlugin extends Plugin {
     @PermissionCallback
     private void notifyDone(PluginCall call) {
         call.resolve(status());
+    }
+
+    /** Opciones: aviso de números desconocidos, tarjeta/burbuja durante las llamadas y notificación «Anotar». */
+    @PluginMethod
+    public void setOptions(PluginCall call) {
+        android.content.SharedPreferences.Editor e = CallSync.prefs(getContext()).edit();
+        if (call.getData().has("unknownNotify")) e.putBoolean("unknownNotify", Boolean.TRUE.equals(call.getBoolean("unknownNotify")));
+        if (call.getData().has("overlay")) e.putBoolean("overlay", Boolean.TRUE.equals(call.getBoolean("overlay")));
+        if (call.getData().has("ongoing")) e.putBoolean("ongoing", Boolean.TRUE.equals(call.getBoolean("ongoing")));
+        e.apply();
+        boolean wantsOutgoing = Boolean.TRUE.equals(call.getBoolean("overlay", false));
+        // Para saber el número marcado desde la app de teléfono hace falta el permiso de llamadas salientes
+        if (wantsOutgoing && getPermissionState("outgoing") != PermissionState.GRANTED) {
+            requestPermissionForAlias("outgoing", call, "notifyDone");
+            return;
+        }
+        if ((Boolean.TRUE.equals(call.getBoolean("ongoing", false)) || wantsOutgoing) && android.os.Build.VERSION.SDK_INT >= 33 && getPermissionState("notify") != PermissionState.GRANTED) {
+            requestPermissionForAlias("notify", call, "notifyDone");
+            return;
+        }
+        call.resolve(status());
+    }
+
+    /** Ajuste de Android «Mostrar sobre otras apps» para Agendario. */
+    @PluginMethod
+    public void openOverlaySettings(PluginCall call) {
+        Intent i = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getContext().getPackageName()))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try { getContext().startActivity(i); } catch (Exception ignored) {}
+        call.resolve();
+    }
+
+    /** Recordatorios pendientes (JSON) para avisar a su hora. */
+    @PluginMethod
+    public void setReminders(PluginCall call) {
+        ReminderStore.set(getContext(), call.getString("items", "[]"));
+        call.resolve();
+    }
+
+    /** Número que se va a marcar desde Agendario (la app de teléfono no lo dice sin permiso). */
+    @PluginMethod
+    public void noteDial(PluginCall call) {
+        CallSync.prefs(getContext()).edit().putString("dialNumber", call.getString("number", "")).putLong("dialAt", System.currentTimeMillis()).apply();
+        call.resolve();
     }
 
     @PluginMethod

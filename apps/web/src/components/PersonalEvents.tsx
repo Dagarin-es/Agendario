@@ -37,19 +37,30 @@ export function nextAnniversary(date: string, today = new Date()) {
   return { next, daysLeft, years: y0 ? next.getFullYear() - y0 : null };
 }
 
-/** «hace 3 años», «hace 8 meses», «este año»… desde la fecha original. */
+/** Tiempo aproximado entre dos fechas: «2 años», «1 mes»… (null si no llega a un mes). */
+function roughSpan(from: Date, to: Date): string | null {
+  let years = to.getFullYear() - from.getFullYear();
+  if (to.getMonth() < from.getMonth() || (to.getMonth() === from.getMonth() && to.getDate() < from.getDate())) years--;
+  if (years >= 1) return `${years} ${years === 1 ? "año" : "años"}`;
+  const months = (to.getFullYear() - from.getFullYear()) * 12 + to.getMonth() - from.getMonth() - (to.getDate() < from.getDate() ? 1 : 0);
+  if (months >= 1) return `${months} ${months === 1 ? "mes" : "meses"}`;
+  return null;
+}
+
+/** «hace 820 días (2 años)», «hace 45 días (1 mes)», «hace 12 días», «hoy», «dentro de 30 días (1 mes)». */
 export function ago(date: string, today = new Date()) {
   if (date.startsWith("--")) return "";
   const [y, m, d] = date.split("-").map(Number) as [number, number, number];
   const then = new Date(y, m - 1, d);
-  if (then > today) return "próximamente";
-  let years = today.getFullYear() - y;
-  if (today.getMonth() < m - 1 || (today.getMonth() === m - 1 && today.getDate() < d)) years--;
-  if (years >= 1) return `hace ${years} ${years === 1 ? "año" : "años"}`;
-  const months = (today.getFullYear() - y) * 12 + today.getMonth() - (m - 1) - (today.getDate() < d ? 1 : 0);
-  if (months >= 1) return `hace ${months} ${months === 1 ? "mes" : "meses"}`;
-  const days = Math.round((today.getTime() - then.getTime()) / 86_400_000);
-  return days === 0 ? "hoy" : `hace ${days} ${days === 1 ? "día" : "días"}`;
+  const now = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  // Días naturales (en UTC para que los cambios de hora no descuadren la cuenta)
+  const days = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(y, m - 1, d)) / 86_400_000);
+  if (days === 0) return "hoy";
+  const n = Math.abs(days);
+  const count = `${n.toLocaleString("es-ES")} ${n === 1 ? "día" : "días"}`;
+  const rough = days > 0 ? roughSpan(then, now) : roughSpan(now, then);
+  const text = rough ? `${count} (${rough})` : count;
+  return days > 0 ? `hace ${text}` : `dentro de ${text}`;
 }
 
 type Sort = "recent" | "next";

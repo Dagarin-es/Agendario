@@ -8,6 +8,7 @@ import { db, schema } from "../db/index.js";
 import { canReadSql } from "../lib/access.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import { toInteraction, userPrefsOf } from "../lib/personal.js";
+import { phoneKey } from "../lib/reminders.js";
 
 const c = schema.contacts;
 const i = schema.interactions;
@@ -19,11 +20,6 @@ async function requireView(contactId: string, userId: string) {
   if (!row) throw new HTTPException(404, { message: "Contacto no encontrado" });
 }
 
-/** Últimas cifras del número (sin prefijo de país ni espacios) para emparejar llamadas con contactos. */
-const phoneKey = (n: string) => {
-  const d = n.replace(/\D/g, "");
-  return d.length > 9 ? d.slice(-9) : d;
-};
 
 export const personalRoutes = new Hono<AppEnv>()
   .use(requireAuth)
@@ -40,9 +36,24 @@ export const personalRoutes = new Hono<AppEnv>()
     const byPhone = new Map<string, string>();
     for (const ct of contacts) for (const p of ct.phones) { const k = phoneKey(p.value); if (k.length >= 6 && !byPhone.has(k)) byPhone.set(k, ct.id); }
     const kinds = { in: "call_in", out: "call_out", missed: "call_missed" } as const;
+    result.unknown = [];
+    // Llamadas de números desconocidos sin nota de hace más de 30 días: ya no hacen falta
+    await db.delete(schema.unknownCalls).where(and(eq(schema.unknownCalls.userId, user.id), eq(schema.unknownCalls.notes, ""), lte(schema.unknownCalls.occurredAt, new Date(Date.now() - 30 * 86400_000))));
     for (const call of calls) {
       const contactId = byPhone.get(phoneKey(call.number));
-      if (!contactId) { result.unmatched++; continue; }
+      if (!contactId) {
+        result.unmatched++;
+        // Atendidas de más de un minuto: se guardan para el aviso «¿Lo guardas?» y poder apuntar algo
+        if (call.type !== "missed" && call.durationSec > 60 && phoneKey(call.number).length >= 6) {
+          const ins = await db
+            .insert(schema.unknownCalls)
+            .values({ userId: user.id, number: call.number, type: call.type, occurredAt: new Date(call.at), durationSec: call.durationSec, externalId: `call:${call.id}` })
+            .onConflictDoNothing()
+            .returning({ id: schema.unknownCalls.id });
+          if (ins.length) result.unknown.push({ unknownCallId: ins[0]!.id, number: call.number, type: call.type, durationSec: call.durationSec, at: call.at });
+        }
+        continue;
+      }
       const at = new Date(call.at);
       // Ya registrada a mano (mismo contacto, llamada, ±3 minutos)
       const near = await db.select({ id: i.id }).from(i).where(and(
@@ -57,7 +68,7 @@ export const personalRoutes = new Hono<AppEnv>()
       }).onConflictDoNothing().returning({ id: i.id });
       if (ins.length) {
         result.added++;
-        result.items!.push({ interactionId: ins[0]!.id, contactId, contactName: names.get(contactId) ?? "", type: call.type, durationSec: call.durationSec, at: call.at });
+        result.items!.push({ interactionId: ins[0]!.id, contactId, contactName: names.get(contactId) ?? "", type: call.type, durationSec: call.durationSec, at: call.at, number: call.number });
       } else result.skipped++;
     }
     return ctx.json(result);

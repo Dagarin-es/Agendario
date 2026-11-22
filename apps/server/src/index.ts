@@ -23,6 +23,7 @@ import { tagRoutes } from "./routes/tags.js";
 import { geoRoutes } from "./routes/geo.js";
 import { historyRoutes } from "./routes/history.js";
 import { personalRoutes } from "./routes/personal.js";
+import { reminderRoutes } from "./routes/reminders.js";
 import { backupRoutes } from "./routes/backup.js";
 import { syncRoutes } from "./routes/sync.js";
 import { davRoutes } from "./routes/dav.js";
@@ -93,6 +94,7 @@ const api = new Hono()
   .route("/personal-events", personalEventRoutes)
   .route("/calendar", calendarRoutes)
   .route("/", historyRoutes)
+  .route("/", reminderRoutes)
   .route("/", personalRoutes)
   .route("/", giftRoutes);
 

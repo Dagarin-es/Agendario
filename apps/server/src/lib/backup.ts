@@ -76,6 +76,8 @@ const TABLES = [
   "contact_item_tags",
   "contact_history",
   "interactions",
+  "reminders",
+  "unknown_calls",
   "user_prefs",
   "contact_prefs",
   "sync_accounts",

@@ -1,3 +1,4 @@
+import { useOverdueCount } from "./Reminders";
 import { manualUrl } from "../lib/platform";
 import { ForcedPasswordChange } from "./UsersSettings";
 import { keepInView } from "../lib/keepInView";
@@ -108,6 +109,7 @@ export function Layout() {
     return () => ro.disconnect();
   }, []);
   const pendingGifts = usePendingGifts().data?.length ?? 0;
+  const overdue = useOverdueCount();
   const { data: me } = useMe();
   const gifts = useGiftsToBuy();
   return (
@@ -130,6 +132,7 @@ export function Layout() {
               <span className={`ml-1 rounded-full px-1.5 py-px text-[10px] font-semibold text-white ${gifts.red ? "bg-red-600" : "bg-amber-500"}`}>🎁{gifts.count}</span>
             )}
             {pendingGifts > 0 && <span className="ml-1 rounded-full bg-rose-500 px-1.5 py-px text-[10px] font-semibold text-white">🛍️{pendingGifts}</span>}
+            {overdue > 0 && <span className="ml-1 rounded-full bg-red-600 px-1.5 py-px text-[10px] font-semibold text-white" title={`${overdue} recordatorio(s) para ya`}>⏰{overdue}</span>}
           </NavLink>
           {/* Solo cuando hay duplicados (o se está en esa pantalla) */}
           {(dupCount > 0 || location.pathname.startsWith("/duplicates")) && (

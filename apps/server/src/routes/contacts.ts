@@ -38,6 +38,7 @@ import { addTags, assertOwnTags, expandTagIds, tagsForContacts } from "../lib/ta
 import { deleteContacts, syncOrgName } from "../lib/merge.js";
 import { idsWithHistory, rawContact, recordHistory } from "../lib/history.js";
 import { contactPrefsOf, interactionsOf } from "../lib/personal.js";
+import { adoptUnknownCalls, remindersOf } from "../lib/reminders.js";
 import { deletePhoto, photoType, readPhoto, saveCover, storeUpload } from "../lib/photos.js";
 
 const c = schema.contacts;
@@ -120,6 +121,7 @@ function toContact(r: Row, userId: string, tags: TagLite[] = [], org: OrgContact
     notes: x.notes,
     createdAt: x.createdAt.toISOString(),
     hasCover: !!x.coverKey,
+    mobileName: (x.mobileName ?? "full") as Contact["mobileName"],
   };
 }
 
@@ -188,7 +190,7 @@ async function buildDetail(id: string, userId: string): Promise<ContactDetail> {
       tagsForContacts([id], userId),
     ]);
     const itemTags = (await itemTagsFor([id], userId)).get(id) ?? {};
-    const [interactions, prefs, [{ n: historyCount }], staff] = await Promise.all([
+    const [interactions, prefs, [{ n: historyCount }], staff, reminders] = await Promise.all([
       interactionsOf(userId, id),
       contactPrefsOf(userId, id),
       db.select({ n: sql<number>`count(*)::int` }).from(schema.contactHistory).where(eq(schema.contactHistory.contactId, id)),
@@ -198,10 +200,12 @@ async function buildDetail(id: string, userId: string): Promise<ContactDetail> {
         .from(c)
         .where(and(eq(c.organizationContactId, id), visibleContacts(userId)))
         .orderBy(asc(sql`lower(${c.displayName})`)),
+      remindersOf(userId, { contactId: id, pendingOnly: true }),
     ]);
 
     const detail: ContactDetail = {
       interactions,
+      reminders,
       prefs,
       historyCount,
       employees: staff.map((e) => ({
@@ -342,6 +346,7 @@ export const contactRoutes = new Hono<AppEnv>()
       .values({ ...ensureItemIds(ctx.req.valid("json")), ownerId: user.id })
       .returning();
     await recordHistory(db, { contactId: created.id, userId: user.id, action: "create", after: created });
+    await adoptUnknownCalls(user.id, created.id, created.phones);
     const row = await loadContact(created.id, user.id);
     return ctx.json(toContact(row, user.id, [], await orgContactOf(row, user.id)), 201);
   })
@@ -387,6 +392,7 @@ export const contactRoutes = new Hono<AppEnv>()
       .where(eq(c.id, id))
       .returning();
     await recordHistory(db, { contactId: id, userId: user.id, action: "update", before, after });
+    if (body.phones) await adoptUnknownCalls(user.id, id, after.phones);
     const updated = await loadContact(id, user.id);
     await cleanupItemTags(id, itemIdsOf(updated.contact)); // etiquetas de datos que se han quitado
     if (body.displayName !== undefined) await syncOrgName(id); // si es la empresa de otros contactos, se les actualiza el nombre

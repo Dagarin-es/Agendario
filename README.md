@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> **Tus contactos, tu servidor.** Versión estable 1.0.0 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
+> **Tus contactos, tu servidor.** Versión estable 1.1.0 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **efemérides**, **contactos compartidos** entre usuarios, **fotos y portadas**, servidor **CardDAV** (con grupos) para el móvil y calendario **.ics** suscribible.
 
-Esta es la **versión 1.0.0**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
+Esta es la **versión 1.1.0**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
 
 ---
 
@@ -57,7 +57,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-1.0.0.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.1.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -91,7 +91,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-1.0.0.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.1.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -99,7 +99,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-1.0.0.zip
+unzip agendario-1.1.0.zip
 cd agendario
 ```
 
@@ -143,7 +143,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-1.0.0.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-1.1.0.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh

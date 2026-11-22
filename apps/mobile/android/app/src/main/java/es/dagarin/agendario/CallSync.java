@@ -95,6 +95,8 @@ public final class CallSync {
         long since = p.getLong("since", System.currentTimeMillis());
         int added = 0, read = 0, unmatched = 0, skipped = 0;
         JSONObject lastItem = null;
+        JSONObject lastUnknown = null;
+        java.util.List<JSONObject> allItems = new java.util.ArrayList<>();
         try {
             while (true) {
                 JSONArray calls = new JSONArray();
@@ -137,22 +139,35 @@ public final class CallSync {
                 skipped += res.optInt("skipped", 0);
                 JSONArray items = res.optJSONArray("items");
                 if (items != null && items.length() > 0) lastItem = items.optJSONObject(items.length() - 1);
+                if (items != null) for (int k = 0; k < items.length(); k++) allItems.add(items.optJSONObject(k));
+                JSONArray unknown = res.optJSONArray("unknown");
+                if (unknown != null && unknown.length() > 0) lastUnknown = unknown.optJSONObject(unknown.length() - 1);
+                if (unknown != null) for (int k = 0; k < unknown.length(); k++) allItems.add(unknown.optJSONObject(k));
                 since = last;
                 p.edit().putLong("since", since).apply();
                 if (calls.length() < BATCH) break;
             }
-            // Aviso para apuntar algo: solo la última llamada, si es reciente, atendida y de más de 30 s
-            if (lastItem != null && p.getBoolean("notify", true) && !"missed".equals(lastItem.optString("type")) && lastItem.optInt("durationSec") > 30) {
-                long callEnd = System.currentTimeMillis();
+            // Nota escrita durante la llamada (burbuja o «Anotar»): se pega a la llamada más reciente con ese número
+            String noted = null;
+            for (int k = allItems.size() - 1; k >= 0 && noted == null; k--) {
+                JSONObject it = allItems.get(k);
+                String note = InCallNotes.take(ctx, it.optString("number"));
+                if (note == null) continue;
+                String path = it.has("unknownCallId") ? "/api/unknown-calls/" + it.optString("unknownCallId") : "/api/interactions/" + it.optString("interactionId");
                 try {
-                    SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
-                    Date at = f.parse(lastItem.optString("at"));
-                    if (at != null) callEnd = at.getTime() + lastItem.optInt("durationSec") * 1000L;
-                } catch (Exception ignored) {
-                    // si no se entiende la fecha, se avisa igualmente
+                    if (Net.request(ctx, "PATCH", path, new JSONObject().put("notes", note).toString(), 15000).ok()) noted = it.optString("number");
+                } catch (Exception e) {
+                    InCallNotes.add(ctx, it.optString("number"), note); // se reintenta en el siguiente envío
                 }
-                if (System.currentTimeMillis() - callEnd < 15 * 60_000L) CallNotify.show(ctx, lastItem);
             }
+            // Aviso para apuntar algo: solo la última llamada, si es reciente, atendida y de más de 30 s
+            if (lastItem != null && p.getBoolean("notify", true) && !"missed".equals(lastItem.optString("type")) && lastItem.optInt("durationSec") > 30 && recent(lastItem)) {
+                if (noted != null && noted.equals(lastItem.optString("number"))) {
+                    CallNotify.done(ctx, lastItem.optString("interactionId").hashCode(), "Llamada con " + lastItem.optString("contactName"), "✓ Nota guardada en la llamada");
+                } else CallNotify.show(ctx, lastItem);
+            }
+            // Número desconocido de más de un minuto: «¿Lo guardas?»
+            if (lastUnknown != null && p.getBoolean("unknownNotify", true) && recent(lastUnknown)) CallNotify.showUnknown(ctx, lastUnknown);
             p.edit().putLong("lastSyncAt", System.currentTimeMillis()).putInt("lastAdded", added).putInt("lastRead", read)
                 .putInt("lastUnmatched", unmatched).putInt("lastSkipped", skipped).putString("lastError", "").apply();
             return true;
@@ -160,6 +175,19 @@ public final class CallSync {
             p.edit().putString("lastError", String.valueOf(e.getMessage())).apply();
             return false;
         }
+    }
+
+    /** ¿Terminó hace menos de 15 minutos? (para no avisar de llamadas antiguas en la primera carga) */
+    private static boolean recent(JSONObject item) {
+        long callEnd = System.currentTimeMillis();
+        try {
+            SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
+            Date at = f.parse(item.optString("at"));
+            if (at != null) callEnd = at.getTime() + item.optInt("durationSec") * 1000L;
+        } catch (Exception ignored) {
+            // si no se entiende la fecha, se avisa igualmente
+        }
+        return System.currentTimeMillis() - callEnd < 15 * 60_000L;
     }
 
     private static JSONObject post(String url, String token, String body) throws Exception {

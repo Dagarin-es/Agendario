@@ -20,6 +20,8 @@ import { LoginPage } from "./pages/Login";
 import { UpcomingPage } from "./pages/Upcoming";
 import { GiftsPage } from "./pages/Gifts";
 import { ShareGiftPage } from "./pages/ShareGift";
+import { ShareImagePage } from "./pages/ShareImage";
+import { UnknownCallPage } from "./pages/UnknownCall";
 
 export function App() {
   const [server, setServerState] = useState(getServer());
@@ -38,6 +40,8 @@ export function App() {
         <Route path="upcoming" element={<UpcomingPage />} />
         <Route path="gifts" element={<GiftsPage />} />
         <Route path="share-gift" element={<ShareGiftPage />} />
+        <Route path="share-image" element={<ShareImagePage />} />
+        <Route path="unknown-call/:id" element={<UnknownCallPage />} />
         <Route path="groups" element={<GroupsPage />} />
         <Route path="tags" element={<TagsPage />} />
         <Route path="import" element={<ImportPage />} />

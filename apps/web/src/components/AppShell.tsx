@@ -1,3 +1,4 @@
+import { useOverdueCount } from "./Reminders";
 import { ForcedPasswordChange } from "./UsersSettings";
 import { keepInView } from "../lib/keepInView";
 /**
@@ -107,6 +108,7 @@ export function AppShell() {
   const dupCount = useDuplicateCount();
   const gifts = useGiftsToBuy();
   const pending = usePendingGifts().data?.length ?? 0;
+  const overdue = useOverdueCount();
   const [sheet, setSheet] = useState(false);
   const [about, setAbout] = useState(false);
   useColorThemeFromPrefs();
@@ -143,15 +145,18 @@ export function AppShell() {
       const d = (e as CustomEvent<{ text?: string; title?: string }>).detail;
       nav(`/share-gift?${new URLSearchParams({ text: d.text ?? "", title: d.title ?? "" })}`);
     };
+    // «Compartir» una imagen desde la galería → foto o portada de un contacto
+    const img = () => nav("/share-image");
+    window.addEventListener("agendario-share-image", img);
     window.addEventListener("agendario-share", on);
     const open = (e: Event) => nav((e as CustomEvent<string>).detail);
     window.addEventListener("agendario-open", open);
-    return () => { window.removeEventListener("agendario-share", on); window.removeEventListener("agendario-open", open); };
+    return () => { window.removeEventListener("agendario-share", on); window.removeEventListener("agendario-open", open); window.removeEventListener("agendario-share-image", img); };
   }, [nav]);
 
   // «Duplicados» solo aparece cuando los hay (o si estás en esa pantalla)
   const visibleTabs = tabs.filter((t) => t.to !== "/duplicates" || dupCount > 0 || location.pathname.startsWith("/duplicates"));
-  const badge = (to: string) => (to === "/duplicates" ? dupCount || null : to === "/upcoming" ? gifts.count + pending || null : null);
+  const badge = (to: string) => (to === "/duplicates" ? dupCount || null : to === "/upcoming" ? gifts.count + pending + overdue || null : null);
   const navItems = (
     <>
       {visibleTabs.map((t) => (

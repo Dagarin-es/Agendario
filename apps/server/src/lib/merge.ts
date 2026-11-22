@@ -67,6 +67,7 @@ export function autoMergeValues(keep: Row, remove: Row): Omit<MergeRequest, "kee
       givenName: pick(keep.givenName, remove.givenName),
       familyName: pick(keep.familyName, remove.familyName),
       nickname: pick(keep.nickname, remove.nickname),
+      mobileName: ((keep.mobileName && keep.mobileName !== "full" ? keep.mobileName : remove.mobileName) ?? "full") as "full" | "nickname" | "display",
       organization: pick(keep.organization, remove.organization),
       organizationContactId: keep.organization.trim() ? keep.organizationContactId : remove.organizationContactId,
       jobTitle: pick(keep.jobTitle, remove.jobTitle),

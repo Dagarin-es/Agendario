@@ -99,7 +99,7 @@ function ItemRow({ href, item, isDefault, onDefault, onUse }: { href: string; it
 }
 
 /** Botones Llamar · Mensaje · Email con el dato y la app por defecto (cambiables por contacto). */
-export function QuickActions({ c, onCall, align = "center" }: { c: ContactDetail; onCall?: (phone: string) => void; align?: "center" | "start" }) {
+export function QuickActions({ c, onCall, align = "center" }: { c: ContactDetail; onCall?: (phone: string, e: React.MouseEvent) => void; align?: "center" | "start" }) {
   const qc = useQueryClient();
   const { data: user } = useUserPrefs();
   const cc = user?.countryCode ?? "34";
@@ -122,10 +122,10 @@ export function QuickActions({ c, onCall, align = "center" }: { c: ContactDetail
   return (
     <div className={`flex flex-wrap gap-2 ${align === "start" ? "justify-start" : "justify-center"}`}>
       {d.callPhone && (
-        <Split href={telLink(d.callPhone.value)} icon="📞" label="Llamar" onMain={() => onCall?.(d.callPhone!.value)}>
+        <Split href={telLink(d.callPhone.value)} icon="📞" label="Llamar" onMain={(e) => onCall?.(d.callPhone!.value, e)}>
           <span className={menuTitle}>Llamar a…</span>
           {c.phones.map((p) => (
-            <ItemRow key={p.id ?? p.value} href={telLink(p.value)} item={p} isDefault={p === d.callPhone} onDefault={() => save.mutate({ callPhoneId: p.id ?? null })} onUse={() => onCall?.(p.value)} />
+            <ItemRow key={p.id ?? p.value} href={telLink(p.value)} item={p} isDefault={p === d.callPhone} onDefault={() => save.mutate({ callPhoneId: p.id ?? null })} onUse={(e) => onCall?.(p.value, e)} />
           ))}
         </Split>
       )}

@@ -1,12 +1,14 @@
-# Agendario — guía para Claude Code
+# Agendario — guía para Claude
 
-Agenda de contactos **autoalojada** (servidor Docker + web/PWA; más adelante app Android). Autor: Daniel (GitHub `Dagarin-es`, Docker Hub `dagarines`). La app está en **Beta** hasta que él diga lo contrario (etiqueta «Beta» visible y versiones `X.Y.Z-beta`).
+Agenda de contactos **autoalojada** («agenda + diario»): servidor Docker + web/PWA + app Android (Capacitor). Autor: Daniel (GitHub `Dagarin-es`, Docker Hub `dagarines`). Versión estable desde la 1.0.0 (`IS_BETA=false`, versiones `X.Y.Z`).
+
+**Al empezar cada chat**: leer este fichero y `PENDIENTES.md` (lo apuntado para la próxima versión). Se trabaja en un proyecto «Agendario» de Claude, un chat por versión; el código siempre sale de este repositorio (rama `main`).
 
 ## Cómo trabajar con Daniel
 
 - Todo en **español** (código comentado en español, textos de la interfaz, commits, CHANGELOG y README).
 - Es principiante con la terminal: instrucciones **paso a paso**, comandos completos para copiar y pegar. Trabaja como **root**: nunca pongas `sudo`.
-- Patrón de trabajo: va dando cambios; si dice «para la próxima versión / no generes aún», **solo se apuntan** (sección *Pendiente* de este fichero). Cuando dice «genera» (o no pide esperar), se hace la versión, se prueba y se publica.
+- Patrón de trabajo: va dando cambios y **solo se apuntan en `PENDIENTES.md`**. Cuando dice «genera», se hace la versión, se prueba, se entrega el zip `agendario-X.Y.Z.zip` (lo instala con `bash /opt/actualizar-agendario.sh`, que también sube el código y la etiqueta a GitHub) y se vacía de `PENDIENTES.md` lo hecho.
 - Le gusta ver capturas de lo que cambia y un resumen corto al final: qué hay nuevo y cómo actualizar.
 - Nada de diálogos nativos del navegador (`alert/confirm`): usar `useConfirm`/`useAlert` de `components/Dialogs.tsx`.
 
@@ -22,6 +24,8 @@ Monorepo con npm workspaces:
   - **Modo oscuro**: `src/dark.css` invierte las escalas de color con variables CSS bajo `.dark` (generado desde `tailwindcss/theme.css`). No añadir clases `dark:`; si un color sólido se ve mal en oscuro, ajustarlo en `dark.css`.
 - `scripts/actualizar-agendario.sh` + `actualizar.conf.example` — instalación/actualización en el servidor desde un zip (y subida a GitHub).
 - `.github/workflows/docker.yml` — al subir una etiqueta `v*`, publica la imagen en Docker Hub `dagarines/agendario` (amd64 + arm64; betas → `X.Y.Z-beta` y `beta`, estables → `X.Y.Z` y `latest`). Secretos del repo: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
+- `.github/workflows/android.yml` — al subir una etiqueta `v*`, compila y firma la APK y la adjunta (con el manual) a la Release.
+- `PENDIENTES.md` — lo apuntado para la próxima versión.
 - `docs/` — `registrar-apps.md` (app de Google), `privacidad.md` (publicada en dagarin.es/agendario/privacidad). `design/icons/` — iconos (principal: libreta índigo con lápiz; alternativo: libreta abierta, para la futura personalización).
 
 ## Comandos
@@ -41,7 +45,9 @@ No hay tests automáticos: se prueba la API con `curl` y la interfaz con Playwri
 1. Subir la versión en: `packages/shared/src/index.ts` (`APP_VERSION`), los cuatro `package.json` (raíz, shared, server, web) y `ARG APP_VERSION` del `Dockerfile`; después `npm install` para el lockfile.
 2. Entrada en `CHANGELOG.md` y actualizar `README.md` (versión, funciones, hoja de ruta).
 3. `npm run typecheck && npm run build`.
-4. Commit en la rama `beta` (betas) o `main` (estables), etiqueta `vX.Y.Z[-beta]` y push (rama + etiqueta). La etiqueta dispara la imagen de Docker Hub. Recordar a Daniel crear la *Release* (pre-release en betas).
+4. Zip `agendario-X.Y.Z.zip` (sin node_modules, dist, dist-app, carpetas build/.gradle de android, assets/public, keystore.properties, local.properties, *.jks, .env, .git) y comprobar que no lleva claves. Daniel lo instala con el script, que hace commit en `main`, etiqueta `vX.Y.Z` y push. La etiqueta dispara:
+   - `.github/workflows/docker.yml` → imagen en Docker Hub;
+   - `.github/workflows/android.yml` → compila y **firma la APK** (secretos `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`; comprueba la huella del certificado `be1e6a4f…0975`) y la adjunta con el manual a la *Release* (que crea con las notas del CHANGELOG). La clave de firma nunca va al repo ni al chat; en local, `./gradlew assembleDebug` basta para comprobar que compila.
 5. Desplegar en su servidor (ver abajo).
 
 ### Despliegue en el servidor de Daniel
@@ -70,8 +76,11 @@ Nunca tocar `/opt/agendario/.env` ni `/opt/agendario/data` sin preguntar. El scr
 - **Direcciones**: buscador Photon (OSM) a través del servidor, coordenadas, botón «Abrir en mapa» adaptado al sistema.
 - Interfaz: paleta índigo (con amarillo, lila y rosa), modo claro/oscuro/automático, botones repartidos a lo ancho en duplicados, combinación manual en tres columnas (principal · a eliminar · Quedará).
 
-## Pendiente (en orden)
+## Pendiente
 
+Lo apuntado para la próxima versión está en **`PENDIENTES.md`**. Aquí, el registro técnico de lo ya hecho:
+
+> Hecho en 1.1.0: tablas `reminders` y `unknown_calls` + `contacts.mobile_name` (migración 0023; las tres en TABLES de copias; `mobile_name` admite nulo por copias de la 1.0), `lib/reminders.ts` (`phoneKey`, `remindersOf`, `adoptUnknownCalls` al crear/editar teléfonos), `routes/reminders.ts` (`/reminders`, `/unknown-calls`, `/calls/lookup`), `/calls/import` devuelve `unknown` (atendidas > 60 s) y `number` en `items`; CardDAV usa `mobileAlias` (FN/N con el apodo o nombre a mostrar, solo en el servidor DAV, no en Fastmail) y al recibir un PUT conserva el nombre real; web: `components/Reminders.tsx` (diálogo, filas, recuadro de la ficha, pestaña Fechas → Recordatorios), `pages/UnknownCall.tsx`, `pages/ShareImage.tsx` + `lib/shareImage.ts`, ventana «Antes de llamar» en la ficha, `ago()` con días exactos; Android: `Net.java`, `CallNotify` (acciones Escribir nota / Recordatorio / No, gracias; aviso de desconocidos; notificación fija), `InCallNotes` (nota durante la llamada → se pega al importar), `CallOverlay` + `CallOverlayService` (tarjeta y burbuja, permiso SYSTEM_ALERT_WINDOW, FGS specialUse), `OutgoingCallReceiver`, `ReminderStore`/`ReminderReceiver`/`ReminderActionReceiver`/`ReminderSyncWorker` (alarmas locales, revisión cada 2 h), `.ShareImage` activity-alias.
 > Hecho en 1.0.0 (estable, IS_BETA=false, LICENSE AGPL-3.0-or-later): `app_passwords` (migración 0021, rutas `/auth/app-passwords`, DAV las acepta y, si hay alguna, ya no la de la cuenta; `forgetDavCredentials`), `sessions.media_id` + `mediaTokenFor` (HMAC con `auth.mediaSecret`; `?mt=` solo en MEDIA_PATHS; `/auth/me` lo devuelve a la app), `lib/ratelimit.ts`, `verifyOrDummy`, `closeOtherSessions`, `/auth/sessions/close-others`, `mustChangePassword` forzado en servidor (`ForcedPasswordChange` en la web), CSP en `secureHeaders` (script en línea pasado a `public/theme-init.js`), `storeUpload` en lib/photos, CATEGORIES en CardDAV (`tagPaths`, `categoriesLine`, `applyCategories`, ETag v2), `personal_events.contact_ids` (0022, nullable por copias de la 0.18), manual en `apps/web/public/manual/Agendario-Manual.pdf` (fuera de dist-app).
 > Hecho en 0.18.0-beta: tabla `personal_events` (efemérides, migración 0020, en TABLES de copias) con rutas `/personal-events` (+ foto); `/calendar/feed` (+ `/token`, `/export.ics`) y público `/api/ics/:token.ics` montado antes de las rutas en «/» (settings `ics.user.<id>` y `ics.token.<token>`); `contacts.cover_key` con `/contacts/:id/cover` (saveCover, X-AGENDARIO-COVER en el .vcf propio); `PhotoViewer`, `PhotoCropper aspect`, `PersonalEvents.tsx`, `CalendarFeedSettings.tsx`, `lib/text.ts capLabel`; búsqueda por teléfono con `jsonb_array_elements`; `CallLogPlugin.openNotificationSettings` y petición del permiso en `configureCallLog`.
 > Hecho en 0.17.0-beta: varias copias (`backup.jobs` en settings, claves `backup.config.<id>`/`backup.secrets.<id>`/`backup.lastAuto.<id>`; la «main» conserva las claves antiguas; `backup_runs.job_id`, migración 0019; todas las rutas de `/backup` aceptan `?job=`; CRUD en `/backup/jobs`; en la web `BackupJobs` + `BackupJobCtx`/`useJobQuery`), `MaterialYouPlugin.mailApps/openMail` (+ `<queries>` de SENDTO mailto), el buscador no se recoge con foco/teclado, Modal `full` usa `h-full` (respeta `--sat`), clases `detail-*` para la cabecera en `.two-pane-detail`.
@@ -83,8 +92,3 @@ Nunca tocar `/opt/agendario/.env` ni `/opt/agendario/data` sin preguntar. El scr
 > Hecho en 0.11.0-beta: ficha compacta (cabecera, Teléfonos/Emails, Celebraciones, Trabajadores), relaciones recíprocas (`relationshipInverse`, `lib/upgrades.ts` para ajustes de datos de una sola vez), calendario en dos columnas, santos desactivados por defecto, Menú, `components/LabelInput.tsx`.
 > Hecho en 0.10.0-beta: calendario de Fechas con estado de regalos (`lib/events.ts`, `pages/Upcoming.tsx`), idea → comprado → regalado, santos automáticos (`packages/shared/src/santoral.ts`), subetiquetas (`tags.parent_id/position`, `expandTagIds`), abecedario arriba, Combinar desde la lista, reordenar datos, etiquetas de datos en `user_prefs.itemLabels`, historial de sincronizaciones (`sync_log`).
 > Hecho en 0.9.0-beta: sincronización CardDAV/Fastmail (`lib/carddav.ts`, `lib/sync.ts`, `routes/sync.ts`, tablas `sync_accounts`/`sync_links`), mapa con chincheta (`components/MapPicker.tsx`, Leaflet), abecedario y orden de la lista, etiquetas y foto en el formulario, botón Editar con lápiz.
-
-2. **Google Contactos**: primero importar contactos y fotos; después, quizá bidireccional (API People con OAuth web; el permiso de contactos no vale con código de dispositivo).
-3. **Agendario como servidor CardDAV** (una libreta por etiqueta o grupo de etiquetas) para sincronizar el móvil directamente (DAVx⁵).
-4. **App Android** con Capacitor reutilizando la web; registro automático de llamadas (solo Android), notificaciones de cumpleaños, cuenta de contactos del teléfono.
-5. **Personalización de la interfaz**: paletas de color y elegir icono (principal o libreta abierta).

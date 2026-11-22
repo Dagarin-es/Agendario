@@ -7,6 +7,8 @@ import type { ColorTheme, ThemeScale } from "@agendario/shared";
 import { isApp } from "./platform";
 import { commitNativeIcon, setDynamicScale, setNativeIconHook } from "./theme";
 import { getServer, getToken } from "./platform";
+import { setSharedImage } from "./shareImage";
+import type { Reminder } from "@agendario/shared";
 
 type Tones = Record<string, string>; // "0" … "1000" → "#rrggbb"
 interface Palette {
@@ -59,16 +61,20 @@ export async function initNative() {
     installedApps(o: { packages: string[] }): Promise<Record<string, boolean>>;
     mailApps(): Promise<{ apps: MailApp[] }>;
     openMail(o: { to: string; package?: string }): Promise<void>;
-    consumeShare(): Promise<{ text?: string; title?: string }>;
+    consumeShare(): Promise<{ text?: string; title?: string; image?: string }>;
     consumeOpen(): Promise<{ path?: string }>;
     addListener(e: "open", fn: (d: { path?: string }) => void): Promise<unknown>;
-    addListener(e: "share", fn: (d: { text?: string; title?: string }) => void): Promise<unknown>;
+    addListener(e: "share", fn: (d: { text?: string; title?: string; image?: string }) => void): Promise<unknown>;
   }>("MaterialYou");
   nativeApi.installedApps = (packages) => MaterialYou.installedApps({ packages });
   nativeApi.mailApps = () => MaterialYou.mailApps().then((r) => r.apps ?? []);
   nativeApi.openMail = (to, pkg) => MaterialYou.openMail({ to, ...(pkg ? { package: pkg } : {}) });
   // «Compartir» desde otra app → Añadir idea de regalo
-  const share = (d: { text?: string; title?: string }) => d?.text && window.dispatchEvent(new CustomEvent("agendario-share", { detail: d }));
+  // «Compartir» una imagen desde la galería → foto o portada de un contacto
+  const share = (d: { text?: string; title?: string; image?: string }) => {
+    if (d?.image) setSharedImage(d.image);
+    else if (d?.text) window.dispatchEvent(new CustomEvent("agendario-share", { detail: d }));
+  };
   void MaterialYou.addListener("share", share).catch(() => undefined);
   setTimeout(() => void MaterialYou.consumeShare().then(share).catch(() => undefined), 800);
   // Abrir una ficha desde un aviso (p. ej. «Abrir ficha» tras una llamada)
@@ -126,6 +132,13 @@ export interface CallLogStatus {
   lastUnmatched?: number;
   lastSkipped?: number;
   since?: number;
+  /** Aviso tras llamadas de más de un minuto con números que no son contactos */
+  unknownNotify?: boolean;
+  /** Tarjeta flotante con tus notas al sonar o marcar, y burbuja para anotar durante la llamada */
+  overlay?: boolean;
+  overlayAllowed?: boolean;
+  /** Notificación fija «Llamada con X · Anotar» durante la llamada */
+  ongoing?: boolean;
 }
 interface CallLogPlugin {
   getStatus(): Promise<CallLogStatus>;
@@ -136,6 +149,10 @@ interface CallLogPlugin {
   syncNow(): Promise<CallLogStatus>;
   setNotify(o: { enabled: boolean }): Promise<CallLogStatus>;
   openBatterySettings(): Promise<void>;
+  setOptions(o: { unknownNotify?: boolean; overlay?: boolean; ongoing?: boolean }): Promise<CallLogStatus>;
+  openOverlaySettings(): Promise<void>;
+  setReminders(o: { items: string }): Promise<void>;
+  noteDial(o: { number: string }): Promise<void>;
 }
 let callLog: CallLogPlugin | null = null;
 /**
@@ -151,6 +168,7 @@ export async function configureCallLog() {
   const p = getCallLog();
   const token = getToken();
   if (p && token) await p.configure({ server: getServer(), token }).catch(() => undefined);
+  void syncNativeReminders();
   // Si el registro está activo con aviso tras la llamada pero falta el permiso de notificaciones
   // (p. ej. se activó antes de existir el aviso), se pide al abrir la app; como mucho dos veces.
   if (!p) return;
@@ -164,4 +182,27 @@ export async function configureCallLog() {
   } catch {
     /* sin plugin o sin almacenamiento: no pasa nada */
   }
+}
+
+/** Pasa a la app de Android los recordatorios pendientes para que avise a su hora (sin conexión también). */
+export async function syncNativeReminders() {
+  const p = getCallLog();
+  if (!p || !getToken()) return;
+  try {
+    const { api } = await import("./api");
+    const list = await api.get<Reminder[]>("/reminders");
+    const items = list.map((r) => ({
+      id: r.id, kind: r.kind, text: r.text, dueAt: new Date(r.dueAt).getTime(),
+      contactId: r.contactId ?? "", contactName: r.contact?.displayName ?? "",
+    }));
+    await p.setReminders({ items: JSON.stringify(items) });
+  } catch {
+    /* sin conexión: se queda con los que ya tenía */
+  }
+}
+
+/** Antes de llamar desde Agendario: la app sabe el número para la tarjeta de notas (la app de teléfono no lo dice). */
+export async function noteDial(number: string) {
+  const p = getCallLog();
+  if (p) await p.noteDial({ number }).catch(() => undefined);
 }

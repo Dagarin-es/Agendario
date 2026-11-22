@@ -25,7 +25,7 @@ import { cleanupItemTags, ensureItemIds, itemIdsOf, itemTagsFor } from "../lib/i
 import { deleteContacts } from "../lib/merge.js";
 import { savePhoto } from "../lib/photos.js";
 import { addTags, ensureTagsByName, expandTagIds, tagsForContacts } from "../lib/tags.js";
-import { buildVCard, exportedItems, mergeFromRemote, readRemote, type Items } from "../lib/sync.js";
+import { buildVCard, exportedItems, mergeFromRemote, mobileAlias, readRemote, type Items } from "../lib/sync.js";
 
 const c = schema.contacts;
 const u = schema.users;
@@ -145,7 +145,7 @@ async function bookContents(userId: string, book: Book) {
     const items: Items = book.tagIds ? exportedItems(row, itemTags.get(row.id), book.tagIds) : { phones: row.phones, emails: row.emails, urls: row.urls, addresses: row.addresses };
     const categories = (tagMap.get(row.id) ?? []).map((t) => paths.get(t.id) ?? t.name).sort((a, b) => a.localeCompare(b, "es"));
     // La ETag incluye las etiquetas: al cambiarlas (o al actualizar a la 1.0) el móvil vuelve a descargar el contacto
-    const etag = `"${createHash("sha256").update(`v2|${row.id}|${row.revision}|${row.updatedAt.toISOString()}|${row.photoKey ?? ""}|${JSON.stringify(items)}|${categories.join("\n")}`).digest("hex").slice(0, 24)}"`;
+    const etag = `"${createHash("sha256").update(`v2|${row.id}|${row.revision}|${row.updatedAt.toISOString()}|${row.photoKey ?? ""}|${mobileAlias(row) ?? ""}|${JSON.stringify(items)}|${categories.join("\n")}`).digest("hex").slice(0, 24)}"`;
     return { row, items, categories, etag, name: names.get(row.id) ?? `${row.id}.vcf` };
   });
 }
@@ -254,11 +254,22 @@ async function applyCard(user: DavUser, book: Book, name: string, text: string, 
   const itemTags = (await itemTagsFor([existing.id], user.id)).get(existing.id);
   const exported: Items = book.tagIds ? exportedItems(existing, itemTags, book.tagIds) : { phones: existing.phones, emails: existing.emails, urls: existing.urls, addresses: existing.addresses };
   const items = mergeFromRemote(existing, exported, p);
+  // «Nombre en el móvil»: el móvil tiene el apodo o el nombre a mostrar en lugar del nombre real.
+  // Si no lo ha cambiado, se conserva el nombre real; si lo ha cambiado, se actualiza solo ese alias.
+  const alias = mobileAlias(existing);
+  const names = !alias
+    ? { givenName: p.givenName, familyName: p.familyName, displayName: p.displayName, nickname: p.nickname }
+    : (() => {
+        const sent = p.displayName.trim() || `${p.givenName} ${p.familyName}`.trim();
+        const keep = { givenName: existing.givenName, familyName: existing.familyName, displayName: existing.displayName, nickname: existing.nickname };
+        if (!sent || sent === alias) return keep;
+        return existing.mobileName === "nickname" ? { ...keep, nickname: sent } : { ...keep, displayName: sent };
+      })();
   const [after] = await db
     .update(c)
     .set({
       ...ensureItemIds(items),
-      givenName: p.givenName, familyName: p.familyName, displayName: p.displayName, nickname: p.nickname,
+      ...names,
       organization: p.organization, organizationContactId: p.organization === existing.organization ? existing.organizationContactId : null,
       jobTitle: p.jobTitle, birthday: p.birthday, notes: p.notes, photoKey, updatedAt: new Date(), revision: sql`${c.revision} + 1`,
     })
@@ -325,7 +336,7 @@ davRoutes.all("*", async (ctx) => {
       const list = wanted ? contents.filter((x) => wanted.has(x.name)) : contents;
       const res: string[] = [];
       for (const x of list) {
-        const card = await buildVCard(x.row, x.items, x.row.id, categoriesLine(x.categories));
+        const card = await buildVCard(x.row, x.items, x.row.id, categoriesLine(x.categories), true);
         res.push(response(bookHref(user.id, book.id) + encodeURIComponent(x.name), `<d:getetag>${x.etag}</d:getetag><card:address-data>${esc(card)}</card:address-data>`));
       }
       return xmlResponse(multistatus(res));
@@ -340,7 +351,7 @@ davRoutes.all("*", async (ctx) => {
 
   if (method === "GET" || method === "HEAD") {
     if (!item) return new Response("No encontrado", { status: 404 });
-    const card = await buildVCard(item.row, item.items, item.row.id, categoriesLine(item.categories));
+    const card = await buildVCard(item.row, item.items, item.row.id, categoriesLine(item.categories), true);
     return new Response(method === "HEAD" ? null : card, { status: 200, headers: { "Content-Type": "text/vcard; charset=utf-8", ETag: item.etag } });
   }
   if (method === "PROPFIND") {

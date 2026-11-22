@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import {
   dateTypeLabels,
+  reminderKindIcons,
+  reminderKindLabels,
   isGeolocated,
   dateTypes,
   relationshipLabels,
@@ -34,7 +36,9 @@ import { Interactions, type InteractionPrefill } from "../components/Interaction
 import { HistoryIcon } from "../components/HistoryIcon";
 import { telLink } from "../lib/links";
 import { api, photoUrl } from "../lib/api";
-import { useAlert, useConfirm } from "../components/Dialogs";
+import { Modal, useAlert, useConfirm } from "../components/Dialogs";
+import { ContactReminders } from "../components/Reminders";
+import { noteDial } from "../lib/native";
 import { formatPartialDate } from "../lib/format";
 
 function PencilIcon({ className }: { className?: string }) {
@@ -117,8 +121,12 @@ export function ContactDetailPage() {
   const [lastCall, setLastCall] = useState<{ phone: string; at: number } | null>(null);
   const [askCall, setAskCall] = useState(false);
   const [prefill, setPrefill] = useState<InteractionPrefill | null>(null);
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const openCall = params.get("call");
+  // ?remind=1 → abrir «Nuevo recordatorio» (desde el aviso al colgar una llamada)
+  const remindNow = params.get("remind") === "1";
+  // Antes de llamar desde aquí: tus últimas notas y recordatorios con este contacto
+  const [preCall, setPreCall] = useState<string | null>(null);
   const [showLog, setShowLog] = useState(!!openCall || false);
   useEffect(() => {
     if (!lastCall) return;
@@ -170,7 +178,19 @@ export function ContactDetailPage() {
   if (error || !c) return <p className="text-red-600">{(error as Error)?.message ?? "No encontrado"}</p>;
 
   const tag = (itemId?: string) => <ItemTag contactId={c.id} itemId={itemId} current={itemId ? c.itemTags[itemId] : undefined} contactTags={c.tags} />;
-  const hasOther = !!c.nickname; // el cumpleaños se ve en Celebraciones → Fechas importantes
+  const mobileAlias = c.mobileName === "nickname" ? c.nickname.trim() : c.mobileName === "display" ? c.displayName : "";
+  const hasOther = !!c.nickname || !!mobileAlias; // el cumpleaños se ve en Celebraciones → Fechas importantes
+  // Notas y recordatorios que se enseñan antes de llamar
+  const lastNotes = c.interactions.filter((x) => x.notes.trim()).slice(0, 3);
+  const startCall = (phone: string, e?: React.MouseEvent) => {
+    void noteDial(phone);
+    if (!preCall && (lastNotes.length || c.reminders.length)) {
+      e?.preventDefault();
+      setPreCall(phone);
+      return;
+    }
+    setLastCall({ phone, at: Date.now() });
+  };
 
   return (
     <div className="space-y-4">
@@ -255,7 +275,7 @@ export function ContactDetailPage() {
         {/* En el móvil, de las etiquetas para abajo va debajo de la foto, a todo el ancho */}
         <div className="detail-rest col-span-2 min-w-0 space-y-2.5 sm:col-span-1 sm:col-start-2">
           <ContactTags contactId={c.id} tags={c.tags} align="start" />
-          <QuickActions c={c} align="start" onCall={(phone) => setLastCall({ phone, at: Date.now() })} />
+          <QuickActions c={c} align="start" onCall={startCall} />
           {askCall && lastCall && (
             <div className="flex flex-wrap items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
               ¿Apuntar la llamada?
@@ -273,6 +293,41 @@ export function ContactDetailPage() {
               </button>
               <button className="btn-ghost px-2.5 py-1" onClick={() => { setAskCall(false); setLastCall(null); }}>No</button>
             </div>
+          )}
+          {preCall && (
+            <Modal title={<span>📞 Antes de llamar a {c.displayName}</span>} onClose={() => setPreCall(null)} size="md"
+              footer={<>
+                <button className="btn-ghost" onClick={() => setPreCall(null)}>Cancelar</button>
+                <a className="btn-primary" href={telLink(preCall)} onClick={() => { setLastCall({ phone: preCall, at: Date.now() }); setPreCall(null); }}>📞 Llamar · {preCall}</a>
+              </>}>
+              <div className="space-y-4 p-4">
+                {c.reminders.length > 0 && (
+                  <div>
+                    <h3 className="mb-1 text-sm font-semibold text-slate-700">⏰ Pendiente</h3>
+                    <ul className="space-y-1.5">
+                      {c.reminders.slice(0, 3).map((r) => (
+                        <li key={r.id} className="rounded-xl bg-amber-50 px-3 py-2 text-sm ring-1 ring-amber-200">
+                          {reminderKindIcons[r.kind]} <span className="font-medium">{reminderKindLabels[r.kind]}</span>{r.text && <> · {r.text}</>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {lastNotes.length > 0 && (
+                  <div>
+                    <h3 className="mb-1 text-sm font-semibold text-slate-700">📝 Últimas anotaciones</h3>
+                    <ul className="space-y-1.5">
+                      {lastNotes.map((x) => (
+                        <li key={x.id} className="rounded-xl bg-slate-50 px-3 py-2 text-sm">
+                          <span className="block text-xs text-slate-500">{new Date(x.occurredAt).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}</span>
+                          <span className="line-clamp-4 whitespace-pre-line">{x.notes}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </Modal>
           )}
           <div className="flex flex-wrap items-center gap-1">
             {c.canEdit && (
@@ -309,7 +364,7 @@ export function ContactDetailPage() {
             {c.phones.map((p, i) => (
               <Row key={`p${i}`} label={p.label}>
                 <span className="inline-flex flex-wrap items-center gap-1.5">
-                  <a className="text-indigo-700" href={telLink(p.value)} onClick={() => setLastCall({ phone: p.value, at: Date.now() })}>{p.value}</a>
+                  <a className="text-indigo-700" href={telLink(p.value)} onClick={(e) => startCall(p.value, e)}>{p.value}</a>
                   {tag(p.id)}
                 </span>
               </Row>
@@ -389,6 +444,7 @@ export function ContactDetailPage() {
             {hasOther && (
               <Block icon="🗂️" title="Otros datos">
                 {c.nickname && <Row label="Apodo">{c.nickname}</Row>}
+                {mobileAlias && <Row label="En el móvil">{mobileAlias} <span className="text-xs text-slate-400">(nombre que ven la agenda del móvil y WhatsApp)</span></Row>}
               </Block>
             )}
             {c.notes && (
@@ -411,6 +467,12 @@ export function ContactDetailPage() {
             <Relationships c={c} onChange={refresh} />
           </div>
           <div className="flex min-w-0 flex-col gap-4">
+            <ContactReminders
+              contact={{ id: c.id, displayName: c.displayName, hasPhoto: c.hasPhoto, updatedAt: c.updatedAt }}
+              reminders={c.reminders ?? []}
+              autoOpen={remindNow}
+              onAutoOpened={() => { if (remindNow) { const n = new URLSearchParams(params); n.delete("remind"); setParams(n, { replace: true }); } }}
+            />
             <ImportantDates c={c} onChange={refresh} />
             <GiftsReceived contactId={c.id} gifts={c.giftsReceived} />
             <LinkedPersonalEvents contactId={c.id} />

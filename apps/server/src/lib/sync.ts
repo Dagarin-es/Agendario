@@ -68,8 +68,18 @@ const stdTypes: Record<string, string> = { móvil: "CELL", movil: "CELL", casa: 
 export type Items = { phones: LabeledValue[]; emails: LabeledValue[]; urls: LabeledValue[]; addresses: Address[] };
 
 /** Cuerpo del vCard (sin foto, REV ni extras): sirve también de huella del estado local. */
-function vcardCore(row: ContactRow, items: Items, uid: string): string[] {
-  const lines = ["BEGIN:VCARD", "VERSION:3.0", `UID:${uid}`, `FN:${esc(row.displayName)}`, `N:${esc(row.familyName)};${esc(row.givenName)};;;`];
+/** Nombre para el móvil según «Nombre en el móvil» de la ficha (solo servidor CardDAV); null = nombre y apellidos. */
+export function mobileAlias(row: Pick<ContactRow, "mobileName" | "nickname" | "displayName">): string | null {
+  if (row.mobileName === "nickname" && row.nickname.trim()) return row.nickname.trim();
+  if (row.mobileName === "display" && row.displayName.trim()) return row.displayName.trim();
+  return null;
+}
+
+function vcardCore(row: ContactRow, items: Items, uid: string, mobile = false): string[] {
+  const alias = mobile ? mobileAlias(row) : null;
+  const lines = alias
+    ? ["BEGIN:VCARD", "VERSION:3.0", `UID:${uid}`, `FN:${esc(alias)}`, `N:;${esc(alias)};;;`]
+    : ["BEGIN:VCARD", "VERSION:3.0", `UID:${uid}`, `FN:${esc(row.displayName)}`, `N:${esc(row.familyName)};${esc(row.givenName)};;;`];
   if (row.nickname) lines.push(`NICKNAME:${esc(row.nickname)}`);
   if (row.organization) lines.push(`ORG:${esc(row.organization)}`);
   if (row.jobTitle) lines.push(`TITLE:${esc(row.jobTitle)}`);
@@ -98,8 +108,8 @@ function localHash(row: ContactRow, items: Items, uid: string) {
   return createHash("sha256").update(vcardCore(row, items, uid).join("\n")).update(`|photo:${row.photoKey ?? ""}`).digest("hex").slice(0, 32);
 }
 
-export async function buildVCard(row: ContactRow, items: Items, uid: string, extra: string): Promise<string> {
-  const lines = vcardCore(row, items, uid);
+export async function buildVCard(row: ContactRow, items: Items, uid: string, extra: string, mobile = false): Promise<string> {
+  const lines = vcardCore(row, items, uid, mobile);
   if (row.photoKey) {
     try {
       const img = await readPhoto(row.photoKey, "full");

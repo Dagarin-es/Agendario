@@ -1,5 +1,17 @@
 # Historial de cambios
 
+## 1.1.0 — recordatorios y notas en las llamadas
+- **Recordatorios**: qué hacer (llamar, enviar un correo o un mensaje, anotar algo u otra cosa) y cuándo («esta tarde», «mañana», «en una semana» o fecha y hora). Se crean desde la ficha, desde la nueva pestaña **Fechas → Recordatorios** o desde el aviso al colgar una llamada. En la app de Android avisan a su hora (también sin conexión) con «Abrir ficha», «✓ Hecho» y «+1 hora». Los vencidos se marcan en la pestaña Fechas.
+- **Al colgar** con un contacto, el aviso trae ahora «Escribir nota», «Recordatorio» y «No, gracias» (tocándolo se abre la ficha).
+- **Números desconocidos**: tras una llamada atendida de más de un minuto con un número que no está en tu agenda, aviso «¿Lo guardas?» con «Guardar» (nuevo contacto o añadirlo a uno existente), «Escribir nota» y «No, gracias». La llamada y su nota pasan a la ficha en cuanto guardas el número. También aparecen en Fechas → Recordatorios.
+- **Antes de llamar** desde Agendario: ventana con tus últimas anotaciones y lo pendiente con ese contacto.
+- **Notas durante la llamada** (app de Android, opcional en Ajustes → Aplicaciones externas): tarjeta flotante con tus últimas notas y recordatorios al sonar o marcar una llamada de un contacto, y burbuja de Agendario durante la llamada para escribir (la nota se guarda en esa llamada al colgar). Alternativa sin permisos extra: notificación fija «Llamada con X · Anotar».
+- **Nombre en el móvil** (edición del contacto): elige si la agenda del móvil —y por tanto WhatsApp— muestra el nombre y apellidos (por defecto), el apodo o el nombre a mostrar. Agendario conserva el nombre real aunque edites el contacto en el móvil.
+- **Compartir desde la galería**: «Poner en un contacto» para usar una imagen como foto de perfil o portada, con su recorte.
+- **Efemérides**: días exactos además del tiempo aproximado («hace 820 días (2 años)»).
+- La APK la compila y firma GitHub Actions y se adjunta, con el manual, a la Release de cada versión. Actualizar con el script: la subida a GitHub ya no falla con el error 408 en los envíos grandes.
+- ⚠️ Actualiza también la APK para tener los avisos nuevos (la web funciona igual con la APK anterior).
+
 ## 1.0.0 — primera versión estable
 Agendario deja atrás la beta.
 - **Contraseñas de aplicación** (Ajustes → Sincronización): crea una para cada dispositivo o programa (DAVx⁵, el Mac, Outlook…), con nombre, se ven una sola vez y se pueden quitar una a una. En cuanto creas la primera, CardDAV ya no acepta la contraseña de tu cuenta.

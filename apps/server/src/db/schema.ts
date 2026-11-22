@@ -143,6 +143,8 @@ export const contacts = pgTable(
     photoKey: text("photo_key"), // nombre del fichero en /data/photos
     /** Portada (imagen apaisada tras la cabecera de la ficha). Solo en Agendario: no hay campo estándar. */
     coverKey: text("cover_key"),
+    /** Nombre que el servidor CardDAV envía al móvil (lo que ve WhatsApp): full · nickname · display */
+    mobileName: text("mobile_name").default("full"), // admite nulo (= full): copias de la 1.0 no lo traen
     // UID del vCard de origen (importación). Sirve para detectar duplicados al reimportar.
     vcardUid: text("vcard_uid"),
     // UIDs de los contactos fusionados en este (para no recrearlos al reimportar).
@@ -398,6 +400,48 @@ export const interactions = pgTable(
     ...timestamps,
   },
   (t) => [index("interactions_contact_idx").on(t.userId, t.contactId, t.occurredAt), uniqueIndex("interactions_external_idx").on(t.userId, t.externalId)],
+);
+
+// ---------- Recordatorios (privados de cada usuario) ----------
+
+export const reminders = pgTable(
+  "reminders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Opcional: un recordatorio puede no ser de ningún contacto */
+    contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "cascade" }),
+    /** call · email · message · note · other */
+    kind: text("kind").notNull(),
+    text: text("text").notNull().default(""),
+    dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
+    doneAt: timestamp("done_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [index("reminders_user_idx").on(t.userId, t.doneAt, t.dueAt)],
+);
+
+// ---------- Llamadas con números que no son contactos (con nota pendiente de asignar) ----------
+
+export const unknownCalls = pgTable(
+  "unknown_calls",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    number: text("number").notNull(),
+    /** in · out */
+    type: text("type").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    durationSec: integer("duration_sec").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    externalId: text("external_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("unknown_calls_user_idx").on(t.userId, t.occurredAt), uniqueIndex("unknown_calls_external_idx").on(t.userId, t.externalId)],
 );
 
 // ---------- Preferencias de cada usuario y por contacto ----------

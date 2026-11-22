@@ -3,7 +3,7 @@ import { PhotoCropper } from "../components/PhotoCropper";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import type { Address, Contact, ContactDetail, ContactInput, LabeledValue, TagLite, Visibility } from "@agendario/shared";
+import { mobileNameLabels, type Address, type Contact, type ContactDetail, type ContactInput, type LabeledValue, type TagLite, type Visibility } from "@agendario/shared";
 import { api } from "../lib/api";
 import { ContactPicker } from "../components/ContactPicker";
 import { AddressSearch, MapPickerButton, useGeocoder } from "../components/AddressSearch";
@@ -12,7 +12,7 @@ import { Avatar } from "../components/Avatar";
 
 const empty: ContactInput = {
   givenName: "", familyName: "", displayName: "", nickname: "", organization: "", organizationContactId: null, jobTitle: "",
-  birthday: null, emails: [], phones: [], urls: [], addresses: [], notes: "", visibility: "private",
+  birthday: null, emails: [], phones: [], urls: [], addresses: [], notes: "", visibility: "private", mobileName: "full",
 };
 
 const monthNames = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -92,7 +92,10 @@ export function ContactFormPage() {
   const [form, setForm] = useState<ContactInput>(() => {
     const org = search.get("org");
     const name = search.get("orgName") ?? "";
-    return org && !id ? { ...empty, organizationContactId: org, organization: name } : empty;
+    // ?phone=… → nuevo contacto desde una llamada de un número desconocido
+    const phone = search.get("phone");
+    const base = phone && !id ? { ...empty, phones: [{ label: "Móvil", value: phone }] } : empty;
+    return org && !id ? { ...base, organizationContactId: org, organization: name } : base;
   });
   const [bday, setBday] = useState({ day: "", month: "", year: "" });
   const [error, setError] = useState("");
@@ -120,7 +123,7 @@ export function ContactFormPage() {
   useEffect(() => {
     if (!existing) return;
     const { givenName, familyName, displayName, nickname, organization, organizationContactId, jobTitle, birthday, emails, phones, urls, addresses, notes, visibility } = existing;
-    setForm({ givenName, familyName, displayName, nickname, organization, organizationContactId, jobTitle, birthday, emails, phones, urls, addresses, notes, visibility });
+    setForm({ givenName, familyName, displayName, nickname, organization, organizationContactId, jobTitle, birthday, emails, phones, urls, addresses, notes, visibility, mobileName: existing.mobileName ?? "full" });
     setOrgName(existing.organizationContact?.displayName ?? "");
     setTags(existing.tags);
     setBday(splitBirthday(birthday));
@@ -146,6 +149,7 @@ export function ContactFormPage() {
       qc.invalidateQueries({ queryKey: ["contact", c.id] });
       qc.invalidateQueries({ queryKey: ["upcoming"] });
       qc.invalidateQueries({ queryKey: ["duplicates"] });
+      qc.invalidateQueries({ queryKey: ["unknown-calls"] });
       nav(back ?? `/contacts/${c.id}`, { replace: true });
     },
     onError: (e) => setError((e as Error).message),
@@ -308,6 +312,15 @@ export function ContactFormPage() {
         <div>
           <label className="label">Notas (las ve cualquiera que pueda ver el contacto)</label>
           <textarea className="input min-h-24" {...text("notes")} />
+        </div>
+        <div>
+          <label className="label">Nombre en el móvil <span className="font-normal text-slate-400">(el que verán la agenda del móvil y WhatsApp)</span></label>
+          <select className="input" value={form.mobileName} onChange={(e) => set("mobileName", e.target.value as ContactInput["mobileName"])}>
+            {(Object.keys(mobileNameLabels) as ContactInput["mobileName"][]).map((k) => (
+              <option key={k} value={k}>{mobileNameLabels[k]}{k === "full" ? " (por defecto)" : ""}</option>
+            ))}
+          </select>
+          {form.mobileName === "nickname" && !form.nickname.trim() && <p className="mt-1 text-xs text-amber-700">Sin apodo: el móvil seguirá mostrando el nombre y apellidos.</p>}
         </div>
         {isOwner && (
           <div>

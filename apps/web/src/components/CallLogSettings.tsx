@@ -66,7 +66,7 @@ export function CallLogSettings({ Section }: { Section: (p: { icon: string; titl
             <input type="checkbox" className="mt-0.5 h-4 w-4" checked={st.notify !== false} onChange={(e) => void getCallLog()?.setNotify({ enabled: e.target.checked }).then(setSt)} />
             <span>
               <span className="font-medium">Al colgar, preguntarme si quiero apuntar algo</span>
-              <span className="block text-xs text-slate-500">Aviso con «Escribir nota» (se contesta desde la propia notificación) y «Abrir ficha». Solo con contactos y llamadas atendidas de más de 30 segundos.</span>
+              <span className="block text-xs text-slate-500">Aviso con «Escribir nota» (se contesta desde la propia notificación), «Recordatorio» y «No, gracias»; tocándolo se abre la ficha. Solo con contactos y llamadas atendidas de más de 30 segundos.</span>
               {st.notify !== false && st.notifyAllowed === false && (
                 <span className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-amber-800">
                   ⚠️ Agendario no tiene permiso para mostrar notificaciones.
@@ -79,6 +79,38 @@ export function CallLogSettings({ Section }: { Section: (p: { icon: string; titl
                 </span>
               )}
               {st.notify !== false && st.notifyAllowed === true && <span className="mt-1 block text-xs text-emerald-700">✓ Notificaciones permitidas</span>}
+            </span>
+          </label>
+          <label className="flex items-start gap-2 rounded-xl bg-slate-50 p-3">
+            <input type="checkbox" className="mt-0.5 h-4 w-4" checked={st.unknownNotify !== false} onChange={(e) => void getCallLog()?.setOptions({ unknownNotify: e.target.checked }).then(setSt)} />
+            <span>
+              <span className="font-medium">Números desconocidos: preguntarme si lo guardo</span>
+              <span className="block text-xs text-slate-500">Tras una llamada atendida de más de un minuto con un número que no está en tu agenda: «Guardar», «Escribir nota» o «No, gracias». Los números ocultos no avisan.</span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 rounded-xl bg-slate-50 p-3">
+            <input type="checkbox" className="mt-0.5 h-4 w-4" checked={!!st.overlay} onChange={(e) => {
+              const on = e.target.checked;
+              const p = getCallLog();
+              void p?.setOptions({ overlay: on }).then((r) => { setSt(r); if (on && r.overlayAllowed === false) void p.openOverlaySettings(); });
+            }} />
+            <span>
+              <span className="font-medium">Notas al llamar: tarjeta flotante y burbuja</span>
+              <span className="block text-xs text-slate-500">Al sonar o marcar una llamada con un contacto aparece una tarjeta con tus últimas notas y recordatorios. Durante la llamada queda una burbuja de Agendario: tócala para escribir; la nota se guarda en esa llamada al colgar.</span>
+              {st.overlay && st.overlayAllowed === false && (
+                <span className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-amber-800">
+                  ⚠️ Falta el permiso «Mostrar sobre otras apps».
+                  <button type="button" className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-900" onClick={(e) => { e.preventDefault(); void getCallLog()?.openOverlaySettings(); }}>Dar permiso</button>
+                </span>
+              )}
+              {st.overlay && st.overlayAllowed === true && <span className="mt-1 block text-xs text-emerald-700">✓ Permiso concedido</span>}
+            </span>
+          </label>
+          <label className="flex items-start gap-2 rounded-xl bg-slate-50 p-3">
+            <input type="checkbox" className="mt-0.5 h-4 w-4" checked={!!st.ongoing} onChange={(e) => void getCallLog()?.setOptions({ ongoing: e.target.checked }).then(setSt)} />
+            <span>
+              <span className="font-medium">Notificación «Anotar» durante la llamada</span>
+              <span className="block text-xs text-slate-500">Alternativa ligera a la burbuja, sin permisos extra: una notificación fija «Llamada con X · Anotar» donde escribes la nota mientras hablas.</span>
             </span>
           </label>
           <div className="flex flex-wrap gap-2">
