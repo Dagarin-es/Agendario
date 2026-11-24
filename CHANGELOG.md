@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 1.2.1 — correcciones y avisos con bola
+- **Editar ideas de regalo**: botón ✏️ en cada idea, en la ficha y en la pestaña Regalos, para cambiar el nombre, el enlace, el precio o las notas (también si ya está comprada).
+- **Recordatorios** siempre en la barra de abajo de la app, entre Fechas y tu usuario (y en el menú de la web), aunque no tengas ninguno pendiente.
+- **Bola con el número en el icono de Agendario** (app): aviso «⏰ N recordatorios pasados de fecha» que se actualiza solo, y a las **9:00** aviso «🎂 N cumpleaños esta semana sin regalo» con los cumpleaños de los próximos 7 días sin regalo comprado ni regalado (funciona también sin conexión con los últimos datos).
+- **Efemérides**: los títulos largos ya no ensanchan la pantalla del móvil ni dejan desplazarse a la derecha.
+- La **barra de navegación de abajo** queda fija también en Fechas (Eventos y Efemérides).
+- Proxy: para los adjuntos de 25 MB, `client_max_body_size 30m;` en Nginx Proxy Manager (antes se recomendaba 20m).
+- ⚠️ Actualiza también la APK para la bola del icono y el aviso de las 9:00.
+
 ## 1.2.0 — adjuntos, últimas notas, Todoist y Android Auto
 - **Adjuntos en las llamadas y apuntes**: fotos (JPG, PNG, HEIC, WebP), PDF, Word, Excel, PowerPoint, LibreOffice, TXT/CSV y audios (MP3, M4A, OGG), hasta 25 MB cada uno. Se añaden al crear o editar la anotación con **📎 Adjuntar** (web y app) y, en la app, **durante la llamada** con los botones **📷** (cámara del móvil, sin pedir permiso de cámara) y **📎** de la burbuja de notas: se suben solos a esa llamada al colgar. Miniatura en las fotos e icono por tipo; tocando se abren. Son privados, van en las copias de seguridad y pasan a la ficha si guardas un número desconocido.
 - **Últimas notas** (en el menú; en la app, en «Más»): todas tus anotaciones de todos los contactos, de la más reciente a la más antigua, agrupadas por día, con filtros por tipo y etiqueta, buscador y edición ahí mismo.

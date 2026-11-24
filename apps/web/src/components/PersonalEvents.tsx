@@ -103,7 +103,7 @@ export function PersonalEventsView({ openId, onOpen }: { openId: string | null; 
           <button className="btn-primary" onClick={() => setEditing("new")}>+ Añadir la primera</button>
         </div>
       )}
-      <ul className="grid gap-2 md:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {list.map((e) => {
           const nx = nextAnniversary(e.date);
           const a = ago(e.date);

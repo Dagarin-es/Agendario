@@ -10,5 +10,7 @@ public class BootReceiver extends BroadcastReceiver {
     public void onReceive(Context ctx, Intent intent) {
         if (CallSync.prefs(ctx).getBoolean("enabled", false)) CallSync.schedule(ctx);
         ReminderStore.scheduleAll(ctx);
+        AppBadges.scheduleDaily(ctx);
+        AppBadges.refreshOverdue(ctx);
     }
 }

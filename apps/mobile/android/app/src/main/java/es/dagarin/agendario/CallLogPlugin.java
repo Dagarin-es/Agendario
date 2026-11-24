@@ -172,6 +172,15 @@ public class CallLogPlugin extends Plugin {
         call.resolve();
     }
 
+    /** Próximas fechas (JSON de /api/upcoming) para el aviso de las 9:00 de cumpleaños sin regalo. */
+    @PluginMethod
+    public void setUpcoming(PluginCall call) {
+        AppBadges.saveUpcoming(getContext(), call.getString("items", "[]"));
+        AppBadges.refreshBirthdays(getContext(), false);
+        AppBadges.scheduleDaily(getContext());
+        call.resolve();
+    }
+
     /** Número que se va a marcar desde Agendario (la app de teléfono no lo dice sin permiso). */
     @PluginMethod
     public void noteDial(PluginCall call) {

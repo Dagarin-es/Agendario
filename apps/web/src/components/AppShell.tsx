@@ -1,4 +1,4 @@
-import { useOverdueCount, useReminders } from "./Reminders";
+import { useOverdueCount } from "./Reminders";
 import { ForcedPasswordChange } from "./UsersSettings";
 import { keepInView } from "../lib/keepInView";
 /**
@@ -115,7 +115,6 @@ export function AppShell() {
   const gifts = useGiftsToBuy();
   const pending = usePendingGifts().data?.length ?? 0;
   const overdue = useOverdueCount();
-  const pendingReminders = useReminders().data?.length ?? 0;
   const [sheet, setSheet] = useState(false);
   const [about, setAbout] = useState(false);
   useColorThemeFromPrefs();
@@ -162,11 +161,8 @@ export function AppShell() {
   }, [nav]);
 
   // «Duplicados» solo aparece cuando los hay (o si estás en esa pantalla)
-  // «Recordatorios» solo cuando hay alguno pendiente (o si estás en esa pantalla)
-  const visibleTabs = tabs.filter((t) =>
-    t.to === "/duplicates" ? dupCount > 0 || location.pathname.startsWith("/duplicates")
-    : t.to === "/reminders" ? pendingReminders > 0 || location.pathname.startsWith("/reminders")
-    : true);
+  // «Duplicados» solo cuando los hay (o si estás en esa pantalla). «Recordatorios», siempre (tras Fechas)
+  const visibleTabs = tabs.filter((t) => t.to !== "/duplicates" || dupCount > 0 || location.pathname.startsWith("/duplicates"));
   const badge = (to: string) => (to === "/duplicates" ? dupCount || null : to === "/upcoming" ? gifts.count + pending || null : to === "/reminders" ? overdue || null : null);
   const navItems = (
     <>
@@ -178,7 +174,7 @@ export function AppShell() {
                 {t.icon(isActive)}
                 {badge(t.to) && <span className={`m3-badge ${t.to === "/upcoming" && !gifts.red ? "bg-amber-600" : "bg-red-600"}`}>{badge(t.to)}</span>}
               </span>
-              <span className={`max-w-full truncate px-0.5 text-[11px] leading-none ${isActive ? "font-bold" : "font-medium"}`}>{t.label}</span>
+              <span className={`max-w-full truncate px-0.5 leading-none ${t.label.length > 11 ? "text-[10px] tracking-tight" : "text-[11px]"} ${isActive ? "font-bold" : "font-medium"}`}>{t.label}</span>
             </>
           )}
         </NavLink>

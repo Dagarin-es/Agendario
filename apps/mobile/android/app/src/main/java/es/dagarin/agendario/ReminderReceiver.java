@@ -19,5 +19,6 @@ public class ReminderReceiver extends BroadcastReceiver {
         }
         ReminderStore.markNotified(ctx, r);
         ReminderStore.notify(ctx, r);
+        AppBadges.refreshOverdue(ctx); // ya está pasado de fecha: sube la bola
     }
 }

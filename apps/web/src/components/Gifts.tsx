@@ -11,6 +11,7 @@ import {
 import { api, apiUrl } from "../lib/api";
 import { Modal, useAlert, useConfirm } from "./Dialogs";
 import { euros, formatDate } from "../lib/format";
+import { syncNativeReminders } from "../lib/native";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -73,10 +74,12 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
     qc.invalidateQueries({ queryKey: ["upcoming"] });
     qc.invalidateQueries({ queryKey: ["pending-gifts"] });
     qc.invalidateQueries({ queryKey: ["gifts-overview"] });
+    void syncNativeReminders(); // el aviso de cumpleaños sin regalo de la app se actualiza
   };
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ title: "", url: "", price: "", notes: "" });
   const [buying, setBuying] = useState<string | null>(null);
+  const [editing, setEditing] = useState<GiftIdea | null>(null);
   const [error, setError] = useState("");
   const confirm = useConfirm();
 
@@ -153,6 +156,7 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
                     </div>
                   </div>
                   <div className="flex w-full justify-end gap-1 sm:w-auto">
+                    <button className="btn-ghost px-2 py-1.5" onClick={() => setEditing(g)} aria-label="Editar" title="Editar">✏️</button>
                     <button className="btn-ghost px-2 py-1.5 text-xs" onClick={() => patch.mutate({ id: g.id, body: { status: "idea" } })} title="Volver a idea">Deshacer</button>
                     <button className="btn-primary px-3 py-1.5" onClick={() => patch.mutate({ id: g.id, body: { status: "given" } })}>🎁 Regalar</button>
                   </div>
@@ -173,6 +177,7 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
                 <div className="font-medium">{title(g)}</div>
                 <div className="text-sm text-slate-500">{[euros(g.priceCents), g.notes].filter(Boolean).join(" · ")}</div>
               </div>
+              <button className="btn-ghost px-2" onClick={() => setEditing(g)} aria-label="Editar" title="Editar">✏️</button>
               <button
                 className="btn-ghost whitespace-nowrap border border-emerald-200 text-emerald-800"
                 title={g.url ? "Abre la tienda y luego marca para qué fecha lo has comprado" : "Marcar como comprado"}
@@ -205,7 +210,51 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
           </ul>
         </details>
       )}
+      {editing && <GiftEditDialog idea={editing} onClose={() => setEditing(null)} onSaved={refresh} />}
     </section>
+  );
+}
+
+/** Editar una idea de regalo: nombre, enlace, precio y notas (también si ya está comprada). */
+export function GiftEditDialog({ idea, onClose, onSaved }: { idea: GiftIdea; onClose: () => void; onSaved: () => void }) {
+  const [d, setD] = useState({
+    title: idea.title,
+    url: idea.url ?? "",
+    price: idea.priceCents != null ? (idea.priceCents / 100).toFixed(2).replace(".", ",").replace(/,00$/, "") : "",
+    notes: idea.notes ?? "",
+  });
+  const [error, setError] = useState("");
+  // «24,90», «24.90» o «1.250,50»
+  const raw = d.price.trim().replace(/\s|€/g, "");
+  const price = raw ? Math.round(parseFloat(raw.includes(",") ? raw.replace(/\./g, "").replace(",", ".") : raw) * 100) : null;
+  const badPrice = d.price.trim() !== "" && (price == null || Number.isNaN(price) || price < 0);
+  const save = useMutation({
+    mutationFn: () => api.patch(`/gift-ideas/${idea.id}`, { title: d.title.trim(), url: d.url.trim() || null, priceCents: price, notes: d.notes }),
+    onSuccess: () => { onSaved(); onClose(); },
+    onError: (e) => setError((e as Error).message),
+  });
+  return (
+    <Modal title="Editar idea de regalo" onClose={onClose}>
+      <form className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); if (d.title.trim() && !badPrice) save.mutate(); }}>
+        <label className="sm:col-span-2"><span className="label">Idea</span>
+          <input className="input" value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} required autoFocus />
+        </label>
+        <label className="sm:col-span-2"><span className="label">Enlace</span>
+          <input className="input" type="url" inputMode="url" placeholder="https://…" value={d.url} onChange={(e) => setD({ ...d, url: e.target.value })} />
+        </label>
+        <label><span className="label">Precio €</span>
+          <input className={`input ${badPrice ? "border-red-400" : ""}`} inputMode="decimal" placeholder="p. ej. 24,90" value={d.price} onChange={(e) => setD({ ...d, price: e.target.value })} />
+        </label>
+        <label><span className="label">Notas</span>
+          <input className="input" placeholder="Talla, color…" value={d.notes} onChange={(e) => setD({ ...d, notes: e.target.value })} />
+        </label>
+        {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
+        <div className="flex justify-end gap-2 pt-1 sm:col-span-2">
+          <button type="button" className="btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn-primary" disabled={save.isPending || !d.title.trim() || badPrice}>{save.isPending ? "Guardando…" : "Guardar"}</button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 

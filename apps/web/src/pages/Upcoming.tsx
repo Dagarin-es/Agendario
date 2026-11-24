@@ -241,7 +241,7 @@ function EventsView() {
         </div>
       )}
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
       {/* Calendario (a la derecha en ordenador) */}
       <section className="card p-3 lg:sticky lg:order-2" style={{ top: "calc(var(--header-h, 68px) + 1rem)" }}>
         <div className="mb-2 flex items-center gap-2">

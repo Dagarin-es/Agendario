@@ -73,6 +73,8 @@
         <receiver android:name=".DismissReceiver" android:exported="false" />
         <receiver android:name=".ReminderReceiver" android:exported="false" />
         <receiver android:name=".ReminderActionReceiver" android:exported="false" />
+        <!-- 9:00: cumpleaños de esta semana sin regalo comprado -->
+        <receiver android:name=".AppBadges$DailyReceiver" android:exported="false" />
         <receiver android:name=".OutgoingCallReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.NEW_OUTGOING_CALL" />

@@ -1,0 +1,119 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><style>
+@page { size: 595.92pt 842.88pt; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Inter Display", Inter, sans-serif; color: #1e293b; font-size: 10.6pt; line-height: 1.55; letter-spacing: .1pt; }
+.page { width: 595.92pt; height: 842.88pt; position: relative; padding: 52pt 48pt 60pt 48pt; page-break-after: always; overflow: hidden; }
+.page:last-child { page-break-after: auto; }
+h1 { font-size: 21pt; color: #3730a3; margin: 0 0 6pt; font-weight: 700; padding-bottom: 8pt; border-bottom: 1px solid #1e293b; }
+h1 .n { color: #a5b4fc; margin-right: 6pt; }
+h2 { font-size: 12.5pt; color: #1e1b4b; margin: 16pt 0 4pt; font-weight: 700; }
+p { margin: 4pt 0; }
+ul, ol { margin: 4pt 0; padding-left: 16pt; }
+li { margin: 2pt 0; }
+b { color: #1e1b4b; }
+.tip { background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.warn { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.foot { position: absolute; bottom: 14pt; left: 48pt; right: 48pt; display: flex; justify-content: space-between; font-size: 8.5pt; color: #5b5f77; }
+.row { display: flex; gap: 14pt; align-items: flex-start; }
+.row img { border: 1px solid #e2e8f0; border-radius: 8pt; }
+.cap { font-size: 8.6pt; color: #64748b; text-align: center; margin-top: 3pt; }
+code { background: #eef2ff; color: #3730a3; padding: 0 3pt; border-radius: 3pt; font-size: 9pt; }
+</style></head><body>
+
+<div class="page">
+<h1><span class="n">9</span>Novedades de las versiones 1.2</h1>
+<p>Esta versión trae cambios en la lista de contactos, una pantalla propia para los recordatorios, adjuntos en las llamadas, la pantalla «Últimas notas», la sincronización con Todoist y los avisos en el coche (Android Auto).</p>
+<div class="warn">⚠️ Actualiza el servidor <b>y</b> la APK: los adjuntos durante la llamada, la selección por pulsación larga y Android Auto son de la app nueva.</div>
+
+<h2>Seleccionar contactos en la app (pulsación larga)</h2>
+<div class="row">
+<div style="flex:1">
+<ul>
+<li>En la app ya no hay casilla a la izquierda de cada contacto.</li>
+<li><b>Mantén pulsada la foto</b> de un contacto un segundo: el móvil vibra y la foto se cambia por un <b>cuadro marcado</b>. Aparece arriba la barra de acciones (combinar, exportar, etiquetas, borrar).</li>
+<li>Con la selección en marcha, todas las fotos se ven como cuadros: <b>toca el cuadro</b> de cada contacto para marcarlo o desmarcarlo. Tocar el nombre sigue abriendo la ficha.</li>
+<li>Si desmarcas todos, se sale de la selección: para empezar otra vez, vuelve a mantener pulsada una foto.</li>
+<li>En la web se sigue usando la casilla, como antes.</li>
+</ul>
+<h2>Recordatorios: pestaña propia e icono en la lista</h2>
+<ul>
+<li>Los contactos con algún recordatorio pendiente llevan un <b>⏰</b> en su fila; con fondo rojo si alguno ya ha vencido.</li>
+<li>La pestaña <b>Recordatorios</b> está siempre en la barra de abajo de la app, entre Fechas y tu usuario (en la web, en el menú de arriba), con el número de vencidos en rojo.</li>
+<li><b>Bola en el icono</b> (1.2.1): si hay recordatorios pasados de fecha, un aviso «⏰ N recordatorios pasados de fecha» pone el número sobre el icono de Agendario. Y a las <b>9:00</b>, si hay cumpleaños en los próximos 7 días sin regalo comprado, avisa «🎂 N cumpleaños esta semana sin regalo» (también suma a la bola).</li>
+<li>Fechas se queda con <b>Eventos</b> y <b>Efemérides</b>.</li>
+</ul>
+</div>
+<div style="width:150pt"><img src="app-seleccion-2.png" style="width:150pt"><div class="cap">Dos contactos marcados en la app.</div></div>
+</div>
+<div class="foot"><span>Agendario · Manual 1.2.1</span><span>41</span></div>
+</div>
+
+<div class="page">
+<h2 style="margin-top:0">Adjuntos en las llamadas y apuntes</h2>
+<p>Las anotaciones de una llamada (y los apuntes, reuniones y mensajes) pueden llevar archivos: <b>fotos</b> (JPG, PNG, HEIC, WebP), <b>PDF</b>, <b>Word, Excel, PowerPoint, LibreOffice</b>, <b>TXT/CSV</b> y <b>audios</b> (MP3, M4A, OGG). Hasta <b>25 MB</b> por archivo y tantos como quieras.</p>
+<ul>
+<li><b>Después de la llamada</b>, en la web o en la app: en la ficha, <b>Llamadas y apuntes → Editar</b> (o al crear uno nuevo) y <b>📎 Adjuntar</b>. Los archivos se suben al pulsar <b>Guardar</b>.</li>
+<li><b>Durante la llamada</b> (app): en la burbuja de notas hay dos botones nuevos, <b>📷</b> para hacer una foto con la cámara del móvil y <b>📎</b> para elegir una foto o un archivo. Al terminar vuelves a la nota; los adjuntos se suben solos a esa llamada al colgar (si no hay conexión, se reintenta; los que no se hayan podido subir en 24 horas se descartan).</li>
+<li>Las fotos salen con miniatura; el resto, con un icono según el tipo. Tocando uno se abre (en el móvil, con la app que corresponda).</li>
+<li>Los adjuntos son <b>privados</b>, como las notas: solo los ve quien hizo la llamada. Entran en las <b>copias de seguridad</b> y se borran al borrar la llamada.</li>
+<li>Si la llamada era de un número que aún no está en tu agenda, la nota y sus adjuntos pasan a la ficha en cuanto guardas el número.</li>
+</ul>
+<div class="row" style="margin-top:8pt">
+<div style="flex:1"><img src="web-tras-guardar.png" style="width:100%"><div class="cap">Llamada con tres adjuntos en la ficha (web).</div></div>
+<div style="flex:1.25">
+<h2 style="margin-top:0">Últimas notas</h2>
+<ul>
+<li>En el menú (en la app, en <b>Más</b>): <b>📝 Últimas notas</b>.</li>
+<li>Todas tus anotaciones de todos los contactos, de la más reciente a la más antigua, agrupadas por día. Se cargan más al bajar.</li>
+<li>Cada nota muestra el contacto, el tipo, la hora, el texto (toca para verlo entero) y sus adjuntos. <b>Editar</b> la cambia ahí mismo; tocar el nombre abre la ficha.</li>
+<li>Filtros por tipo (llamadas, reuniones, mensajes, apuntes), por etiqueta del contacto y buscador en el texto.</li>
+</ul>
+</div>
+</div>
+<div class="foot"><span>Agendario · Manual 1.2.1</span><span>42</span></div>
+</div>
+
+<div class="page">
+<h2 style="margin-top:0">Recordatorios en Todoist</h2>
+<p>Cada recordatorio puede crear una tarea en Todoist con el texto, la fecha y hora, el contacto y dos enlaces: <b>Abrir en Agendario</b> (la web) y <b>Abrir en la app del móvil</b>. Va en los dos sentidos: completar, cambiar o borrar en un lado se refleja en el otro (Agendario revisa Todoist cada 5 minutos).</p>
+<ol>
+<li>En Todoist: <b>Ajustes → Integraciones → Desarrollador → Copiar clave de API</b>.</li>
+<li>En Agendario: <b>Ajustes → Sincronización → Todoist</b>, pega la clave y pulsa <b>Conectar Todoist</b>. Te pregunta si mandar también los recordatorios pendientes que ya tienes.</li>
+<li>Elige el <b>proyecto</b> donde van las tareas (por defecto, la bandeja de entrada), la <b>etiqueta</b> (por defecto «agendario») y revisa la <b>dirección de Agendario</b> para los enlaces.</li>
+<li>Con la casilla <b>Avisos de Agendario en el móvil</b> decides si siguen sonando los avisos de la app para los recordatorios enviados a Todoist o si prefieres que te avise solo Todoist.</li>
+</ol>
+<ul>
+<li>Si borras la tarea en Todoist, el recordatorio sigue en Agendario y queda marcado como <b>desvinculado</b>.</li>
+<li><b>Revisar ahora</b> trae los cambios sin esperar; <b>Desconectar</b> deja tareas y recordatorios donde están, sin enlace.</li>
+<li>La clave se guarda solo en tu servidor (y en sus copias cifradas); la web nunca la vuelve a mostrar.</li>
+</ul>
+
+<h2>Avisos en el coche (Android Auto)</h2>
+<p>Agendario no tiene pantalla propia en el coche (Android Auto solo permite ciertos tipos de apps), pero sus <b>avisos</b> sí aparecen, se leen en voz alta y se contestan dictando:</p>
+<ul>
+<li><b>Nota al colgar</b>: el aviso de la llamada sale en el coche; contesta hablando y lo que digas se guarda como nota de esa llamada.</li>
+<li><b>Recordatorios</b>: el coche los lee; <b>Hecho</b> (marcar como leído) lo completa y, si contestas con la voz, se guarda como apunte en la ficha del contacto.</li>
+</ul>
+<p>Como la APK no viene de Google Play, hay que dejar que Android Auto la use (una sola vez):</p>
+<ol>
+<li>En el móvil, abre los ajustes de <b>Android Auto</b> (Ajustes → Dispositivos conectados → Preferencias de conexión → Android Auto, según el móvil).</li>
+<li>Baja hasta <b>Versión</b> y tócala unas <b>10 veces</b> hasta que pregunte si activar los ajustes de desarrollador; acepta.</li>
+<li>En el menú <b>⋮</b> de arriba, entra en <b>Ajustes de desarrollador</b> y activa <b>Fuentes desconocidas</b>.</li>
+<li>Desconecta y vuelve a conectar el móvil al coche.</li>
+</ol>
+<div class="tip">💡 Para probar sin coche existe el «Desktop Head Unit» de Google (para desarrolladores). Si no ves los avisos, revisa que las notificaciones de Agendario estén permitidas en el móvil.</div>
+<div class="foot"><span>Agendario · Manual 1.2.1</span><span>43</span></div>
+</div>
+
+<div class="page">
+<h2 style="margin-top:0">Correcciones de la 1.2.1</h2>
+<ul>
+<li><b>Editar ideas de regalo</b>: botón <b>✏️</b> en cada idea (en la ficha y en la pestaña Regalos) para cambiar el nombre, el enlace, el precio o las notas, también si ya está comprada.</li>
+<li><b>Efemérides</b>: los títulos largos ya no ensanchan la pantalla del móvil.</li>
+<li>La <b>barra de navegación de abajo</b> se queda fija en Fechas y Efemérides, como en el resto de pantallas.</li>
+</ul>
+<div class="warn">⚠️ <b>Adjuntos de hasta 25 MB y Nginx Proxy Manager</b>: en el Proxy Host de Agendario, pestaña <i>Advanced</i>, pon <code>client_max_body_size 30m;</code> (antes se recomendaba <code>20m</code>, que corta los archivos de más de 20 MB).</div>
+<div class="foot"><span>Agendario · Manual 1.2.1</span><span>44</span></div>
+</div>
+
+</body></html>

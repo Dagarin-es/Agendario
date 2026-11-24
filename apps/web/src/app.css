@@ -14,6 +14,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 .app body { background: var(--app-surface); }
+/* Nada puede ensanchar la pantalla: si algo se sale, no aparece desplazamiento lateral
+   (con él, la barra de navegación inferior se movía con el dedo en Fechas y Efemérides) */
+.app, .app body { overflow-x: clip; }
 .m3 { background: var(--app-surface); }
 .m3-surface { background: var(--app-surface); }
 .m3-surface-2 { background: var(--app-surface-2); }

@@ -95,7 +95,8 @@ export async function initNative() {
   // Botón atrás de Android: atrás en la app; en la pantalla principal, salir
   const { App } = await import("@capacitor/app");
   // El icono del lanzador se cambia al salir de la app (Android la reinicia al cambiarlo)
-  App.addListener("appStateChange", ({ isActive }) => { if (!isActive) commitNativeIcon(); });
+  // Al volver a la app: recordatorios y próximas fechas al día (bola del icono y aviso de las 9:00)
+  App.addListener("appStateChange", ({ isActive }) => { if (!isActive) commitNativeIcon(); else void syncNativeReminders(); });
   // Registro de llamadas: que el envío en segundo plano tenga el servidor y la sesión actuales
   void configureCallLog();
   App.addListener("backButton", ({ canGoBack }) => {
@@ -152,6 +153,8 @@ interface CallLogPlugin {
   setOptions(o: { unknownNotify?: boolean; overlay?: boolean; ongoing?: boolean }): Promise<CallLogStatus>;
   openOverlaySettings(): Promise<void>;
   setReminders(o: { items: string }): Promise<void>;
+  /** Desde la 1.2.1 (con una APK anterior no existe) */
+  setUpcoming?(o: { items: string }): Promise<void>;
   noteDial(o: { number: string }): Promise<void>;
 }
 let callLog: CallLogPlugin | null = null;
@@ -197,6 +200,11 @@ export async function syncNativeReminders() {
       contactId: r.contactId ?? "", contactName: r.contact?.displayName ?? "",
     }));
     await p.setReminders({ items: JSON.stringify(items) });
+    // Próximas fechas para el aviso de las 9:00 (cumpleaños de esta semana sin regalo comprado)
+    if (p.setUpcoming) {
+      const upcoming = await api.get<unknown[]>("/upcoming?days=8");
+      await p.setUpcoming({ items: JSON.stringify(upcoming) }).catch(() => undefined);
+    }
   } catch {
     /* sin conexión: se queda con los que ya tenía */
   }

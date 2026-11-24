@@ -4,7 +4,8 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Para la próxima versión
 
-_(nada apuntado todavía)_
+- **1.3**: Daniel tiene una lista de cambios prevista para la 1.3; la dictará aquí.
+- Manual: la página de Nginx Proxy Manager (capítulo 2) aún dice `client_max_body_size 20m;` (el capítulo 9 ya avisa de poner 30m). Al rehacer el manual, corregirlo ahí.
 
 ## Más adelante / tareas de Daniel
 

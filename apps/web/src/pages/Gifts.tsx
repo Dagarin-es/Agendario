@@ -1,11 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
-import type { GiftOverviewItem } from "@agendario/shared";
+import type { GiftIdea, GiftOverviewItem } from "@agendario/shared";
 import { Avatar } from "../components/Avatar";
 import { Modal } from "../components/Dialogs";
-import { GiftThumb, QuickIdeaForm } from "../components/Gifts";
+import { GiftEditDialog, GiftThumb, QuickIdeaForm } from "../components/Gifts";
 import { api } from "../lib/api";
+import { syncNativeReminders } from "../lib/native";
 import { formatDate } from "../lib/format";
 import { GiftIcon } from "./Upcoming";
 
@@ -17,7 +18,7 @@ function when(days: number) {
   return `En ${days} días`;
 }
 
-function Card({ it, onAdd }: { it: GiftOverviewItem; onAdd: () => void }) {
+function Card({ it, onAdd, onEdit }: { it: GiftOverviewItem; onAdd: () => void; onEdit: (g: GiftIdea) => void }) {
   const e = it.next;
   const tone = e?.gift === "none" ? "none" : e?.gift === "ideas" ? "ideas" : e?.gift ? "bought" : "grey";
   return (
@@ -46,6 +47,7 @@ function Card({ it, onAdd }: { it: GiftOverviewItem; onAdd: () => void }) {
                 {g.url ? <a href={g.url} target="_blank" rel="noreferrer" className="text-slate-800 hover:text-indigo-700">{g.title} ↗</a> : g.title}
               </span>
               {g.status === "bought" && <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">✅ Comprado</span>}
+              <button className="btn-ghost shrink-0 px-1.5 py-1 text-sm" onClick={() => onEdit(g)} aria-label={`Editar ${g.title}`} title="Editar">✏️</button>
             </li>
           ))}
         </ul>
@@ -60,6 +62,8 @@ function Card({ it, onAdd }: { it: GiftOverviewItem; onAdd: () => void }) {
 export function GiftsPage() {
   const [sort, setSort] = useState<Sort>(() => (localStorage.getItem("gifts-sort") as Sort) || "next");
   const [adding, setAdding] = useState<GiftOverviewItem | null>(null);
+  const [editing, setEditing] = useState<GiftIdea | null>(null);
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["gifts-overview"], queryFn: () => api.get<GiftOverviewItem[]>("/gifts/overview") });
   const list = useMemo(() => {
     const l = [...(data ?? [])];
@@ -83,9 +87,17 @@ export function GiftsPage() {
       </div>
       {isLoading && <p className="text-slate-500">Cargando…</p>}
       {data && !data.length && <div className="card text-sm text-slate-500">Nadie tiene todavía fechas con 🎁. Márcalas en la ficha de cada contacto (Fechas importantes).</div>}
-      <div className="grid gap-3 lg:grid-cols-2">
-        {list.map((it) => <Card key={it.contactId} it={it} onAdd={() => setAdding(it)} />)}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        {list.map((it) => <Card key={it.contactId} it={it} onAdd={() => setAdding(it)} onEdit={setEditing} />)}
       </div>
+      {editing && (
+        <GiftEditDialog idea={editing} onClose={() => setEditing(null)} onSaved={() => {
+          qc.invalidateQueries({ queryKey: ["gifts-overview"] });
+          qc.invalidateQueries({ queryKey: ["contact", editing.contactId] });
+          qc.invalidateQueries({ queryKey: ["upcoming"] });
+          void syncNativeReminders();
+        }} />
+      )}
       {adding && (
         <Modal title={`Nueva idea para ${adding.contactName}`} onClose={() => setAdding(null)}>
           <QuickIdeaForm contactId={adding.contactId} onDone={() => setAdding(null)} onCancel={() => setAdding(null)} />

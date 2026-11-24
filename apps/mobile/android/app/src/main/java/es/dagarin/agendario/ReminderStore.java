@@ -57,6 +57,8 @@ final class ReminderStore {
         p.edit().putString("list", list.toString()).putStringSet("ids", now).apply();
         scheduleAll(ctx);
         schedulePeriodic(ctx);
+        AppBadges.refreshOverdue(ctx);
+        AppBadges.scheduleDaily(ctx);
     }
 
     static synchronized void scheduleAll(Context ctx) {
@@ -134,6 +136,7 @@ final class ReminderStore {
             // nada
         }
         cancel(ctx, id);
+        AppBadges.refreshOverdue(ctx);
     }
 
     /** Cambia la hora de uno (posponer) y lo vuelve a programar */
@@ -152,6 +155,7 @@ final class ReminderStore {
         } catch (Exception ignored) {
             // nada
         }
+        AppBadges.refreshOverdue(ctx);
     }
 
     /** Revisión cada 2 horas: trae los recordatorios creados desde la web. */

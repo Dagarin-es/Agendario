@@ -37,6 +37,13 @@ public class ReminderSyncWorker extends Worker {
                     .put("contactName", c != null ? c.optString("displayName") : ""));
             }
             ReminderStore.set(ctx, out.toString());
+            // Próximas fechas: el aviso de cumpleaños sin regalo se actualiza (sin sonar)
+            try {
+                Net.Res up = Net.request(ctx, "GET", "/api/upcoming?days=8", null, 15000);
+                if (up.ok()) { AppBadges.saveUpcoming(ctx, up.body); AppBadges.refreshBirthdays(ctx, false); }
+            } catch (Exception ignored) {
+                // se queda con lo guardado
+            }
             return Result.success();
         } catch (Exception e) {
             return Result.retry();
