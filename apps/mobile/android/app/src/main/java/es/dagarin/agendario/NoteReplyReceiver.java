@@ -12,6 +12,7 @@ import org.json.JSONObject;
  *  - target «call»: nota de una llamada ya registrada (interactionId)
  *  - target «unknown»: nota de una llamada con un número desconocido (unknownCallId)
  *  - target «incall»: nota escrita durante la llamada; se guarda al colgar en esa llamada
+ *  - target «contact»: apunte nuevo en la ficha de un contacto (respuesta a un recordatorio, p. ej. dictada en Android Auto)
  */
 public class NoteReplyReceiver extends BroadcastReceiver {
     @Override
@@ -30,11 +31,18 @@ public class NoteReplyReceiver extends BroadcastReceiver {
             return;
         }
         String id = intent.getStringExtra("id");
-        String path = "unknown".equals(target) ? "/api/unknown-calls/" + id : "/api/interactions/" + id;
+        boolean contact = "contact".equals(target);
+        String path = contact ? "/api/contacts/" + id + "/interactions" : "unknown".equals(target) ? "/api/unknown-calls/" + id : "/api/interactions/" + id;
         PendingResult pr = goAsync();
         new Thread(() -> {
             boolean ok;
             try {
+                if (contact) {
+                    java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US);
+                    f.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+                    JSONObject b = new JSONObject().put("kind", "note").put("occurredAt", f.format(new java.util.Date())).put("notes", text);
+                    ok = Net.request(ctx, "POST", path, b.toString(), 15000).ok();
+                } else
                 ok = Net.request(ctx, "PATCH", path, new JSONObject().put("notes", text).toString(), 15000).ok();
             } catch (Exception e) {
                 ok = false;

@@ -191,7 +191,8 @@ export async function syncNativeReminders() {
   try {
     const { api } = await import("./api");
     const list = await api.get<Reminder[]>("/reminders");
-    const items = list.map((r) => ({
+    // Enlazados con Todoist con los avisos del móvil apagados: avisa Todoist, no Agendario
+    const items = list.filter((r) => r.phoneAlert !== false).map((r) => ({
       id: r.id, kind: r.kind, text: r.text, dueAt: new Date(r.dueAt).getTime(),
       contactId: r.contactId ?? "", contactName: r.contact?.displayName ?? "",
     }));

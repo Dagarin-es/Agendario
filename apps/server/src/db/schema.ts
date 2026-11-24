@@ -418,6 +418,11 @@ export const reminders = pgTable(
     text: text("text").notNull().default(""),
     dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
     doneAt: timestamp("done_at", { withTimezone: true }),
+    /** Tarea enlazada en Todoist (si el usuario lo tiene conectado) */
+    todoistId: text("todoist_id"),
+    todoistSyncedAt: timestamp("todoist_synced_at", { withTimezone: true }),
+    /** La tarea se borró en Todoist: el recordatorio sigue aquí, sin enlace (admite nulo por copias de la 1.1) */
+    todoistUnlinked: boolean("todoist_unlinked").default(false),
     ...timestamps,
   },
   (t) => [index("reminders_user_idx").on(t.userId, t.doneAt, t.dueAt)],
@@ -442,6 +447,30 @@ export const unknownCalls = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("unknown_calls_user_idx").on(t.userId, t.occurredAt), uniqueIndex("unknown_calls_external_idx").on(t.userId, t.externalId)],
+);
+
+// ---------- Adjuntos de las llamadas y apuntes (privados, como la llamada) ----------
+
+export const interactionAttachments = pgTable(
+  "interaction_attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** De una llamada/apunte… */
+    interactionId: uuid("interaction_id").references(() => interactions.id, { onDelete: "cascade" }),
+    /** …o de una llamada con un número que aún no es contacto (pasa a la llamada al crear el contacto) */
+    unknownCallId: uuid("unknown_call_id").references(() => unknownCalls.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    mime: text("mime").notNull(),
+    size: integer("size").notNull(),
+    /** Nombre del fichero en DATA_DIR/attachments */
+    fileKey: text("file_key").notNull(),
+    hasThumb: boolean("has_thumb").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("interaction_attachments_interaction_idx").on(t.interactionId), index("interaction_attachments_unknown_idx").on(t.unknownCallId)],
 );
 
 // ---------- Preferencias de cada usuario y por contacto ----------

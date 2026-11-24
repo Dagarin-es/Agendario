@@ -24,6 +24,10 @@ import { geoRoutes } from "./routes/geo.js";
 import { historyRoutes } from "./routes/history.js";
 import { personalRoutes } from "./routes/personal.js";
 import { reminderRoutes } from "./routes/reminders.js";
+import { noteRoutes } from "./routes/notes.js";
+import { todoistRoutes } from "./routes/todoist.js";
+import { startAttachmentSweep } from "./lib/attachments.js";
+import { startTodoistScheduler } from "./lib/todoist.js";
 import { backupRoutes } from "./routes/backup.js";
 import { syncRoutes } from "./routes/sync.js";
 import { davRoutes } from "./routes/dav.js";
@@ -37,29 +41,35 @@ import { exportRoutes, groupRoutes, upcomingRoutes } from "./routes/misc.js";
 const app = new Hono();
 
 app.use(logger());
-app.use(
-  secureHeaders({
-    crossOriginResourcePolicy: false,
-    // Solo código propio; imágenes propias y de los mapas (OpenStreetMap, Esri); sin incrustar en otras webs
-    contentSecurityPolicy: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "blob:", "https://tile.openstreetmap.org", "https://server.arcgisonline.com"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'", "data:"],
-      workerSrc: ["'self'"],
-      manifestSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"],
-      frameAncestors: ["'none'"],
-    },
-    xFrameOptions: "DENY",
-    referrerPolicy: "same-origin",
-    permissionsPolicy: { camera: false, microphone: false, payment: false, usb: false, geolocation: ["self"] },
-  }),
-);
+const strictHeaders = secureHeaders({
+  crossOriginResourcePolicy: false,
+  // Solo código propio; imágenes propias y de los mapas (OpenStreetMap, Esri); sin incrustar en otras webs
+  contentSecurityPolicy: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'"],
+    styleSrc: ["'self'", "'unsafe-inline'"],
+    imgSrc: ["'self'", "data:", "blob:", "https://tile.openstreetmap.org", "https://server.arcgisonline.com"],
+    connectSrc: ["'self'"],
+    fontSrc: ["'self'", "data:"],
+    workerSrc: ["'self'"],
+    manifestSrc: ["'self'"],
+    objectSrc: ["'none'"],
+    baseUri: ["'self'"],
+    formAction: ["'self'"],
+    frameAncestors: ["'none'"],
+  },
+  xFrameOptions: "DENY",
+  referrerPolicy: "same-origin",
+  permissionsPolicy: { camera: false, microphone: false, payment: false, usb: false, geolocation: ["self"] },
+});
+// Los adjuntos (PDF, fotos, audios) se abren con el visor del navegador: su CSP no puede bloquear el visor de PDF
+const fileHeaders = secureHeaders({
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: { defaultSrc: ["'none'"], imgSrc: ["'self'"], mediaSrc: ["'self'"], styleSrc: ["'unsafe-inline'"], frameAncestors: ["'none'"] },
+  xFrameOptions: "DENY",
+  referrerPolicy: "same-origin",
+});
+app.use((c, next) => (/^\/api\/attachments\/[\w-]+$/.test(c.req.path) ? fileHeaders(c, next) : strictHeaders(c, next)));
 
 // ---------- API ----------
 // La app de Android carga la interfaz desde el propio móvil (https://localhost) y llama a este servidor
@@ -94,6 +104,8 @@ const api = new Hono()
   .route("/personal-events", personalEventRoutes)
   .route("/calendar", calendarRoutes)
   .route("/", historyRoutes)
+  .route("/", noteRoutes)
+  .route("/todoist", todoistRoutes)
   .route("/", reminderRoutes)
   .route("/", personalRoutes)
   .route("/", giftRoutes);
@@ -132,6 +144,8 @@ const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`Agendario escuchando en http://0.0.0.0:${info.port}`);
 });
 startPurgeJob();
+startAttachmentSweep();
+startTodoistScheduler();
 startSessionCleanup();
 startBackupScheduler();
 startSyncScheduler();

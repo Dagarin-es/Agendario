@@ -5,6 +5,7 @@ import type { ContactDetail, UnknownCall } from "@agendario/shared";
 import { api } from "../lib/api";
 import { ContactPicker } from "../components/ContactPicker";
 import { useAlert } from "../components/Dialogs";
+import { AttachButton, AttachmentList, uploadAttachments } from "../components/Attachments";
 
 /** Llamada de un número que no es contacto: guardar el número (nuevo o en un contacto) y apuntar algo. */
 export function UnknownCallPage() {
@@ -25,6 +26,12 @@ export function UnknownCallPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["unknown-calls"] }); qc.invalidateQueries({ queryKey: ["unknown-call", id] }); },
     onError: (e) => showAlert("No se ha podido guardar", (e as Error).message),
   });
+  const refreshCall = () => qc.invalidateQueries({ queryKey: ["unknown-call", id] });
+  const upload = useMutation({
+    mutationFn: (files: File[]) => uploadAttachments(`/unknown-calls/${id}/attachments`, files),
+    onSuccess: refreshCall,
+    onError: (e) => showAlert("No se ha podido subir", (e as Error).message),
+  });
   const addTo = useMutation({
     mutationFn: async (contactId: string) => {
       await saveNote();
@@ -42,7 +49,7 @@ export function UnknownCallPage() {
   });
   const discard = useMutation({
     mutationFn: () => api.del(`/unknown-calls/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["unknown-calls"] }); nav("/upcoming?vista=recordatorios", { replace: true }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["unknown-calls"] }); nav("/reminders", { replace: true }); },
   });
 
   if (isLoading) return <p className="p-4 text-slate-500">Cargando…</p>;
@@ -58,10 +65,12 @@ export function UnknownCallPage() {
       <div className="card space-y-2">
         <label className="label" htmlFor="uc-notes">📝 Nota de la llamada</label>
         <textarea id="uc-notes" className="input min-h-28" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="¿De qué habéis hablado?" maxLength={20000} />
-        <div className="flex justify-end">
+        <AttachmentList items={call.attachments ?? []} onChanged={refreshCall} />
+        <div className="flex items-center justify-between gap-2">
+          {upload.isPending ? <span className="text-sm text-slate-500">Subiendo…</span> : <AttachButton onFiles={(f) => upload.mutate(f)} />}
           <button className="btn-ghost border border-slate-200" disabled={note.isPending || notes === call.notes} onClick={() => note.mutate()}>{note.isPending ? "Guardando…" : "Guardar nota"}</button>
         </div>
-        <p className="text-xs text-slate-500">Si guardas el número en un contacto, la llamada y esta nota pasan a su ficha.</p>
+        <p className="text-xs text-slate-500">Si guardas el número en un contacto, la llamada, esta nota y sus adjuntos pasan a su ficha.</p>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <button className="btn-primary" onClick={async () => { await saveNote().catch(() => undefined); nav(`/contacts/new?phone=${encodeURIComponent(call.number)}`); }}>👤 Nuevo contacto</button>

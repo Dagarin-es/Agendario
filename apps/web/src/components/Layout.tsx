@@ -1,4 +1,4 @@
-import { useOverdueCount } from "./Reminders";
+import { useOverdueCount, useReminders } from "./Reminders";
 import { manualUrl } from "../lib/platform";
 import { ForcedPasswordChange } from "./UsersSettings";
 import { keepInView } from "../lib/keepInView";
@@ -21,6 +21,7 @@ const tones = {
   amber: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
   violet: "bg-violet-100 text-violet-800 ring-1 ring-violet-200",
   rose: "bg-rose-100 text-rose-800 ring-1 ring-rose-200",
+  red: "bg-red-100 text-red-800 ring-1 ring-red-200",
 } as const;
 const link = (tone: keyof typeof tones) => ({ isActive }: { isActive: boolean }) =>
   `relative whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium sm:px-3 ${isActive ? tones[tone] : "text-slate-600 hover:bg-slate-100"}`;
@@ -77,6 +78,7 @@ function MoreMenu() {
           </Link>
           <div className="px-3 pb-2"><ModeSelector compact /></div>
           <div className="my-1 border-t border-slate-100" />
+          <Link to="/notes" className={item}>📝 Últimas notas</Link>
           <Link to="/groups" className={item}>👪 Grupos</Link>
           <Link to="/tags" className={item}>🏷️ Etiquetas</Link>
           <Link to="/trash" className={item}>🗑️ Papelera</Link>
@@ -110,6 +112,7 @@ export function Layout() {
   }, []);
   const pendingGifts = usePendingGifts().data?.length ?? 0;
   const overdue = useOverdueCount();
+  const pendingReminders = useReminders().data?.length ?? 0;
   const { data: me } = useMe();
   const gifts = useGiftsToBuy();
   return (
@@ -132,8 +135,14 @@ export function Layout() {
               <span className={`ml-1 rounded-full px-1.5 py-px text-[10px] font-semibold text-white ${gifts.red ? "bg-red-600" : "bg-amber-500"}`}>🎁{gifts.count}</span>
             )}
             {pendingGifts > 0 && <span className="ml-1 rounded-full bg-rose-500 px-1.5 py-px text-[10px] font-semibold text-white">🛍️{pendingGifts}</span>}
-            {overdue > 0 && <span className="ml-1 rounded-full bg-red-600 px-1.5 py-px text-[10px] font-semibold text-white" title={`${overdue} recordatorio(s) para ya`}>⏰{overdue}</span>}
           </NavLink>
+          {/* Solo cuando hay recordatorios pendientes (o se está en esa pantalla) */}
+          {(pendingReminders > 0 || location.pathname.startsWith("/reminders")) && (
+            <NavLink to="/reminders" className={link("red")} title="Recordatorios pendientes">
+              Recordatorios
+              {overdue > 0 && <span className="ml-1 rounded-full bg-red-600 px-1.5 py-px text-[10px] font-semibold text-white" title={`${overdue} recordatorio(s) para ya`}>{overdue}</span>}
+            </NavLink>
+          )}
           {/* Solo cuando hay duplicados (o se está en esa pantalla) */}
           {(dupCount > 0 || location.pathname.startsWith("/duplicates")) && (
             <NavLink to="/duplicates" className={link("violet")} title="Buscar y combinar duplicados">

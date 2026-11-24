@@ -24,6 +24,14 @@ public class MainActivity extends BridgeActivity {
     private void handleShare(Intent intent) {
         if (intent == null) return;
         String path = intent.getStringExtra("agendarioPath");
+        // Enlace «agendario://contacts/<id>» (p. ej. desde una tarea de Todoist): abre esa pantalla
+        if (path == null && Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null && "agendario".equals(intent.getData().getScheme())) {
+            android.net.Uri u = intent.getData();
+            String p = "/" + (u.getHost() == null ? "" : u.getHost()) + (u.getPath() == null ? "" : u.getPath());
+            // Solo rutas propias conocidas (nada de rutas raras desde enlaces de fuera)
+            if (p.matches("^/(contacts/[0-9a-fA-F-]{36}|reminders|notes)$")) path = p;
+            intent.setData(null);
+        }
         if (path != null) {
             intent.removeExtra("agendarioPath");
             JSObject o = new JSObject();

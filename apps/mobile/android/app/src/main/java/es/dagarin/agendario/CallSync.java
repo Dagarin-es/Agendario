@@ -160,6 +160,26 @@ public final class CallSync {
                     InCallNotes.add(ctx, it.optString("number"), note); // se reintenta en el siguiente envío
                 }
             }
+            // Adjuntos hechos o elegidos durante la llamada: a la llamada más reciente con ese número
+            for (int k = allItems.size() - 1; k >= 0; k--) {
+                JSONObject it = allItems.get(k);
+                JSONArray files = InCallNotes.files(ctx, it.optString("number"));
+                if (files == null) continue;
+                String path = (it.has("unknownCallId") ? "/api/unknown-calls/" + it.optString("unknownCallId") : "/api/interactions/" + it.optString("interactionId")) + "/attachments";
+                for (int f = 0; f < files.length(); f++) {
+                    JSONObject a = files.optJSONObject(f);
+                    java.io.File file = new java.io.File(a.optString("path"));
+                    if (!file.exists()) { InCallNotes.removeFile(ctx, a.optString("path")); continue; }
+                    try {
+                        Net.Res up = Net.upload(ctx, path, file, a.optString("name"), a.optString("mime", "application/octet-stream"));
+                        // Subido, o rechazado por el servidor (tipo o tamaño no válidos): no se reintenta
+                        if (up.ok() || (up.code >= 400 && up.code < 500 && up.code != 401)) InCallNotes.removeFile(ctx, a.optString("path"));
+                    } catch (Exception e) {
+                        // sin conexión: se reintenta en el siguiente envío
+                    }
+                }
+                break;
+            }
             // Aviso para apuntar algo: solo la última llamada, si es reciente, atendida y de más de 30 s
             if (lastItem != null && p.getBoolean("notify", true) && !"missed".equals(lastItem.optString("type")) && lastItem.optInt("durationSec") > 30 && recent(lastItem)) {
                 if (noted != null && noted.equals(lastItem.optString("number"))) {

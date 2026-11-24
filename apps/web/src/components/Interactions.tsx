@@ -10,10 +10,11 @@ import {
   type InteractionKind,
 } from "@agendario/shared";
 import { api } from "../lib/api";
+import { AttachButton, AttachmentList, PendingFiles, uploadAttachments } from "./Attachments";
 import { useAlert, useConfirm } from "./Dialogs";
 
 /** «2026-11-15T16:30» en hora local, para <input type="datetime-local"> */
-const localInput = (d: Date) => {
+export const localInput = (d: Date) => {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
@@ -23,7 +24,7 @@ const fmt = (iso: string) =>
 
 export type InteractionPrefill = { kind: InteractionKind; channel?: string; durationMin?: number | null; at?: Date };
 
-type Draft = { kind: InteractionKind; at: string; durationMin: string; channel: string; notes: string };
+export type Draft = { kind: InteractionKind; at: string; durationMin: string; channel: string; notes: string };
 const emptyDraft = (p?: InteractionPrefill): Draft => ({
   kind: p?.kind ?? "note",
   at: localInput(p?.at ?? new Date()),
@@ -32,12 +33,17 @@ const emptyDraft = (p?: InteractionPrefill): Draft => ({
   notes: "",
 });
 
-function Form({ c, initial, onDone, onCancel, editing }: { c: ContactDetail; initial: Draft; onDone: () => void; onCancel: () => void; editing?: string }) {
+export function InteractionForm({ c, initial, onDone, onCancel, editing, attachments, onAttachmentsChanged }: {
+  c: Pick<ContactDetail, "id" | "phones">; initial: Draft; onDone: () => void; onCancel: () => void; editing?: string;
+  attachments?: Interaction["attachments"]; onAttachmentsChanged?: () => void;
+}) {
   const showAlert = useAlert();
   const [d, setD] = useState(initial);
+  // Archivos elegidos: se suben al guardar (la llamada nueva aún no existe en el servidor)
+  const [files, setFiles] = useState<File[]>([]);
   const isCall = d.kind.startsWith("call");
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const body: InteractionInput = {
         kind: d.kind,
         occurredAt: new Date(d.at).toISOString(),
@@ -45,7 +51,9 @@ function Form({ c, initial, onDone, onCancel, editing }: { c: ContactDetail; ini
         channel: d.channel,
         notes: d.notes,
       };
-      return editing ? api.patch(`/interactions/${editing}`, body) : api.post(`/contacts/${c.id}/interactions`, body);
+      const saved = editing ? await api.patch<Interaction>(`/interactions/${editing}`, body) : await api.post<Interaction>(`/contacts/${c.id}/interactions`, body);
+      const id = editing ?? saved?.id;
+      if (files.length && id) await uploadAttachments(`/interactions/${id}/attachments`, files);
     },
     onSuccess: onDone,
     onError: (e) => showAlert("No se ha podido guardar", (e as Error).message),
@@ -78,9 +86,14 @@ function Form({ c, initial, onDone, onCancel, editing }: { c: ContactDetail; ini
         </div>
       )}
       <textarea className="input min-h-24" placeholder="¿De qué habéis hablado? Acuerdos, pendientes…" value={d.notes} onChange={(e) => setD({ ...d, notes: e.target.value })} aria-label="Apuntes" />
-      <div className="flex justify-end gap-2">
-        <button type="button" className="btn-ghost" onClick={onCancel}>Cancelar</button>
-        <button className="btn-primary" disabled={save.isPending}>{save.isPending ? "Guardando…" : "Guardar"}</button>
+      {attachments && attachments.length > 0 && <AttachmentList items={attachments} onChanged={onAttachmentsChanged} />}
+      <PendingFiles files={files} onRemove={(i) => setFiles(files.filter((_, k) => k !== i))} />
+      <div className="flex items-center justify-between gap-2">
+        <AttachButton onFiles={(f) => setFiles([...files, ...f])} />
+        <div className="flex gap-2">
+          <button type="button" className="btn-ghost" onClick={onCancel}>Cancelar</button>
+          <button className="btn-primary" disabled={save.isPending}>{save.isPending ? (files.length ? "Subiendo…" : "Guardando…") : "Guardar"}</button>
+        </div>
       </div>
     </form>
   );
@@ -120,7 +133,7 @@ export function Interactions({ c, prefill, onPrefillUsed, embedded, openId }: { 
       </div>
       {adding && (
         <div className="mb-3">
-          <Form c={c} initial={adding} onCancel={() => setAdding(null)} onDone={() => { setAdding(null); refresh(); }} />
+          <InteractionForm c={c} initial={adding} onCancel={() => setAdding(null)} onDone={() => { setAdding(null); refresh(); }} />
         </div>
       )}
       {!c.interactions.length && !adding && <p className="text-sm text-slate-500">Aún no hay nada. Apunta las llamadas y de qué habláis: solo lo ves tú.</p>}
@@ -128,10 +141,12 @@ export function Interactions({ c, prefill, onPrefillUsed, embedded, openId }: { 
         {list.map((it: Interaction) =>
           editing === it.id ? (
             <li key={it.id}>
-              <Form
+              <InteractionForm
                 c={c}
                 editing={it.id}
                 initial={{ kind: it.kind, at: localInput(new Date(it.occurredAt)), durationMin: it.durationMin != null ? String(it.durationMin) : "", channel: it.channel, notes: it.notes }}
+                attachments={it.attachments}
+                onAttachmentsChanged={refresh}
                 onCancel={() => setEditing(null)}
                 onDone={() => { setEditing(null); refresh(); }}
               />
@@ -144,10 +159,12 @@ export function Interactions({ c, prefill, onPrefillUsed, embedded, openId }: { 
                   {interactionKindLabels[it.kind]}
                   {it.durationMin != null && <span className="font-normal text-slate-500"> · {it.durationMin} min</span>}
                   {it.channel && <span className="font-normal text-slate-500"> · {it.channel}</span>}
+                  {it.attachments?.length > 0 && <span className="font-normal text-slate-500" title={`${it.attachments.length} adjunto(s)`}> · 📎{it.attachments.length > 1 ? it.attachments.length : ""}</span>}
                 </span>
                 <span className="text-xs text-slate-500">{fmt(it.occurredAt)}</span>
               </div>
               {it.notes && <p className="mt-0.5 whitespace-pre-wrap text-sm text-slate-700">{it.notes}</p>}
+              <AttachmentList items={it.attachments ?? []} onChanged={refresh} canDelete={false} compact />
               <div className="mt-0.5 flex gap-3 text-xs">
                 <button className="text-slate-500 hover:underline" onClick={() => setEditing(it.id)}>Editar</button>
                 <button

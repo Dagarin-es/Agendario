@@ -180,21 +180,35 @@ final class ReminderStore {
         String title = pick(ICONS, kind) + " " + pick(LABELS, kind) + (who.isEmpty() ? "" : (kind.equals("other") || kind.equals("note") ? " · " : " a ") + who);
         String text = r.optString("text");
         String cid = r.optString("contactId");
-        PendingIntent open = CallNotify.openPath(ctx, nid + 1, cid.isEmpty() ? "/upcoming?vista=recordatorios" : "/contacts/" + cid);
+        PendingIntent open = CallNotify.openPath(ctx, nid + 1, cid.isEmpty() ? "/reminders" : "/contacts/" + cid);
         Intent done = new Intent(ctx, ReminderActionReceiver.class).setAction("done").putExtra("id", id);
         Intent later = new Intent(ctx, ReminderActionReceiver.class).setAction("later").putExtra("id", id);
+        // Estilo de mensaje: Android Auto lo lee en voz alta («Hecho» = marcar como leído; responder = apunte en la ficha)
+        String spoken = pick(LABELS, kind) + (who.isEmpty() ? "" : " · " + who) + (text.isEmpty() ? "" : ". " + text);
+        NotificationCompat.Action doneAction = new NotificationCompat.Action.Builder(0, "✓ Hecho",
+                PendingIntent.getBroadcast(ctx, nid + 2, done, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE))
+            .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ)
+            .setShowsUserInterface(false)
+            .build();
         NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_note)
             .setContentTitle(title)
             .setContentText(text.isEmpty() ? "Recordatorio de Agendario" : text)
-            .setStyle(text.isEmpty() ? null : new NotificationCompat.BigTextStyle().bigText(text))
+            .setStyle(CallNotify.carStyle(who.isEmpty() ? "Agendario" : who, spoken))
             .setContentIntent(open)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .addAction(new NotificationCompat.Action(0, cid.isEmpty() ? "Abrir" : "Abrir ficha", open))
-            .addAction(new NotificationCompat.Action(0, "✓ Hecho", PendingIntent.getBroadcast(ctx, nid + 2, done, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE)))
+            .addAction(doneAction)
             .addAction(new NotificationCompat.Action(0, "+1 hora", PendingIntent.getBroadcast(ctx, nid + 3, later, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE)));
+        if (!cid.isEmpty()) {
+            // Responder (en el coche, dictando): lo dicho se guarda como apunte en la ficha del contacto
+            Intent ri = new Intent(ctx, NoteReplyReceiver.class).putExtra("target", "contact").putExtra("id", cid)
+                .putExtra("notificationId", nid).putExtra("title", title);
+            b.addAction(CallNotify.reply(ctx, nid + 4, "Apunte para " + who, ri, "Apuntar"));
+        } else {
+            b.addAction(new NotificationCompat.Action(0, "Abrir", open));
+        }
         try {
             NotificationManagerCompat.from(ctx).notify(nid, b.build());
         } catch (SecurityException ignored) {

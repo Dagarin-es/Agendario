@@ -159,7 +159,11 @@ export function ReminderRow({ r, showContact = true }: { r: Reminder; showContac
           {showContact && r.contact && <> · <Link to={`/contacts/${r.contact.id}`} className="text-indigo-700 hover:underline">{r.contact.displayName}</Link></>}
         </div>
         {r.text && <p className="whitespace-pre-line text-sm text-slate-700">{r.text}</p>}
-        <p className={`text-xs ${overdue ? "font-medium text-red-700" : "text-slate-500"}`}>{overdue ? "⚠️ " : "⏰ "}{dueText(r.dueAt)}</p>
+        <p className={`text-xs ${overdue ? "font-medium text-red-700" : "text-slate-500"}`}>
+          {overdue ? "⚠️ " : "⏰ "}{dueText(r.dueAt)}
+          {r.todoist && <span className="ml-1.5 rounded bg-red-50 px-1 py-px font-medium text-red-700 ring-1 ring-red-200" title="Enlazado con una tarea de Todoist">✓ Todoist</span>}
+          {r.todoistUnlinked && <span className="ml-1.5 rounded bg-slate-100 px-1 py-px text-slate-500" title="La tarea se borró en Todoist">desvinculado de Todoist</span>}
+        </p>
       </div>
       <div className="flex shrink-0 gap-1">
         <button type="button" className="btn-ghost px-2" onClick={() => setEditing(true)} aria-label="Editar" title="Editar">✏️</button>

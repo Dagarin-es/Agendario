@@ -9,6 +9,7 @@ import { canReadSql } from "../lib/access.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import { toInteraction, userPrefsOf } from "../lib/personal.js";
 import { phoneKey } from "../lib/reminders.js";
+import { attachmentsFor } from "../lib/attachments.js";
 
 const c = schema.contacts;
 const i = schema.interactions;
@@ -95,7 +96,7 @@ export const personalRoutes = new Hono<AppEnv>()
       .where(and(eq(i.id, ctx.req.valid("param").id), eq(i.userId, user.id)))
       .returning();
     if (!row) throw new HTTPException(404, { message: "No encontrado" });
-    return ctx.json(toInteraction(row));
+    return ctx.json(toInteraction(row, (await attachmentsFor([row.id])).get(row.id)));
   })
   .delete("/interactions/:id", idParam, async (ctx) => {
     const user = ctx.get("user");

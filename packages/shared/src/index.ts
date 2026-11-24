@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // IS_BETA = true muestra la etiqueta «Beta» (desde la 1.0, false).
 export * from "./themes";
 
-export const APP_VERSION = "1.1.0";
+export const APP_VERSION = "1.2.0";
 export const IS_BETA = false;
 
 // ---------- Enumeraciones ----------
@@ -532,6 +532,7 @@ export interface UnknownCall {
   occurredAt: string;
   durationSec: number;
   notes: string;
+  attachments?: InteractionAttachment[];
 }
 
 // ---------- Recordatorios ----------
@@ -560,7 +561,34 @@ export interface Reminder extends ReminderInput {
   doneAt: string | null;
   createdAt: string;
   contact: { id: string; displayName: string; hasPhoto: boolean; updatedAt: string } | null;
+  /** Enlazado con una tarea de Todoist */
+  todoist?: boolean;
+  /** La tarea de Todoist se borró: ya no está enlazado */
+  todoistUnlinked?: boolean;
+  /** false: la app del móvil no avisa (lo hace Todoist) */
+  phoneAlert?: boolean;
 }
+
+// ---------- Todoist ----------
+
+export interface TodoistStatus {
+  connected: boolean;
+  projectId: string | null;
+  projectName: string | null;
+  label: string;
+  /** ¿Siguen sonando los avisos de Agendario en el móvil para los recordatorios enlazados? */
+  phoneAlerts: boolean;
+  publicUrl: string;
+  lastSyncAt: string | null;
+  lastError: string | null;
+}
+export const todoistSettingsSchema = z.object({
+  token: z.string().min(10).max(200).optional(),
+  projectId: z.string().max(100).nullable().optional(),
+  label: z.string().max(60).optional(),
+  phoneAlerts: z.boolean().optional(),
+  publicUrl: z.string().max(300).optional(),
+});
 
 export const giftReceivedInputSchema = z.object({
   description: z.string().min(1).max(300),
@@ -854,11 +882,41 @@ export const interactionInputSchema = z.object({
   notes: z.string().max(20000).default(""),
 });
 export type InteractionInput = z.infer<typeof interactionInputSchema>;
+/** Archivo adjunto a una llamada o apunte (foto, PDF, documento, audio…). */
+export interface InteractionAttachment {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+  hasThumb: boolean;
+  createdAt: string;
+}
 export interface Interaction extends InteractionInput {
   id: string;
   contactId: string;
   createdAt: string;
+  attachments: InteractionAttachment[];
 }
+/** Nota de «Últimas notas»: la anotación con el contacto al que pertenece. */
+export interface RecentNote extends Interaction {
+  contactName: string;
+  contactHasPhoto: boolean;
+  contactUpdatedAt: string;
+}
+export interface RecentNotesPage {
+  items: RecentNote[];
+  /** Para pedir la página siguiente (?before=…); null si no hay más */
+  next: string | null;
+}
+
+/** Adjuntos: 25 MB por archivo y los tipos habituales. */
+export const ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024;
+export const ATTACHMENT_ACCEPT = [
+  "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif",
+  "application/pdf",
+  ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp",
+  ".txt", ".csv", ".mp3", ".m4a", ".ogg", ".oga", ".opus",
+].join(",");
 
 // ---------- Acciones por defecto (llamar, mensaje, email) ----------
 

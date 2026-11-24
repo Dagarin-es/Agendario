@@ -14,6 +14,8 @@ import { TagChip, tagTree, useTagPath, useTags } from "../components/Tags";
 import { VisibilityBadge } from "../components/VisibilityBadge";
 import { api } from "../lib/api";
 import { isApp } from "../lib/platform";
+import { haptic } from "../lib/native";
+import { useReminders } from "../components/Reminders";
 
 const PAGE_SIZES = [25, 50, 75, 100, 0] as const; // 0 = todos
 const PAGE_SIZE_KEY = "contactos.pageSize";
@@ -83,6 +85,69 @@ function Pager({ page, pages, onPage }: { page: number; pages: number; onPage: (
       ))}
       <button className={btn} disabled={page === pages} onClick={() => onPage(page + 1)} aria-label="Siguiente">›</button>
     </nav>
+  );
+}
+
+const LONG_PRESS_MS = 1000;
+
+/**
+ * Foto del contacto en la app: mantenerla pulsada empieza la selección (la foto pasa a ser un cuadro marcado);
+ * con la selección en marcha, tocar el cuadro marca o desmarca. Tocar el resto de la fila abre la ficha.
+ */
+function SelectableAvatar({ selecting, checked, label, onToggle, children }: {
+  selecting: boolean; checked: boolean; label: string; onToggle: () => void; children: React.ReactNode;
+}) {
+  const timer = useRef<number>(undefined);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const fired = useRef(false);
+  const cancel = () => { window.clearTimeout(timer.current); start.current = null; };
+  useEffect(() => cancel, []);
+  return (
+    <span
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={`Seleccionar ${label}`}
+      className="relative block shrink-0 select-none [-webkit-touch-callout:none]"
+      onContextMenu={(e) => e.preventDefault()}
+      onPointerDown={(e) => {
+        fired.current = false;
+        if (selecting) return;
+        start.current = { x: e.clientX, y: e.clientY };
+        timer.current = window.setTimeout(() => {
+          fired.current = true;
+          start.current = null;
+          void haptic();
+          onToggle();
+        }, LONG_PRESS_MS);
+      }}
+      onPointerMove={(e) => {
+        // Si se desplaza la lista, no es una pulsación larga
+        if (start.current && Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y) > 10) cancel();
+      }}
+      onPointerUp={() => { if (start.current) cancel(); }}
+      onPointerCancel={cancel}
+      onPointerLeave={cancel}
+      onClick={(e) => {
+        if (fired.current) { e.preventDefault(); e.stopPropagation(); fired.current = false; return; }
+        if (!selecting) return; // toque normal: abre la ficha
+        e.preventDefault();
+        e.stopPropagation();
+        void haptic();
+        onToggle();
+      }}
+    >
+      {selecting ? (
+        <span
+          className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 transition-colors ${checked ? "border-indigo-700 bg-indigo-700 text-white" : "border-slate-400 bg-white"}`}
+        >
+          {checked && (
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12.5l4.5 4.5L19 7.5" />
+            </svg>
+          )}
+        </span>
+      ) : children}
+    </span>
   );
 }
 
@@ -268,6 +333,18 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
     addToSelection(all);
     setSelMenu(false);
   }
+  // Contactos con recordatorios pendientes (⏰ en la fila; con fondo rojo si alguno está vencido)
+  const { data: reminders } = useReminders();
+  const reminderState = useMemo(() => {
+    const m = new Map<string, "pending" | "overdue">();
+    const now = Date.now();
+    for (const r of reminders ?? []) {
+      if (!r.contactId) continue;
+      if (new Date(r.dueAt).getTime() <= now) m.set(r.contactId, "overdue");
+      else if (!m.has(r.contactId)) m.set(r.contactId, "pending");
+    }
+    return m;
+  }, [reminders]);
   const notMine = [...selected.values()].filter((mine) => !mine).length;
   const bulk = useBulkActions({
     ids: [...selected.keys()], notMine, onClear: () => setSelected(new Map()), onMessage: showToast, filterTag: activeTag,
@@ -440,11 +517,24 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
             </li>
           )}
           <li className={`flex items-center ${selected.has(c.id) ? "bg-indigo-50/70" : ""}`}>
-            <label className="flex cursor-pointer items-center self-stretch pl-4 pr-1" aria-label={`Seleccionar ${c.displayName}`}>
-              <input type="checkbox" className="h-4 w-4 cursor-pointer" checked={selected.has(c.id)} onChange={() => toggleOne(c)} />
-            </label>
-            <Link to={`/contacts/${c.id}`} className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-2 pr-4 hover:bg-slate-50/60">
-              <Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} version={c.updatedAt} />
+            {!isApp && (
+              <label className="flex cursor-pointer items-center self-stretch pl-4 pr-1" aria-label={`Seleccionar ${c.displayName}`}>
+                <input type="checkbox" className="h-4 w-4 cursor-pointer" checked={selected.has(c.id)} onChange={() => toggleOne(c)} />
+              </label>
+            )}
+            <Link to={`/contacts/${c.id}`} className={`flex min-w-0 flex-1 items-center gap-3 py-3 pr-4 hover:bg-slate-50/60 ${isApp ? "pl-4" : "pl-2"}`}>
+              {isApp ? (
+                <SelectableAvatar
+                  selecting={selected.size > 0}
+                  checked={selected.has(c.id)}
+                  label={c.displayName}
+                  onToggle={() => toggleOne(c)}
+                >
+                  <Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} version={c.updatedAt} />
+                </SelectableAvatar>
+              ) : (
+                <Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} version={c.updatedAt} />
+              )}
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium">{c.displayName}</div>
                 {(sort === "family" || sort === "given" || sort === "nickname") && sortText(c, sort) && sortText(c, sort) !== c.displayName && (
@@ -460,6 +550,13 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
                   </div>
                 )}
               </div>
+              {reminderState.has(c.id) && (
+                <span
+                  className={`shrink-0 text-base leading-none ${reminderState.get(c.id) === "overdue" ? "rounded-full bg-red-100 px-1 py-0.5" : ""}`}
+                  title={reminderState.get(c.id) === "overdue" ? "Tiene un recordatorio vencido" : "Tiene un recordatorio pendiente"}
+                  aria-label={reminderState.get(c.id) === "overdue" ? "Recordatorio vencido" : "Recordatorio pendiente"}
+                >⏰</span>
+              )}
               {c.visibility !== "private" && <VisibilityBadge v={c.visibility} />}
               {c.hasHistory && <span className="shrink-0 text-indigo-500"><HistoryIcon className="h-5 w-5" title="Tiene cambios en el historial" /></span>}
               <GeoIcon status={c.geo} />

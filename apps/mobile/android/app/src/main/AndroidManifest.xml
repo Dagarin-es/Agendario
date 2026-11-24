@@ -17,7 +17,23 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
+            <!-- Enlaces «agendario://contacts/<id>» (las tareas de Todoist llevan uno) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="agendario" />
+            </intent-filter>
         </activity>
+
+        <!-- Cámara o selector de archivos desde la burbuja de notas durante una llamada -->
+        <activity
+            android:name=".AttachActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:taskAffinity=".adjuntar"
+            android:launchMode="singleTask"
+            android:exported="false" />
 
         <!-- «Compartir» desde el navegador u otra app → Añadir idea de regalo -->
         <activity-alias
@@ -157,6 +173,11 @@
             </intent-filter>
         </activity-alias>
 
+
+        <!-- Android Auto: los avisos (nota al colgar, recordatorios) se ven y se contestan con la voz en el coche -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

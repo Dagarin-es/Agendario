@@ -26,6 +26,8 @@ public class ReminderSyncWorker extends Worker {
             java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", java.util.Locale.US);
             for (int i = 0; i < in.length(); i++) {
                 JSONObject r = in.optJSONObject(i);
+                // Enlazado con Todoist y con los avisos del móvil apagados: avisa Todoist, no Agendario
+                if (!r.optBoolean("phoneAlert", true)) continue;
                 JSONObject c = r.optJSONObject("contact");
                 java.util.Date due = f.parse(r.optString("dueAt").replace("Z", "+00:00"));
                 out.put(new JSONObject()

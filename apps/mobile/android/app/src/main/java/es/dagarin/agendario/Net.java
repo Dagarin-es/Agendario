@@ -54,4 +54,34 @@ final class Net {
         }
         return new Res(code, text);
     }
+
+    /** Sube un fichero (multipart, campo «file») a la ruta indicada. Hasta 25 MB: tiempo de espera largo. */
+    static Res upload(Context ctx, String path, java.io.File file, String name, String mime) throws Exception {
+        SharedPreferences p = CallSync.prefs(ctx);
+        String boundary = "----agendario" + System.nanoTime();
+        HttpURLConnection con = (HttpURLConnection) new URL(p.getString("server", "") + path).openConnection();
+        con.setConnectTimeout(20000);
+        con.setReadTimeout(180000);
+        con.setRequestMethod("POST");
+        con.setDoOutput(true);
+        con.setChunkedStreamingMode(64 * 1024);
+        con.setRequestProperty("Authorization", "Bearer " + p.getString("token", ""));
+        con.setRequestProperty("X-Agendario-Client", "app");
+        con.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+        String safe = name.replace("\"", "'").replace("\r", " ").replace("\n", " ");
+        try (OutputStream os = con.getOutputStream(); InputStream in = new java.io.FileInputStream(file)) {
+            os.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            os.write(name.getBytes(StandardCharsets.UTF_8));
+            os.write(("\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"" + safe + "\"\r\nContent-Type: " + mime + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            byte[] buf = new byte[64 * 1024];
+            int n;
+            while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
+            os.write(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+        }
+        int code = con.getResponseCode();
+        try (InputStream in = code < 400 ? con.getInputStream() : con.getErrorStream()) {
+            if (in != null) while (in.read() != -1) { /* vaciar */ }
+        }
+        return new Res(code, "");
+    }
 }

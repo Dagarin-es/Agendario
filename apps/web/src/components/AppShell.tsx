@@ -1,4 +1,4 @@
-import { useOverdueCount } from "./Reminders";
+import { useOverdueCount, useReminders } from "./Reminders";
 import { ForcedPasswordChange } from "./UsersSettings";
 import { keepInView } from "../lib/keepInView";
 /**
@@ -41,6 +41,9 @@ export const icons = {
   gift: (f?: boolean) => (
     <I filled={f} d={f ? <path d="M20 7h-2.2A3 3 0 0 0 12 3.8 3 3 0 0 0 6.2 7H4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h7V7h2v5h7a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1Zm-11-.1a1 1 0 1 1 1-1V7H9a1 1 0 0 1 0-.1Zm6 .1h-1V5.9a1 1 0 1 1 1 1.1ZM4 13v6a2 2 0 0 0 2 2h5v-8Zm9 8h5a2 2 0 0 0 2-2v-6h-7Z" /> : <><rect x="3.5" y="7.5" width="17" height="4.5" rx="1" /><path d="M5 12v7.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V12M12 7.5V21M12 7.5S10.5 3.5 8.2 4.3C6 5 7.3 7.5 9 7.5M12 7.5s1.5-4 3.8-3.2C18 5 16.7 7.5 15 7.5" /></>} />
   ),
+  alarm: (f?: boolean) => (
+    <I filled={f} d={f ? <path d="M12 4a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Zm1 4v4.6l3.2 1.9-1 1.7-4.2-2.5V8h2ZM3.3 6.6 6.8 3.6l1.3 1.5-3.5 3ZM20.7 6.6l-1.3 1.5-3.5-3 1.3-1.5Z" /> : <><circle cx="12" cy="12.8" r="7.7" /><path d="M12 8.6v4.4l2.8 1.7M3.8 6.6l3.4-2.9M20.2 6.6l-3.4-2.9" /></>} />
+  ),
   back: () => <I d={<path d="M19 12H5M11 18l-6-6 6-6" />} />,
   add: () => <I d={<path d="M12 5v14M5 12h14" strokeWidth={2.2} />} />,
 };
@@ -49,6 +52,7 @@ const tabs = [
   { to: "/", end: true, label: "Contactos", icon: icons.contacts },
   { to: "/gifts", label: "Regalos", icon: icons.gift },
   { to: "/upcoming", label: "Fechas", icon: icons.event },
+  { to: "/reminders", label: "Recordatorios", icon: icons.alarm },
   { to: "/duplicates", label: "Duplicados", icon: icons.merge },
 ] as const;
 
@@ -57,6 +61,8 @@ const titles: [RegExp, string][] = [
   [/^\/gifts/, "Regalos"],
   [/^\/share-gift/, "Añadir idea de regalo"],
   [/^\/upcoming/, "Fechas"],
+  [/^\/reminders/, "Recordatorios"],
+  [/^\/notes/, "Últimas notas"],
   [/^\/duplicates\/merge/, "Combinar"],
   [/^\/duplicates/, "Duplicados"],
   [/^\/contacts\/new/, "Nuevo contacto"],
@@ -109,6 +115,7 @@ export function AppShell() {
   const gifts = useGiftsToBuy();
   const pending = usePendingGifts().data?.length ?? 0;
   const overdue = useOverdueCount();
+  const pendingReminders = useReminders().data?.length ?? 0;
   const [sheet, setSheet] = useState(false);
   const [about, setAbout] = useState(false);
   useColorThemeFromPrefs();
@@ -155,8 +162,12 @@ export function AppShell() {
   }, [nav]);
 
   // «Duplicados» solo aparece cuando los hay (o si estás en esa pantalla)
-  const visibleTabs = tabs.filter((t) => t.to !== "/duplicates" || dupCount > 0 || location.pathname.startsWith("/duplicates"));
-  const badge = (to: string) => (to === "/duplicates" ? dupCount || null : to === "/upcoming" ? gifts.count + pending + overdue || null : null);
+  // «Recordatorios» solo cuando hay alguno pendiente (o si estás en esa pantalla)
+  const visibleTabs = tabs.filter((t) =>
+    t.to === "/duplicates" ? dupCount > 0 || location.pathname.startsWith("/duplicates")
+    : t.to === "/reminders" ? pendingReminders > 0 || location.pathname.startsWith("/reminders")
+    : true);
+  const badge = (to: string) => (to === "/duplicates" ? dupCount || null : to === "/upcoming" ? gifts.count + pending || null : to === "/reminders" ? overdue || null : null);
   const navItems = (
     <>
       {visibleTabs.map((t) => (
@@ -167,7 +178,7 @@ export function AppShell() {
                 {t.icon(isActive)}
                 {badge(t.to) && <span className={`m3-badge ${t.to === "/upcoming" && !gifts.red ? "bg-amber-600" : "bg-red-600"}`}>{badge(t.to)}</span>}
               </span>
-              <span className={`text-[11px] leading-none ${isActive ? "font-bold" : "font-medium"}`}>{t.label}</span>
+              <span className={`max-w-full truncate px-0.5 text-[11px] leading-none ${isActive ? "font-bold" : "font-medium"}`}>{t.label}</span>
             </>
           )}
         </NavLink>
@@ -306,6 +317,7 @@ function MoreSheet({ onClose, onAbout }: { onClose: () => void; onAbout: () => v
             </span>
           </Link>
           <div className="mb-2 px-2"><ModeSelector /></div>
+          <Link to="/notes" className={item}>📝 Últimas notas</Link>
           <Link to="/tags" className={item}>🏷️ Etiquetas</Link>
           <Link to="/groups" className={item}>👪 Grupos</Link>
           <Link to="/trash" className={item}>🗑️ Papelera</Link>

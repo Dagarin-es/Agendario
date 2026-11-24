@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.app.Person;
 import androidx.core.app.RemoteInput;
 import androidx.core.content.ContextCompat;
 import org.json.JSONObject;
@@ -55,13 +56,36 @@ public final class CallNotify {
     static NotificationCompat.Action dismiss(Context ctx, int id) {
         Intent i = new Intent(ctx, DismissReceiver.class).putExtra("notificationId", id);
         PendingIntent pi = PendingIntent.getBroadcast(ctx, id + 3, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        return new NotificationCompat.Action(0, "No, gracias", pi);
+        // En Android Auto es «Marcar como leído»: cierra el aviso sin abrir nada
+        return new NotificationCompat.Action.Builder(0, "No, gracias", pi)
+            .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ)
+            .setShowsUserInterface(false)
+            .build();
+    }
+
+    /**
+     * Estilo de mensaje para que Android Auto lea el aviso en voz alta y deje contestar dictando.
+     * En el móvil se ve como una conversación: «contacto» → texto.
+     */
+    static NotificationCompat.MessagingStyle carStyle(String sender, String message) {
+        Person me = new Person.Builder().setName("Tú").setKey("me").build();
+        Person who = new Person.Builder().setName(sender == null || sender.isEmpty() ? "Agendario" : sender).setKey("c:" + sender).build();
+        return new NotificationCompat.MessagingStyle(me)
+            .setGroupConversation(false)
+            .addMessage(message, System.currentTimeMillis(), who);
     }
 
     static NotificationCompat.Action reply(Context ctx, int id, String label, Intent target) {
+        return reply(ctx, id, label, target, "Escribir nota");
+    }
+
+    static NotificationCompat.Action reply(Context ctx, int id, String label, Intent target, String button) {
         RemoteInput input = new RemoteInput.Builder(KEY_NOTE).setLabel(label).build();
         PendingIntent pi = PendingIntent.getBroadcast(ctx, id, target, PendingIntent.FLAG_UPDATE_CURRENT | mutable());
-        return new NotificationCompat.Action.Builder(0, "Escribir nota", pi).addRemoteInput(input).setAllowGeneratedReplies(false).build();
+        return new NotificationCompat.Action.Builder(0, button, pi).addRemoteInput(input).setAllowGeneratedReplies(false)
+            .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY) // Android Auto: «Responder» por voz
+            .setShowsUserInterface(false)
+            .build();
     }
 
     private static void post(Context ctx, int id, Notification n) {
@@ -86,6 +110,7 @@ public final class CallNotify {
             .setSmallIcon(R.drawable.ic_stat_note)
             .setContentTitle(title)
             .setContentText("¿Quieres apuntar algo o dejarte un recordatorio?")
+            .setStyle(carStyle(item.optString("contactName"), "Llamada de " + min + " min. ¿Quieres apuntar algo de la llamada?"))
             .setContentIntent(openPath(ctx, id + 1, "/contacts/" + cid + "?call=" + iid))
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
@@ -115,6 +140,7 @@ public final class CallNotify {
             .setSmallIcon(R.drawable.ic_stat_note)
             .setContentTitle(title)
             .setContentText("Este número no está en tu agenda. ¿Lo guardas?")
+            .setStyle(carStyle(fmtNumber(item.optString("number")), "Llamada de " + min + " min con un número que no está en tu agenda. ¿Quieres apuntar algo?"))
             .setContentIntent(save)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)

@@ -3,7 +3,9 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { reminderInputSchema, reminderPatchSchema, type CallLookup, type UnknownCall } from "@agendario/shared";
+import { reminderInputSchema, reminderPatchSchema, type CallLookup, type InteractionAttachment, type UnknownCall } from "@agendario/shared";
+import { attachmentsForUnknown } from "../lib/attachments.js";
+import { deleteTask, loadTodoist, pushLater } from "../lib/todoist.js";
 import { db, schema } from "../db/index.js";
 import { canReadSql } from "../lib/access.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
@@ -21,8 +23,8 @@ async function checkContact(contactId: string | null | undefined, userId: string
   if (!row) throw new HTTPException(404, { message: "Contacto no encontrado" });
 }
 
-const toUnknown = (x: typeof u.$inferSelect): UnknownCall => ({
-  id: x.id, number: x.number, type: x.type as UnknownCall["type"], occurredAt: x.occurredAt.toISOString(), durationSec: x.durationSec, notes: x.notes,
+const toUnknown = (x: typeof u.$inferSelect, attachments: InteractionAttachment[] = []): UnknownCall => ({
+  id: x.id, number: x.number, type: x.type as UnknownCall["type"], occurredAt: x.occurredAt.toISOString(), durationSec: x.durationSec, notes: x.notes, attachments,
 });
 
 export const reminderRoutes = new Hono<AppEnv>()
@@ -31,7 +33,11 @@ export const reminderRoutes = new Hono<AppEnv>()
   // ---------- Recordatorios ----------
   .get("/reminders", zValidator("query", z.object({ status: z.enum(["pending", "all"]).default("pending") })), async (ctx) => {
     const user = ctx.get("user");
-    return ctx.json(await remindersOf(user.id, { pendingOnly: ctx.req.valid("query").status === "pending" }));
+    const list = await remindersOf(user.id, { pendingOnly: ctx.req.valid("query").status === "pending" });
+    // Con Todoist conectado y los avisos del móvil apagados, la app no programa alarma para los enlazados
+    const td = await loadTodoist(user.id);
+    if (td?.token && !td.phoneAlerts) for (const x of list) if (x.todoist) x.phoneAlert = false;
+    return ctx.json(list);
   })
   .post("/reminders", zValidator("json", reminderInputSchema), async (ctx) => {
     const user = ctx.get("user");
@@ -39,6 +45,7 @@ export const reminderRoutes = new Hono<AppEnv>()
     await checkContact(b.contactId, user.id);
     const [row] = await db.insert(r).values({ ...b, dueAt: new Date(b.dueAt), userId: user.id }).returning();
     const [out] = (await remindersOf(user.id, { contactId: row!.contactId ?? undefined })).filter((x) => x.id === row!.id);
+    pushLater(user.id, row!.id);
     return ctx.json(out ?? toReminder(row!), 201);
   })
   .patch("/reminders/:id", idParam, zValidator("json", reminderPatchSchema), async (ctx) => {
@@ -53,11 +60,13 @@ export const reminderRoutes = new Hono<AppEnv>()
     if (done !== undefined) set.doneAt = done ? new Date() : null;
     const [row] = await db.update(r).set(set).where(and(eq(r.id, ctx.req.valid("param").id), eq(r.userId, user.id))).returning();
     if (!row) throw new HTTPException(404, { message: "Recordatorio no encontrado" });
+    pushLater(user.id, row.id);
     return ctx.json(toReminder(row));
   })
   .delete("/reminders/:id", idParam, async (ctx) => {
     const user = ctx.get("user");
-    await db.delete(r).where(and(eq(r.id, ctx.req.valid("param").id), eq(r.userId, user.id)));
+    const [gone] = await db.delete(r).where(and(eq(r.id, ctx.req.valid("param").id), eq(r.userId, user.id))).returning({ todoistId: r.todoistId });
+    if (gone?.todoistId) void deleteTask(user.id, gone.todoistId).catch(() => undefined);
     return ctx.body(null, 204);
   })
 
@@ -65,19 +74,20 @@ export const reminderRoutes = new Hono<AppEnv>()
   .get("/unknown-calls", async (ctx) => {
     const user = ctx.get("user");
     const rows = await db.select().from(u).where(eq(u.userId, user.id)).orderBy(desc(u.occurredAt)).limit(200);
-    return ctx.json(rows.map(toUnknown));
+    const atts = await attachmentsForUnknown(rows.map((x) => x.id));
+    return ctx.json(rows.map((x) => toUnknown(x, atts.get(x.id))));
   })
   .get("/unknown-calls/:id", idParam, async (ctx) => {
     const user = ctx.get("user");
     const [row] = await db.select().from(u).where(and(eq(u.id, ctx.req.valid("param").id), eq(u.userId, user.id)));
     if (!row) throw new HTTPException(404, { message: "Llamada no encontrada" });
-    return ctx.json(toUnknown(row));
+    return ctx.json(toUnknown(row, (await attachmentsForUnknown([row.id])).get(row.id)));
   })
   .patch("/unknown-calls/:id", idParam, zValidator("json", z.object({ notes: z.string().max(20000) })), async (ctx) => {
     const user = ctx.get("user");
     const [row] = await db.update(u).set({ notes: ctx.req.valid("json").notes }).where(and(eq(u.id, ctx.req.valid("param").id), eq(u.userId, user.id))).returning();
     if (!row) throw new HTTPException(404, { message: "Llamada no encontrada" });
-    return ctx.json(toUnknown(row));
+    return ctx.json(toUnknown(row, (await attachmentsForUnknown([row.id])).get(row.id)));
   })
   .delete("/unknown-calls/:id", idParam, async (ctx) => {
     const user = ctx.get("user");

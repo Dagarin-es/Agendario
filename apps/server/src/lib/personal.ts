@@ -1,10 +1,11 @@
 import { and, desc, eq } from "drizzle-orm";
-import { contactPrefsSchema, userPrefsSchema, type ContactPrefs, type Interaction, type UserPrefs } from "@agendario/shared";
+import { contactPrefsSchema, userPrefsSchema, type ContactPrefs, type Interaction, type InteractionAttachment, type UserPrefs } from "@agendario/shared";
 import { db, schema } from "../db/index.js";
+import { attachmentsFor } from "./attachments.js";
 
 const i = schema.interactions;
 
-export function toInteraction(r: typeof i.$inferSelect): Interaction {
+export function toInteraction(r: typeof i.$inferSelect, attachments: InteractionAttachment[] = []): Interaction {
   return {
     id: r.id,
     contactId: r.contactId,
@@ -14,6 +15,7 @@ export function toInteraction(r: typeof i.$inferSelect): Interaction {
     channel: r.channel,
     notes: r.notes,
     createdAt: r.createdAt.toISOString(),
+    attachments,
   };
 }
 
@@ -25,7 +27,8 @@ export async function interactionsOf(userId: string, contactId: string) {
     .where(and(eq(i.userId, userId), eq(i.contactId, contactId)))
     .orderBy(desc(i.occurredAt))
     .limit(500);
-  return rows.map(toInteraction);
+  const atts = await attachmentsFor(rows.map((r) => r.id));
+  return rows.map((r) => toInteraction(r, atts.get(r.id)));
 }
 
 export async function contactPrefsOf(userId: string, contactId: string): Promise<ContactPrefs> {

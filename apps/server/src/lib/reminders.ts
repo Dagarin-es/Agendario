@@ -25,6 +25,8 @@ export function toReminder(x: Row, ct?: ContactLite | null): Reminder {
     doneAt: x.doneAt?.toISOString() ?? null,
     createdAt: x.createdAt.toISOString(),
     contact: ct ? { id: ct.id, displayName: ct.displayName, hasPhoto: !!ct.photoKey, updatedAt: ct.updatedAt.toISOString() } : null,
+    todoist: !!x.todoistId,
+    todoistUnlinked: !!x.todoistUnlinked,
   };
 }
 
@@ -52,14 +54,21 @@ export async function adoptUnknownCalls(userId: string, contactId: string, phone
   const rows = await db.select().from(u).where(eq(u.userId, userId));
   const mine = rows.filter((x) => keys.has(phoneKey(x.number)));
   for (const x of mine) {
-    await db
+    const inserted = await db
       .insert(schema.interactions)
       .values({
         userId, contactId, kind: x.type === "out" ? "call_out" : "call_in", occurredAt: x.occurredAt,
         durationMin: x.durationSec > 0 ? Math.max(1, Math.round(x.durationSec / 60)) : null,
         channel: x.number, notes: x.notes, externalId: x.externalId,
       })
-      .onConflictDoUpdate({ target: [schema.interactions.userId, schema.interactions.externalId], set: { notes: x.notes } });
+      .onConflictDoUpdate({ target: [schema.interactions.userId, schema.interactions.externalId], set: { notes: x.notes } })
+      .returning({ id: schema.interactions.id });
+    // Los adjuntos de esa llamada pasan también a la ficha
+    const [ins] = inserted;
+    if (ins) {
+      await db.update(schema.interactionAttachments).set({ interactionId: ins.id, unknownCallId: null })
+        .where(eq(schema.interactionAttachments.unknownCallId, x.id));
+    }
     await db.delete(u).where(eq(u.id, x.id));
   }
   return mine.length;

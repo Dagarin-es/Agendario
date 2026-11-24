@@ -169,6 +169,13 @@
       "when": 1795250000000,
       "tag": "0023_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795350000000,
+      "tag": "0024_attachments_todoist",
+      "breakpoints": true
     }
   ]
 }

@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> **Tus contactos, tu servidor.** Versión estable 1.1.0 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
+> **Tus contactos, tu servidor.** Versión estable 1.2.0 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **efemérides**, **contactos compartidos** entre usuarios, **fotos y portadas**, servidor **CardDAV** (con grupos) para el móvil y calendario **.ics** suscribible.
 
-Esta es la **versión 1.1.0**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
+Esta es la **versión 1.2.0**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
 
 ---
 
@@ -18,7 +18,7 @@ Esta es la **versión 1.1.0**: servidor + web app instalable (PWA) en un contene
 - **Contactos** con nombre, apodo, empresa (que puede enlazarse con otro contacto de la agenda), cargo, cumpleaños (con o sin año), varios teléfonos, emails, webs y direcciones, y notas.
 - **Direcciones geolocalizadas**: buscador de direcciones que rellena los campos y guarda las coordenadas, botón **Abrir en mapa** (o en Waze) y mapa en la ficha. Ver *Direcciones y mapas*.
 - **Historial de cambios** (60 días) de cada contacto, con **restaurar** una versión o un solo campo, y **papelera** para recuperar contactos borrados. Ver *Historial y papelera*.
-- **Llamadas y apuntes** de cada conversación (privados) y botones **Llamar · Mensaje · Email** con el teléfono, email y app de mensajería por defecto (general y por contacto). Ver *Llamadas, mensajes y apuntes*.
+- **Llamadas y apuntes** de cada conversación (privados), con **archivos adjuntos** (fotos, PDF, documentos, audios) también durante la llamada, pantalla **Últimas notas** y botones **Llamar · Mensaje · Email** con el teléfono, email y app de mensajería por defecto (general y por contacto). Ver *Llamadas, mensajes y apuntes*.
 - **Copias de seguridad automáticas y cifradas** en una carpeta local, NFS, SMB o Google Drive. Ver *Copias de seguridad*.
 - **Modo oscuro** (automático, claro u oscuro) en ⚙️ Ajustes → Apariencia.
 - **Foto de contacto**: se guarda normalizada (JPEG de hasta 1024 px más una miniatura de 256 px) y va incluida en la exportación vCard.
@@ -30,7 +30,9 @@ Esta es la **versión 1.1.0**: servidor + web app instalable (PWA) en un contene
 - **Etiquetas** con color para clasificar contactos y **filtrar** la lista. Son **personales**: puedes etiquetar también los contactos que te comparten y nadie más verá tus etiquetas.
 - **Etiquetas en cada dato**: un teléfono, email o dirección se puede asociar a una etiqueta. Al filtrar o exportar por esa etiqueta se usan sus datos. Ver *Etiquetas en teléfonos, emails y direcciones*.
 - **Importación de .vcf**: uno o varios ficheros, o **una carpeta entera** (con subcarpetas). Ver el apartado *Importar contactos*.
-- **Selección múltiple** con acciones en bloque: exportar, añadir o quitar etiquetas y borrar.
+- **Selección múltiple** con acciones en bloque: exportar, añadir o quitar etiquetas y borrar (en la app, manteniendo pulsada la foto).
+- **Recordatorios** con avisos en el móvil, pestaña propia cuando hay pendientes, ⏰ en la lista y **sincronización con Todoist** en los dos sentidos.
+- **Android Auto**: los avisos de la app (nota al colgar, recordatorios) se leen en el coche y se contestan con la voz.
 - **Duplicados** al estilo de Google Contacts: borrar uno, combinar automáticamente o combinar manualmente eligiendo qué conservar. Ver *Buscar y combinar duplicados*.
 - **Ideas para regalos**: idea, enlace, precio, notas y estado regalado (fecha y motivo). **Siempre son privadas**: aunque el contacto esté compartido, nadie más ve tus ideas.
 - **Regalos recibidos**: qué te regaló, cuándo y por qué. También son privados.
@@ -57,7 +59,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-1.1.0.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.2.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -91,7 +93,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-1.1.0.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.2.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -99,7 +101,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-1.1.0.zip
+unzip agendario-1.2.0.zip
 cd agendario
 ```
 
@@ -143,7 +145,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-1.1.0.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-1.2.0.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -299,7 +301,7 @@ GEOCODER_BIAS=36.72,-4.42
 
 ## Seleccionar varios contactos
 
-Cada contacto de la lista tiene una casilla. Junto al contador hay otra casilla para marcar los de la página, y su menú **▾** permite elegir:
+En la web, cada contacto de la lista tiene una casilla. En la app de Android no hay casilla: **mantén pulsada la foto** de un contacto y se convierte en un cuadro marcado; después toca los cuadros de los demás para marcarlos o desmarcarlos (si desmarcas todos, se sale de la selección). Junto al contador hay otra casilla para marcar los de la página, y su menú **▾** permite elegir:
 
 - **Los de esta página**
 - **Todos los del filtro**: los que salen con la búsqueda o la etiqueta activa.
@@ -406,7 +408,9 @@ Los **santos** se pueden añadir a mano en «Fechas importantes». Si quieres qu
 - En **⚙️ Ajustes → Llamadas y mensajes** eliges la app de mensajería general (WhatsApp, WhatsApp Business, Telegram, Signal o SMS) y el prefijo de país para los números sin prefijo.
 - Por defecto, llamar usa el primer teléfono y los mensajes el primer móvil. WhatsApp Business se abre directamente en Android; en el ordenador y en iPhone abre WhatsApp.
 - **Llamadas y apuntes**: en cada ficha puedes apuntar llamadas (saliente, entrante, perdida, con duración), reuniones, mensajes y notas de lo que habéis hablado. Son **privados**: solo los ves tú. Si llamas desde la ficha, al volver a la app te ofrece apuntar la llamada con la duración calculada.
-- El registro automático de llamadas del teléfono llegará con la app nativa de Android (iPhone no lo permite).
+- **Adjuntos** (desde la 1.2): fotos, PDF, Word, Excel, PowerPoint, LibreOffice, TXT/CSV y audios, hasta 25 MB cada uno. Se añaden al editar la llamada o, en la app, durante la llamada con los botones 📷 y 📎 de la burbuja de notas (se suben al colgar). Privados como la llamada y dentro de las copias de seguridad.
+- **Últimas notas** (menú): todas tus anotaciones de todos los contactos, de la más reciente a la más antigua, con filtros por tipo y etiqueta y buscador.
+- El registro automático de llamadas del teléfono está en la app de Android (iPhone no lo permite).
 
 ---
 
@@ -607,6 +611,9 @@ Desde la 1.0 `IS_BETA = false` (sin etiqueta «Beta»). La versión está en `AP
 3. ✅ **Fase 3** (0.12): servidor **CardDAV** para la agenda nativa del móvil y del Mac, y subetiquetas ↔ grupos de Fastmail.
 4. Google: solo traer las fotos de perfil (`scripts/fotos-google.py`). Sin sincronización con Google ni Outlook.
 5. **Fase 5**: ✅ app Android con Capacitor (0.12). Pendiente: iOS y Tauri (Mac/Windows).
+   - ✅ 1.1: recordatorios y notas durante las llamadas.
+   - ✅ 1.2: adjuntos en las llamadas, «Últimas notas», recordatorios con pestaña propia y Todoist, selección por pulsación larga y avisos en Android Auto.
+   - Más adelante: recordatorios con apps de tareas autoalojadas por CalDAV (Vikunja, Nextcloud Tasks).
 6. Más adelante: historial de interacciones, "mantener el contacto" y préstamos.
 
 

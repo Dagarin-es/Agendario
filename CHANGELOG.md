@@ -1,5 +1,15 @@
 # Historial de cambios
 
+## 1.2.0 — adjuntos, últimas notas, Todoist y Android Auto
+- **Adjuntos en las llamadas y apuntes**: fotos (JPG, PNG, HEIC, WebP), PDF, Word, Excel, PowerPoint, LibreOffice, TXT/CSV y audios (MP3, M4A, OGG), hasta 25 MB cada uno. Se añaden al crear o editar la anotación con **📎 Adjuntar** (web y app) y, en la app, **durante la llamada** con los botones **📷** (cámara del móvil, sin pedir permiso de cámara) y **📎** de la burbuja de notas: se suben solos a esa llamada al colgar. Miniatura en las fotos e icono por tipo; tocando se abren. Son privados, van en las copias de seguridad y pasan a la ficha si guardas un número desconocido.
+- **Últimas notas** (en el menú; en la app, en «Más»): todas tus anotaciones de todos los contactos, de la más reciente a la más antigua, agrupadas por día, con filtros por tipo y etiqueta, buscador y edición ahí mismo.
+- **Recordatorios**: ⏰ en la fila de los contactos con alguno pendiente (con fondo rojo si ya ha vencido) y **pestaña propia** abajo en la app (y en el menú de la web) que solo aparece si tienes alguno pendiente. Fechas se queda con Eventos y Efemérides.
+- **Todoist** (Ajustes → Sincronización): cada recordatorio crea una tarea con el contacto y enlaces para abrirlo en Agendario (web y app del móvil). Va en los dos sentidos: completar, cambiar o borrar en un lado se refleja en el otro (revisión cada 5 minutos). Proyecto y etiqueta a elegir, y opción para que avise solo Todoist.
+- **Selección en la app por pulsación larga**: sin casilla a la izquierda; mantén pulsada la foto de un contacto y se convierte en un cuadro marcado, y toca los cuadros de los demás para seguir marcando. Si desmarcas todos, se sale de la selección.
+- **Android Auto**: el aviso al colgar y los de los recordatorios se ven en el coche, se leen en voz alta y se contestan dictando (la nota se guarda en la llamada o como apunte del contacto). Hay que activar «Fuentes desconocidas» en los ajustes de desarrollador de Android Auto (pasos en el manual).
+- Manual actualizado con un capítulo de novedades.
+- ⚠️ Actualiza también la APK: los adjuntos durante la llamada, la pulsación larga, los enlaces desde Todoist y Android Auto son de la app nueva (la web y la APK anterior siguen funcionando con este servidor).
+
 ## 1.1.0 — recordatorios y notas en las llamadas
 - **Recordatorios**: qué hacer (llamar, enviar un correo o un mensaje, anotar algo u otra cosa) y cuándo («esta tarde», «mañana», «en una semana» o fecha y hora). Se crean desde la ficha, desde la nueva pestaña **Fechas → Recordatorios** o desde el aviso al colgar una llamada. En la app de Android avisan a su hora (también sin conexión) con «Abrir ficha», «✓ Hecho» y «+1 hora». Los vencidos se marcan en la pestaña Fechas.
 - **Al colgar** con un contacto, el aviso trae ahora «Escribir nota», «Recordatorio» y «No, gracias» (tocándolo se abre la ficha).

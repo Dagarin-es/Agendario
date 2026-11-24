@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Agendario en Android Auto: solo avisos de mensajería (MessagingStyle con respuesta por voz). Sin pantalla propia. -->
+<automotiveApp>
+    <uses name="notification" />
+</automotiveApp>

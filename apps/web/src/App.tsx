@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Navigate, Route, Routes } from "react-router";
 import { AppShell } from "./components/AppShell";
+import { RemindersPage } from "./pages/Reminders";
+import { NotesPage } from "./pages/Notes";
 import { ServerSetup } from "./pages/ServerSetup";
 import { getServer, isApp } from "./lib/platform";
 import { HistoryPage } from "./pages/History";
@@ -39,6 +41,8 @@ export function App() {
         <Route path="contacts/:id/edit" element={<ContactFormPage />} />
         <Route path="upcoming" element={<UpcomingPage />} />
         <Route path="gifts" element={<GiftsPage />} />
+        <Route path="reminders" element={<RemindersPage />} />
+        <Route path="notes" element={<NotesPage />} />
         <Route path="share-gift" element={<ShareGiftPage />} />
         <Route path="share-image" element={<ShareImagePage />} />
         <Route path="unknown-call/:id" element={<UnknownCallPage />} />

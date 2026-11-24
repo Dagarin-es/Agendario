@@ -30,7 +30,8 @@ async function send(method: string, path: string, body?: unknown) {
       credentials: isApp ? "omit" : "same-origin",
       headers: headers(!!body && !isForm),
       body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
-      signal: AbortSignal.timeout(method === "GET" && path.includes("offline-snapshot") ? 120_000 : 20_000),
+      // Las subidas de archivos (adjuntos de hasta 25 MB) pueden tardar con datos móviles
+      signal: AbortSignal.timeout(isForm ? 300_000 : method === "GET" && path.includes("offline-snapshot") ? 120_000 : 20_000),
     });
     // Un proxy delante (Nginx Proxy Manager) responde 502/503/504 si Agendario no está: es como no tener conexión
     if (res.status >= 502 && res.status <= 504) throw new OfflineError("El servidor no responde");

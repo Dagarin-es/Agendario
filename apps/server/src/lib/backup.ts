@@ -78,6 +78,7 @@ const TABLES = [
   "interactions",
   "reminders",
   "unknown_calls",
+  "interaction_attachments",
   "user_prefs",
   "contact_prefs",
   "sync_accounts",
@@ -94,6 +95,7 @@ type Secrets = { destPassword?: string; encryptionPassword?: string; token?: str
 
 const dataPath = (...p: string[]) => join(config.dataDir, ...p);
 const photosDir = () => dataPath("photos");
+const attachmentsDir = () => dataPath("attachments");
 
 // ---------- Configuración ----------
 
@@ -412,8 +414,11 @@ export async function createArchive(password: string, name = `agendario-${stamp(
   await writeFile(join(work, "db.json"), JSON.stringify(dump));
   await mkdir(photosDir(), { recursive: true });
   await symlink(photosDir(), join(work, "photos"));
+  // Adjuntos de las llamadas (desde la 1.2)
+  await mkdir(attachmentsDir(), { recursive: true });
+  await symlink(attachmentsDir(), join(work, "attachments"));
   const tgz = join(work, "backup.tar.gz");
-  await tar.c({ gzip: true, file: tgz, cwd: work, follow: true, portable: true }, ["manifest.json", "db.json", "photos"]);
+  await tar.c({ gzip: true, file: tgz, cwd: work, follow: true, portable: true }, ["manifest.json", "db.json", "photos", "attachments"]);
   const e = new Encrypter();
   e.setPassphrase(password);
   const out = join(work, name);
@@ -559,6 +564,12 @@ export async function restoreArchive(work: string) {
   await mkdir(photosDir(), { recursive: true });
   for (const f of await readdir(photosDir())) await unlink(join(photosDir(), f)).catch(() => {});
   for (const f of files) await copyFile(join(src, f), join(photosDir(), f));
+  // Adjuntos: igual (las copias anteriores a la 1.2 no los llevan: se queda sin ninguno, como sus llamadas)
+  const srcA = join(work, "x", "attachments");
+  const filesA = await readdir(srcA).catch(() => [] as string[]);
+  await mkdir(attachmentsDir(), { recursive: true });
+  for (const f of await readdir(attachmentsDir())) await unlink(join(attachmentsDir(), f)).catch(() => {});
+  for (const f of filesA) await copyFile(join(srcA, f), join(attachmentsDir(), f));
 }
 
 // ---------- Conectar Google Drive (código de dispositivo) ----------

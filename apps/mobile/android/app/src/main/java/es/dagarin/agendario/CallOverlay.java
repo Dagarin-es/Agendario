@@ -40,6 +40,8 @@ final class CallOverlay {
     private static final Handler ui = new Handler(Looper.getMainLooper());
     private static View card;
     private static View bubble;
+    /** Lo que se estaba escribiendo al abrir la cámara o el selector de archivos */
+    private static String draft = "";
     private static View editor;
     private static String number;
     private static String name = "";
@@ -297,8 +299,19 @@ final class CallOverlay {
                 p.setPadding(0, dp(app, 6), 0, 0);
                 box.addView(p);
             }
+            int files = InCallNotes.fileCount(app);
+            if (files > 0) {
+                TextView fl = text(app, "📎 " + files + (files == 1 ? " adjunto" : " adjuntos") + " para esta llamada", 13, false, 0xFF4F46E5);
+                fl.setPadding(0, dp(app, 4), 0, 0);
+                box.addView(fl);
+            }
             EditText et = new EditText(app);
             et.setHint("¿Qué quieres apuntar?");
+            if (!draft.isEmpty()) {
+                et.setText(draft);
+                et.setSelection(draft.length());
+                draft = "";
+            }
             et.setTextColor(fg);
             et.setHintTextColor(dark(app) ? 0x88FFFFFF : 0x88475569);
             et.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
@@ -309,15 +322,34 @@ final class CallOverlay {
             elp.topMargin = dp(app, 8);
             box.addView(et, elp);
             LinearLayout actions = new LinearLayout(app);
-            actions.setGravity(Gravity.END);
+            actions.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
             actions.setPadding(0, dp(app, 8), 0, 0);
+            // 📷 foto con la cámara del móvil · 📎 foto o archivo del móvil: se suben a la llamada al colgar
+            Button camera = button(app, "📷", false);
+            camera.setContentDescription("Hacer una foto");
+            Button attach = button(app, "📎", false);
+            attach.setContentDescription("Adjuntar una foto o un archivo");
+            for (Button ib : new Button[]{camera, attach}) {
+                ib.setPadding(0, 0, 0, 0);
+                ib.setMinWidth(0);
+                ib.setMinimumWidth(0);
+                ib.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+            }
             Button cancel = button(app, "Cancelar", false);
             Button save = button(app, "Guardar", true);
+            LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(app, 48), dp(app, 40));
+            ilp.setMarginEnd(dp(app, 4));
+            actions.addView(camera, ilp);
+            actions.addView(attach, ilp);
+            View spacer = new View(app);
+            actions.addView(spacer, new LinearLayout.LayoutParams(0, 1, 1f));
             LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(app, 40));
             blp.setMarginStart(dp(app, 8));
             actions.addView(cancel, blp);
             actions.addView(save, blp);
             box.addView(actions);
+            camera.setOnClickListener(v -> pick(app, et, "camera"));
+            attach.setOnClickListener(v -> pick(app, et, "file"));
             cancel.setOnClickListener(v -> closeEditor(app, et));
             save.setOnClickListener(v -> {
                 String t = et.getText().toString().trim();
@@ -343,6 +375,27 @@ final class CallOverlay {
                 editor = null;
             }
         });
+    }
+
+    /** Cierra el cuadro (guardando lo escrito) y abre la cámara o el selector; al volver se reabre. */
+    private static void pick(Context app, EditText et, String mode) {
+        draft = et.getText().toString();
+        InputMethodManager im = (InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (im != null) im.hideSoftInputFromWindow(et.getWindowToken(), 0);
+        remove(app, editor);
+        editor = null;
+        try {
+            AttachActivity.start(app, mode, number);
+        } catch (Exception e) {
+            Toast.makeText(app, "No se ha podido abrir", Toast.LENGTH_SHORT).show();
+            openEditor(app);
+        }
+    }
+
+    /** Al volver de la cámara o del selector de archivos. */
+    static void reopenEditor(Context app) {
+        if (!enabled(app)) return;
+        openEditor(app);
     }
 
     private static void closeEditor(Context app, EditText et) {
