@@ -7,7 +7,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
  * en escritorio se centra. Se cierra con Esc o tocando el fondo.
  */
 export function Modal({
-  title, onClose, children, footer, size = "md", full,
+  title, onClose, children, footer, size = "md", full, animate = true,
 }: {
   title?: ReactNode;
   onClose: () => void;
@@ -15,6 +15,9 @@ export function Modal({
   footer?: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
   full?: boolean;
+  /** Sin animación de entrada. Para ventanas que se abren justo al cerrarse un diálogo del sistema (elegir archivo):
+   *  ahí el navegador no avanza la animación hasta que se mueve el ratón y la ventana quedaba invisible. */
+  animate?: boolean;
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -38,7 +41,7 @@ export function Modal({
         onSubmit={(e) => e.stopPropagation()}
         className={`flex w-full flex-col overflow-hidden bg-white shadow-2xl ${width} ${
           full ? "h-full sm:h-[90vh] sm:rounded-2xl" : "max-h-[90dvh] rounded-t-2xl sm:rounded-2xl"
-        } animate-[dialogIn_.15s_ease-out]`}
+        } ${animate ? "animate-[dialogIn_.15s_ease-out]" : ""}`}
       >
         {title !== undefined && (
           <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">

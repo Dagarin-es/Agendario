@@ -11,6 +11,8 @@ COPY apps/mobile/package.json apps/mobile/
 RUN npm ci
 COPY packages packages
 COPY apps apps
+# El historial de cambios va dentro de la web («Novedades» en el menú)
+COPY CHANGELOG.md ./
 RUN npm run build
 
 # ---------- 2. Dependencias de producción ----------
@@ -27,7 +29,7 @@ RUN npm ci --omit=dev --workspace @agendario/server --include-workspace-root=fal
 FROM node:22-alpine
 # rclone: copias de seguridad en SMB y Google Drive · tzdata: hora local de las copias
 RUN apk add --no-cache su-exec rclone tzdata ca-certificates
-ARG APP_VERSION=1.2.1
+ARG APP_VERSION=1.3.0
 # App de Google para conectar Google Drive (la imagen de Docker Hub la recibe de los secretos de GitHub)
 ARG GOOGLE_CLIENT_ID=""
 ARG GOOGLE_CLIENT_SECRET=""

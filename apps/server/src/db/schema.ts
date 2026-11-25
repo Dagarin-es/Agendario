@@ -473,6 +473,27 @@ export const interactionAttachments = pgTable(
   (t) => [index("interaction_attachments_interaction_idx").on(t.interactionId), index("interaction_attachments_unknown_idx").on(t.unknownCallId)],
 );
 
+// ---------- Sincronización de contactos con Gmail (solo Agendario → Google) ----------
+
+/** Contacto de Agendario ↔ contacto creado por Agendario en Google Contactos (cada usuario, su cuenta). */
+export const gmailLinks = pgTable(
+  "gmail_links",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    contactId: uuid("contact_id").notNull(),
+    /** «people/c123…» en la People API */
+    resourceName: text("resource_name").notNull(),
+    etag: text("etag").notNull().default(""),
+    /** Huella de lo último que se envió (para no reenviar si no cambia) */
+    hash: text("hash").notNull().default(""),
+    photoKey: text("photo_key").notNull().default(""),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.contactId] })],
+);
+
 // ---------- Preferencias de cada usuario y por contacto ----------
 
 export const userPrefs = pgTable("user_prefs", {

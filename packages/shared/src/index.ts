@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // IS_BETA = true muestra la etiqueta «Beta» (desde la 1.0, false).
 export * from "./themes";
 
-export const APP_VERSION = "1.2.1";
+export const APP_VERSION = "1.3.0";
 export const IS_BETA = false;
 
 // ---------- Enumeraciones ----------
@@ -589,6 +589,32 @@ export const todoistSettingsSchema = z.object({
   phoneAlerts: z.boolean().optional(),
   publicUrl: z.string().max(300).optional(),
 });
+
+// ---------- Gmail (contactos de Agendario → Google Contactos) ----------
+
+export interface GmailStatus {
+  /** El administrador ha puesto el ID y el secreto de la app de Google (Ajustes → Sincronización) */
+  appConfigured: boolean;
+  /** ID de cliente (público) para mostrarlo; el secreto nunca se devuelve */
+  appClientId: string;
+  connected: boolean;
+  /** Cuenta de Google conectada */
+  email: string | null;
+  /** Etiquetas marcadas «Sincronizar con Gmail» (sin contar las subetiquetas, que entran solas) */
+  tagIds: string[];
+  /** Contactos que están ahora en Gmail */
+  linked: number;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  /** Resumen de la última sincronización */
+  lastResult: { created: number; updated: number; deleted: number } | null;
+  running: boolean;
+}
+export const gmailAppSchema = z.object({
+  clientId: z.string().trim().min(10).max(300),
+  clientSecret: z.string().trim().min(6).max(300).optional(),
+});
+export const gmailTagsSchema = z.object({ tagIds: z.array(z.string().uuid()).max(500) });
 
 export const giftReceivedInputSchema = z.object({
   description: z.string().min(1).max(300),

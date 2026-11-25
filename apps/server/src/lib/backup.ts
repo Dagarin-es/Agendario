@@ -86,6 +86,7 @@ const TABLES = [
   "sync_log",
   "dav_resources",
   "sync_group_links",
+  "gmail_links",
   "settings",
 ] as const;
 

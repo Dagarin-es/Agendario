@@ -26,8 +26,10 @@ import { personalRoutes } from "./routes/personal.js";
 import { reminderRoutes } from "./routes/reminders.js";
 import { noteRoutes } from "./routes/notes.js";
 import { todoistRoutes } from "./routes/todoist.js";
+import { gmailPublicRoutes, gmailRoutes } from "./routes/gmail.js";
 import { startAttachmentSweep } from "./lib/attachments.js";
 import { startTodoistScheduler } from "./lib/todoist.js";
+import { kickAll as kickGmail, startGmailScheduler } from "./lib/gmail.js";
 import { backupRoutes } from "./routes/backup.js";
 import { syncRoutes } from "./routes/sync.js";
 import { davRoutes } from "./routes/dav.js";
@@ -85,6 +87,11 @@ app.use(
 );
 const api = new Hono()
   .use(bodyLimit({ maxSize: 32 * 1024 * 1024 }))
+  // Cualquier cambio en contactos o etiquetas: Gmail se pone al día al poco (solo envía lo que haya cambiado)
+  .use(async (c, next) => {
+    await next();
+    if (c.req.method !== "GET" && c.res.status < 400 && /^\/api\/(contacts|tags|import|duplicates|trash)/.test(c.req.path)) void kickGmail();
+  })
   .get("/health", (c) => c.json({ ok: true, version: process.env.APP_VERSION ?? APP_VERSION }))
   .route("/auth", authRoutes)
   .route("/users", userRoutes)
@@ -99,6 +106,9 @@ const api = new Hono()
   .route("/geo", geoRoutes)
   .route("/backup", backupRoutes)
   .route("/sync", syncRoutes)
+  // Vuelta de Google al conectar Gmail (sin sesión; antes que las rutas con sesión)
+  .route("/gmail", gmailPublicRoutes)
+  .route("/gmail", gmailRoutes)
   // Antes que las rutas montadas en «/» (que exigen sesión): el calendario suscrito entra con su token
   .route("/ics", icsPublicRoutes)
   .route("/personal-events", personalEventRoutes)
@@ -146,6 +156,7 @@ const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
 startPurgeJob();
 startAttachmentSweep();
 startTodoistScheduler();
+startGmailScheduler();
 startSessionCleanup();
 startBackupScheduler();
 startSyncScheduler();

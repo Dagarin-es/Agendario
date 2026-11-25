@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> **Tus contactos, tu servidor.** Versión estable 1.2.1 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
+> **Tus contactos, tu servidor.** Versión estable 1.3.0 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **efemérides**, **contactos compartidos** entre usuarios, **fotos y portadas**, servidor **CardDAV** (con grupos) para el móvil y calendario **.ics** suscribible.
 
-Esta es la **versión 1.2.1**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
+Esta es la **versión 1.3.0**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
 
 ---
 
@@ -32,6 +32,8 @@ Esta es la **versión 1.2.1**: servidor + web app instalable (PWA) en un contene
 - **Importación de .vcf**: uno o varios ficheros, o **una carpeta entera** (con subcarpetas). Ver el apartado *Importar contactos*.
 - **Selección múltiple** con acciones en bloque: exportar, añadir o quitar etiquetas y borrar (en la app, manteniendo pulsada la foto).
 - **Recordatorios** con avisos en el móvil, pestaña propia cuando hay pendientes, ⏰ en la lista y **sincronización con Todoist** en los dos sentidos.
+- **Contactos a Gmail** (para el nuevo Outlook): los de las etiquetas que marques, en un solo sentido, con foto y etiquetas como grupos de Google Contactos.
+- **Novedades** en el menú: el historial de cambios de cada versión, dentro de la app.
 - **Android Auto**: los avisos de la app (nota al colgar, recordatorios) se leen en el coche y se contestan con la voz.
 - **Duplicados** al estilo de Google Contacts: borrar uno, combinar automáticamente o combinar manualmente eligiendo qué conservar. Ver *Buscar y combinar duplicados*.
 - **Ideas para regalos**: idea, enlace, precio, notas y estado regalado (fecha y motivo). **Siempre son privadas**: aunque el contacto esté compartido, nadie más ve tus ideas.
@@ -59,7 +61,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-1.2.1.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.3.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -93,7 +95,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-1.2.1.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.3.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -101,7 +103,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-1.2.1.zip
+unzip agendario-1.3.0.zip
 cd agendario
 ```
 
@@ -145,7 +147,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-1.2.1.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-1.3.0.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -609,9 +611,10 @@ Desde la 1.0 `IS_BETA = false` (sin etiqueta «Beta»). La versión está en `AP
    - ✅ 0.6: direcciones geolocalizadas (buscador, abrir en mapa o Waze, mapa en la ficha) y orden por geolocalización.
 2. ✅ **Fase 2**: copias cifradas (age), programables, a una carpeta, NFS, SMB o Google Drive. Pendiente: personalizar la interfaz (colores e icono alternativo).
 3. ✅ **Fase 3** (0.12): servidor **CardDAV** para la agenda nativa del móvil y del Mac, y subetiquetas ↔ grupos de Fastmail.
-4. Google: solo traer las fotos de perfil (`scripts/fotos-google.py`). Sin sincronización con Google ni Outlook.
+4. Google: traer las fotos de perfil (`scripts/fotos-google.py`) y, desde la 1.3, **enviar contactos a una cuenta de Gmail** por etiquetas (solo Agendario → Google) para verlos en el nuevo Outlook.
 5. **Fase 5**: ✅ app Android con Capacitor (0.12). Pendiente: iOS y Tauri (Mac/Windows).
    - ✅ 1.1: recordatorios y notas durante las llamadas.
+   - ✅ 1.3: contactos a Gmail (para Outlook), «Novedades» en el menú y corrección del recorte de fotos en la web.
    - ✅ 1.2.1: editar ideas de regalo, avisos con bola en el icono (vencidos y cumpleaños sin regalo) y correcciones de la app.
    - ✅ 1.2: adjuntos en las llamadas, «Últimas notas», recordatorios con pestaña propia y Todoist, selección por pulsación larga y avisos en Android Auto.
    - Más adelante: recordatorios con apps de tareas autoalojadas por CalDAV (Vikunja, Nextcloud Tasks).

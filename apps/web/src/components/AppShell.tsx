@@ -17,6 +17,7 @@ import { haptic } from "../lib/native";
 import { ModeSelector, useColorThemeFromPrefs, useThemeIcon } from "./Personalize";
 import { UserAvatar } from "./UserAvatar";
 import { AboutModal } from "./About";
+import { ChangelogModal } from "./Changelog";
 import { ContactListPage } from "../pages/ContactList";
 import { OfflineBanner } from "./OfflineBanner";
 import { sortOptions, useSortPref } from "../lib/sort";
@@ -117,6 +118,7 @@ export function AppShell() {
   const overdue = useOverdueCount();
   const [sheet, setSheet] = useState(false);
   const [about, setAbout] = useState(false);
+  const [news, setNews] = useState(false);
   useColorThemeFromPrefs();
   const icon = useThemeIcon();
   const headerRef = useRef<HTMLElement>(null);
@@ -250,8 +252,9 @@ export function AppShell() {
         </nav>
       )}
 
-      {sheet && <MoreSheet onClose={() => setSheet(false)} onAbout={() => { setSheet(false); setAbout(true); }} />}
+      {sheet && <MoreSheet onClose={() => setSheet(false)} onAbout={() => { setSheet(false); setAbout(true); }} onNews={() => { setSheet(false); setNews(true); }} />}
       {about && <AboutModal onClose={() => setAbout(false)} />}
+      {news && <ChangelogModal onClose={() => setNews(false)} />}
     </div>
   );
 }
@@ -282,7 +285,7 @@ function SortMenu() {
 }
 
 /** Hoja inferior con tu cuenta y el resto de opciones. Se cierra tocando fuera, con atrás o deslizando hacia abajo. */
-function MoreSheet({ onClose, onAbout }: { onClose: () => void; onAbout: () => void }) {
+function MoreSheet({ onClose, onAbout, onNews }: { onClose: () => void; onAbout: () => void; onNews: () => void }) {
   const logout = useLogout();
   const { data: me } = useMe();
   const [dy, setDy] = useState(0);
@@ -322,8 +325,8 @@ function MoreSheet({ onClose, onAbout }: { onClose: () => void; onAbout: () => v
           <button className={item} onClick={() => { setServer(null); void logout().then(() => window.location.reload()); }}>🔁 Cambiar de servidor</button>
           <button className={item} onClick={onAbout}>📒 Acerca de {APP_NAME}</button>
           <a className={item} href={manualUrl()} target="_blank" rel="noopener">📘 Manual (PDF)</a>
+          <button className={item} onClick={onNews}>📋 Novedades <span className="ml-auto text-sm text-slate-400">v{APP_VERSION}</span></button>
           <button className={`${item} text-red-700`} onClick={() => void logout()}>🚪 Salir</button>
-          <p className="mt-2 px-4 text-xs text-slate-400">{APP_NAME} {APP_VERSION}</p>
         </div>
       </div>
     </>

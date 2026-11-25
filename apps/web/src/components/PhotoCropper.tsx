@@ -19,10 +19,20 @@ export function PhotoCropper({ file, onCancel, onDone, aspect = 1, title = "Encu
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ d: number; z: number } | null>(null);
 
+  // Tras el selector de archivos la ventana del navegador puede no tener el foco y no repintar hasta un clic:
+  // se fuerza un repintado al montar, al cargar la imagen y al volver el foco.
+  const [, repaint] = useState(0);
+  useEffect(() => {
+    const tick = () => requestAnimationFrame(() => repaint((n) => n + 1));
+    tick();
+    window.addEventListener("focus", tick);
+    return () => window.removeEventListener("focus", tick);
+  }, []);
+
   useEffect(() => {
     const url = URL.createObjectURL(file);
     const i = new Image();
-    i.onload = () => setImg(i);
+    i.onload = () => { setImg(i); requestAnimationFrame(() => repaint((n) => n + 1)); };
     i.src = url;
     return () => URL.revokeObjectURL(url);
   }, [file]);
@@ -87,7 +97,7 @@ export function PhotoCropper({ file, onCancel, onDone, aspect = 1, title = "Encu
   const sz = side();
   const s = cover(sz);
   return (
-    <Modal title={title} onClose={onCancel}>
+    <Modal title={title} onClose={onCancel} animate={false}>
       <div className="space-y-4 p-4">
         <div
           ref={box}

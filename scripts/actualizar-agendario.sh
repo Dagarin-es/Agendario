@@ -236,6 +236,9 @@ if [ "$SUBIR" = s ]; then
     elif git show-ref -q --verify "refs/remotes/origin/$RAMA"; then git checkout -q -b "$RAMA" "origin/$RAMA"
     else git checkout -q -b "$RAMA" 2>/dev/null || git checkout -q --orphan "$RAMA"; fi
   fi
+  # Claude sube a GitHub los apuntes (PENDIENTES.md) entre versiones: se parte de lo que hay en GitHub
+  # para que el push no se rechace. Sin --hard: los ficheros se sustituyen igualmente por los del zip.
+  if git show-ref -q --verify "refs/remotes/origin/$RAMA"; then git reset -q "origin/$RAMA"; fi
   find "$REPO" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
   cp -a "$SRC/." "$REPO/"
   git add -A

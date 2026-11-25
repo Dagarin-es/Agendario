@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router";
-import type { Tag, TagColor } from "@agendario/shared";
+import type { GmailStatus, Tag, TagColor } from "@agendario/shared";
 import { ColorPicker, descendantIds, TagChip, tagTree, useTags } from "../components/Tags";
 import { api, apiUrl } from "../lib/api";
 import { useAlert, useConfirm } from "../components/Dialogs";
@@ -17,6 +17,22 @@ export function TagsPage() {
   const [draft, setDraft] = useState<{ name: string; color: TagColor }>({ name: "", color: "teal" });
   const confirm = useConfirm();
   const showAlert = useAlert();
+  // «Sincronizar con Gmail» en cada etiqueta (las subetiquetas entran solas)
+  const { data: gmail } = useQuery({ queryKey: ["gmail"], queryFn: () => api.get<GmailStatus>("/gmail") });
+  const gmailSet = new Set(gmail?.tagIds ?? []);
+  const setGmail = useMutation({
+    mutationFn: (tagIds: string[]) => api.put<GmailStatus>("/gmail/tags", { tagIds }),
+    onSuccess: (st) => qc.setQueryData(["gmail"], st),
+    onError: (e) => showAlert("No se ha podido guardar", (e as Error).message),
+  });
+  const gmailInherited = (t: Tag): Tag | undefined => {
+    let p = t.parentId ? tags?.find((x) => x.id === t.parentId) : undefined;
+    for (let i = 0; p && i < 10; i++) {
+      if (gmailSet.has(p.id)) return p;
+      p = p.parentId ? tags?.find((x) => x.id === p!.parentId) : undefined;
+    }
+    return undefined;
+  };
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["tags"] });
     qc.invalidateQueries({ queryKey: ["contacts"] });
@@ -110,6 +126,11 @@ export function TagsPage() {
       </form>
       {tree.length > 1 && <p className="text-xs text-slate-500">Usa ↑ ↓ para ordenarlas y «Mover a» para meter una etiqueta dentro de otra. Filtrar o sincronizar una etiqueta incluye sus subetiquetas.</p>}
 
+      {gmail && gmail.tagIds.length > 0 && !gmail.connected && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Has marcado etiquetas para Gmail, pero tu cuenta de Google no está conectada: <Link to="/settings?tab=sync" className="font-medium underline">Ajustes → Sincronización</Link>.
+        </p>
+      )}
       {tags?.length === 0 && <div className="card text-center text-slate-500">Todavía no tienes etiquetas.</div>}
       <ul className="space-y-2">
         {tree.map(({ tag: t, depth, childCount }) => {
@@ -152,6 +173,20 @@ export function TagsPage() {
                   {t.contactCount > 0 && (
                     <a className="btn-ghost px-2 py-1 text-xs" href={apiUrl(`/export/contacts.vcf?tag=${t.id}`)} title="Exporta sus contactos con los teléfonos, emails y direcciones de esta etiqueta">⤒ Exportar</a>
                   )}
+                  {(() => {
+                    const via = gmailInherited(t);
+                    return (
+                      <label className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${gmailSet.has(t.id) || via ? "border-sky-200 bg-sky-50 text-sky-900" : "border-slate-200 text-slate-600"}`} title={via ? `Ya entra por «${via.name}»` : "Envía sus contactos a Google Contactos (para verlos en Outlook)"}>
+                        <input
+                          type="checkbox"
+                          checked={gmailSet.has(t.id) || !!via}
+                          disabled={!!via || setGmail.isPending}
+                          onChange={(e) => setGmail.mutate(e.target.checked ? [...gmailSet, t.id] : [...gmailSet].filter((x) => x !== t.id))}
+                        />
+                        Sincronizar con Gmail{via ? ` (por ${via.name})` : ""}
+                      </label>
+                    );
+                  })()}
                   <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { setEditing(t.id); setDraft({ name: t.name, color: t.color }); }}>Editar</button>
                   <button className="btn-danger px-2 py-1 text-xs" onClick={() => askDelete(t)}>Borrar</button>
                   {t.contactCount > 0 && (

@@ -1,0 +1,112 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><style>
+@page { size: 595.92pt 842.88pt; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Inter Display", Inter, sans-serif; color: #1e293b; font-size: 10.6pt; line-height: 1.55; letter-spacing: .1pt; }
+.page { width: 595.92pt; height: 842.88pt; position: relative; padding: 52pt 48pt 60pt 48pt; page-break-after: always; overflow: hidden; }
+.page:last-child { page-break-after: auto; }
+h1 { font-size: 21pt; color: #3730a3; margin: 0 0 6pt; font-weight: 700; padding-bottom: 8pt; border-bottom: 1px solid #1e293b; }
+h1 .n { color: #a5b4fc; margin-right: 6pt; }
+h2 { font-size: 12.5pt; color: #1e1b4b; margin: 16pt 0 4pt; font-weight: 700; }
+h3 { font-size: 10.8pt; color: #3730a3; margin: 10pt 0 2pt; font-weight: 700; }
+p { margin: 4pt 0; }
+ul, ol { margin: 4pt 0; padding-left: 16pt; }
+li { margin: 2pt 0; }
+b { color: #1e1b4b; }
+.tip { background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.warn { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.foot { position: absolute; bottom: 14pt; left: 48pt; right: 48pt; display: flex; justify-content: space-between; font-size: 8.5pt; color: #5b5f77; }
+.row { display: flex; gap: 14pt; align-items: flex-start; }
+img.shot { border: 1px solid #e2e8f0; border-radius: 8pt; display: block; }
+.cap { font-size: 8.6pt; color: #64748b; text-align: center; margin-top: 3pt; }
+code { background: #eef2ff; color: #3730a3; padding: 0 3pt; border-radius: 3pt; font-size: 9pt; word-break: break-all; }
+</style></head><body>
+
+<div class="page">
+<h1><span class="n">10</span>Novedades de la versión 1.3</h1>
+<p>La 1.3 trae la sincronización de contactos con una cuenta de <b>Gmail</b> (para tenerlos en el nuevo Outlook, que no admite CardDAV), la ventana de <b>Novedades</b> en el menú y varias correcciones.</p>
+
+<h2>Novedades en el menú</h2>
+<ul>
+<li>En el menú (web) y en «Más» (app), justo antes de <b>Salir</b>, está <b>📋 Novedades</b> con el número de tu versión.</li>
+<li>Abre el historial de cambios de todas las versiones, con la tuya marcada. Va dentro de Agendario: se ve también sin conexión.</li>
+</ul>
+
+<h2>Contactos en Gmail (y en Outlook)</h2>
+<p>Agendario puede enviar a una cuenta de Google los contactos de las etiquetas que elijas. Añadiendo esa cuenta al <b>nuevo Outlook</b>, los verás allí. Funciona así:</p>
+<ul>
+<li>Va <b>en un solo sentido</b>: Agendario → Google. Los cambios se hacen en Agendario; en Google y en Outlook los contactos son para consultar (lo que se cambie allí se pisa en la siguiente sincronización).</li>
+<li>Eliges las etiquetas en <b>Etiquetas</b> con la casilla <b>«Sincronizar con Gmail»</b>. Las subetiquetas entran solas.</li>
+<li>De cada contacto van su nombre, apodo, empresa y cargo, cumpleaños, notas, foto y los teléfonos, correos, webs y direcciones <b>de esas etiquetas y los que no tienen etiqueta</b> (la misma regla que con Fastmail).</li>
+<li>En Google, cada etiqueta aparece como una <b>etiqueta de contactos</b> con el mismo nombre («dgarcia › Clientes» para las subetiquetas).</li>
+<li>Si quitas la marca de una etiqueta, la etiqueta a un contacto o borras el contacto, <b>se borra de Google</b>. Solo se tocan los contactos que creó Agendario, nunca los que ya tenía la cuenta.</li>
+<li>Se sincroniza cada 15 minutos y, además, un minuto después de cada cambio. En <b>Ajustes → Sincronización → Gmail</b> está «Sincronizar ahora».</li>
+</ul>
+<div class="tip">💡 Usa una cuenta de <b>Gmail normal</b> (no de Google Workspace) si la de Workspace va a desaparecer. Puede ser una cuenta solo para esto.</div>
+<div class="foot"><span>Agendario · Manual 1.3.0</span><span>45</span></div>
+</div>
+
+<div class="page">
+<h2 style="margin-top:0">Paso 1 · Preparar la app de Google (una vez, lo hace el administrador)</h2>
+<p>Google exige una «app» propia para dar permiso sobre los contactos. Se crea gratis en Google Cloud; si ya tienes la de las copias en Google Drive, usa <b>ese mismo proyecto</b>.</p>
+<ol>
+<li>Entra en <b>console.cloud.google.com</b> con tu cuenta y elige el proyecto de Agendario (arriba a la izquierda).</li>
+<li><b>APIs y servicios → Biblioteca</b>, busca <b>People API</b> y pulsa <b>Habilitar</b>.</li>
+<li><b>Google Auth Platform → Público</b>: tipo de usuario <b>Externo</b> y estado de publicación <b>En producción</b> (botón «Publicar app»). <i>Importante</i>: si se queda «En pruebas», Google retira el permiso cada 7 días y la sincronización se para.</li>
+<li><b>Google Auth Platform → Clientes → Crear cliente</b>:
+  <ul>
+  <li>Tipo de aplicación: <b>Aplicación web</b>. Nombre: «Agendario Gmail».</li>
+  <li>En <b>URIs de redirección autorizados</b> añade la dirección de tu Agendario seguida de <code>/api/gmail/callback</code>, por ejemplo <code>https://agendario.tudominio.es/api/gmail/callback</code>. Agendario te la muestra ya escrita en Ajustes.</li>
+  <li>Pulsa <b>Crear</b> y copia el <b>ID de cliente</b> y el <b>secreto de cliente</b>.</li>
+  </ul></li>
+<li>En Agendario: <b>Ajustes → Sincronización → Gmail</b>, pega el ID y el secreto y pulsa <b>Guardar</b>. Se guardan solo en tu servidor.</li>
+</ol>
+<div class="warn">⚠️ La dirección tiene que ser <b>https</b> y exactamente la que usas para abrir Agendario en el navegador (la del Proxy Host de Nginx Proxy Manager). Si no coincide, Google dice «redirect_uri_mismatch».</div>
+
+<h2>Paso 2 · Conectar tu cuenta de Gmail</h2>
+<ol>
+<li>Desde la <b>web</b> de Agendario (no desde la app): <b>Ajustes → Sincronización → Gmail → Conectar cuenta de Google</b>.</li>
+<li>Elige la cuenta de Gmail. Saldrá <b>«Google no ha verificado esta app»</b>: es normal, la app es tuya. Pulsa <b>Configuración avanzada → Ir a … (no seguro)</b>.</li>
+<li>Marca el permiso de <b>contactos</b> y pulsa <b>Continuar</b>. Vuelves a Agendario con «Gmail conectado».</li>
+</ol>
+<p>Cada usuario de Agendario conecta su propia cuenta y elige sus etiquetas.</p>
+<div class="foot"><span>Agendario · Manual 1.3.0</span><span>46</span></div>
+</div>
+
+<div class="page">
+<h2 style="margin-top:0">Paso 3 · Elegir las etiquetas</h2>
+<ul>
+<li>Menú → <b>Etiquetas</b>. En cada etiqueta hay una casilla <b>«Sincronizar con Gmail»</b>.</li>
+<li>Al marcarla, sus contactos se envían enseguida. Sus subetiquetas aparecen marcadas «por» la madre.</li>
+<li>En <b>Ajustes → Sincronización → Gmail</b> ves la cuenta conectada, cuántos contactos hay en Google, cuándo fue la última sincronización y qué cambió.</li>
+<li><b>Desconectar</b> pregunta si quieres borrar también de Google los contactos y etiquetas que creó Agendario o dejarlos allí.</li>
+</ul>
+<img class="shot" src="gmail-etiquetas.png" style="width:100%; margin-top:6pt"><div class="cap">La casilla «Sincronizar con Gmail» en Etiquetas (la subetiqueta entra por su madre).</div>
+<img class="shot" src="gmail-ajustes.png" style="width:100%; margin-top:8pt"><div class="cap">Ajustes → Sincronización → Gmail, ya conectado.</div>
+
+<h2>Paso 4 · Verlos en el nuevo Outlook</h2>
+<ol>
+<li>En el nuevo Outlook: <b>Agregar cuenta</b> y entra con esa cuenta de Gmail.</li>
+<li><b>Personas → Configuración</b>: en «Mostrar solo estos contactos» deja marcada solo la cuenta de Gmail (si no quieres ver los de otras cuentas).</li>
+<li>En el <b>Calendario</b>, desmarca el de esa cuenta si no lo usas. Su bandeja de correo puedes contraerla.</li>
+</ol>
+<div class="foot"><span>Agendario · Manual 1.3.0</span><span>47</span></div>
+</div>
+
+<div class="page">
+<h2 style="margin-top:0">Correcciones de la 1.3</h2>
+<ul>
+<li><b>Cambiar una foto desde la web</b>: la ventana «Encuadrar la foto» aparece en cuanto eliges el archivo (antes, en Edge y Chrome, no salía hasta hacer clic en otra parte).</li>
+<li><b>Actualizar con el script</b>: ya no falla al subir a GitHub si allí hay cambios que tu copia no tiene (el script parte de lo que hay en GitHub).</li>
+<li>Manual: en el capítulo 2, Nginx Proxy Manager lleva ya <code>client_max_body_size 30m;</code>.</li>
+</ul>
+<h2>Si algo falla con Gmail</h2>
+<ul>
+<li><b>«Google ha retirado el permiso»</b>: la app sigue «En pruebas» o quitaste el acceso en tu cuenta de Google. Publícala «En producción» y vuelve a conectar.</li>
+<li><b>«La People API no está activada»</b>: paso 1, punto 2.</li>
+<li><b>redirect_uri_mismatch</b>: la dirección del paso 1 no coincide con la que usas en el navegador.</li>
+<li>Los cambios hechos en Google o en Outlook <b>se pierden</b> en la siguiente sincronización: edita en Agendario.</li>
+</ul>
+<div class="foot"><span>Agendario · Manual 1.3.0</span><span>48</span></div>
+</div>
+
+</body></html>

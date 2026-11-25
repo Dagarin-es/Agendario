@@ -13,6 +13,7 @@ import { useGiftsToBuy, usePendingGifts } from "../lib/gifts";
 import { ModeSelector, useColorThemeFromPrefs, useThemeIcon } from "./Personalize";
 import { UserAvatar } from "./UserAvatar";
 import { AboutModal } from "./About";
+import { ChangelogModal } from "./Changelog";
 import { OfflineBanner } from "./OfflineBanner";
 
 /** Cada sección con su tono: Contactos índigo, Fechas ámbar, Duplicados lila. */
@@ -39,6 +40,7 @@ export function useDuplicateCount() {
 function MoreMenu() {
   const [open, setOpen] = useState(false);
   const [about, setAbout] = useState(false);
+  const [news, setNews] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const { data: me } = useMe();
@@ -86,10 +88,12 @@ function MoreMenu() {
           <div className="my-1 border-t border-slate-100" />
           <button className={item} onClick={() => { setOpen(false); setAbout(true); }}>📒 Acerca de Agendario</button>
           <a className={item} href={manualUrl()} target="_blank" rel="noopener" onClick={() => setOpen(false)}>📘 Manual (PDF)</a>
+          <button className={item} onClick={() => { setOpen(false); setNews(true); }}>📋 Novedades <span className="ml-auto text-xs text-slate-400">v{APP_VERSION}</span></button>
           <button className={`${item} text-red-700`} onClick={logout}>🚪 Salir</button>
         </div>
       )}
       {about && <AboutModal onClose={() => setAbout(false)} />}
+      {news && <ChangelogModal onClose={() => setNews(false)} />}
     </div>
   );
 }

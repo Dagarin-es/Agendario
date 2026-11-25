@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 1.3.0 — contactos a Gmail (para Outlook) y Novedades
+- **Contactos a Gmail** (Ajustes → Sincronización → Gmail): envía a una cuenta de Google los contactos de las etiquetas que marques en **Etiquetas** con la casilla **«Sincronizar con Gmail»** (las subetiquetas entran solas). Añadiendo esa cuenta al nuevo Outlook, que no admite CardDAV, los ves allí. Va en un solo sentido: se edita en Agendario y en Google/Outlook es para consultar. Van nombre, apodo, empresa, cumpleaños, notas, foto y los teléfonos, correos y direcciones de esas etiquetas y los sin etiqueta; cada etiqueta es una etiqueta de Google Contactos. Quitar la marca, la etiqueta o borrar el contacto lo quita de Google (solo lo que creó Agendario). Se sincroniza al minuto de cada cambio y cada 15 minutos. Hace falta crear una vez una app de Google «Aplicación web» (pasos en el manual, capítulo 10).
+- **Novedades** en el menú, justo antes de Salir y con el número de tu versión: este historial de cambios dentro de Agendario (también sin conexión).
+- **Cambiar una foto desde la web**: la ventana «Encuadrar la foto» sale en cuanto eliges el archivo (antes no aparecía hasta hacer clic en otra parte, en Edge y Chrome en Mac y Windows).
+- **Script de actualización**: parte de lo que hay en GitHub antes de subir la versión, así no falla si allí hay apuntes que tu copia no tiene.
+- Manual: capítulo 10 con la conexión a Gmail y Outlook; en el capítulo 2, `client_max_body_size 30m;`.
+- La APK nueva trae «Novedades» en «Más»; con la anterior todo sigue funcionando (la conexión con Gmail se hace desde la web).
+
 ## 1.2.1 — correcciones y avisos con bola
 - **Editar ideas de regalo**: botón ✏️ en cada idea, en la ficha y en la pestaña Regalos, para cambiar el nombre, el enlace, el precio o las notas (también si ya está comprada).
 - **Recordatorios** siempre en la barra de abajo de la app, entre Fechas y tu usuario (y en el menú de la web), aunque no tengas ninguno pendiente.
