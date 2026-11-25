@@ -183,6 +183,13 @@
       "when": 1795450000000,
       "tag": "0025_gmail_links",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1795550000000,
+      "tag": "0026_gmail_accounts",
+      "breakpoints": true
     }
   ]
 }

@@ -325,7 +325,7 @@ function MoreSheet({ onClose, onAbout, onNews }: { onClose: () => void; onAbout:
           <button className={item} onClick={() => { setServer(null); void logout().then(() => window.location.reload()); }}>🔁 Cambiar de servidor</button>
           <button className={item} onClick={onAbout}>📒 Acerca de {APP_NAME}</button>
           <a className={item} href={manualUrl()} target="_blank" rel="noopener">📘 Manual (PDF)</a>
-          <button className={item} onClick={onNews}>📋 Novedades <span className="ml-auto text-sm text-slate-400">v{APP_VERSION}</span></button>
+          <button className={item} onClick={onNews}>📋 Changelog {APP_VERSION}</button>
           <button className={`${item} text-red-700`} onClick={() => void logout()}>🚪 Salir</button>
         </div>
       </div>

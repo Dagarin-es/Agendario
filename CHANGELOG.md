@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 1.3.1 — varias cuentas de Google y fotos desde Google
+- **Varias cuentas de Google** (Ajustes → Sincronización → Gmail): conecta todas las que quieras con **«+ Añadir otra cuenta de Google»**. En **Etiquetas** cada etiqueta tiene una casilla por cuenta para elegir a cuál va (puede ir a varias a la vez; las subetiquetas entran solas). Tu cuenta de antes sigue igual, con lo que ya tenía, sin volver a subir nada.
+- **Pasar las etiquetas de una cuenta a otra**, con un desplegable en cada cuenta: los contactos se crean en la nueva y se quitan de la antigua. Pensado para el día en que cambies una cuenta por otra.
+- **Fotos desde Google**: a los contactos que no tienen foto, Agendario les pone la que haya en tus cuentas de Google (la de un contacto que ya tuvieras allí o la foto de perfil de Google de esa persona), reconociéndolos por el email o el teléfono. Se hace solo cada 15 minutos y con el botón **«📷 Buscar fotos en Google ahora»**. Nunca cambia una foto que ya tengas, si hay dudas sobre quién es no toca nada y, si quitas una foto que vino de Google, no vuelve. Queda en el historial del contacto.
+- **Changelog** en el menú, con tu versión en el propio nombre («📋 Changelog 1.3.1»).
+- **Efemérides ordenadas por la próxima que llega**: primero la que antes cumple aniversario, luego la siguiente, y así todas (también en la ficha del contacto). En el desplegable sigue la opción «Más recientes».
+- Manual: capítulo 10 al día con las varias cuentas y las fotos.
+- La APK anterior sigue funcionando con este servidor; la nueva trae el «Changelog 1.3.1», las casillas por cuenta en Etiquetas y el nuevo orden de las efemérides. Las cuentas de Google se conectan desde la web.
+
 ## 1.3.0 — contactos a Gmail (para Outlook) y Novedades
 - **Contactos a Gmail** (Ajustes → Sincronización → Gmail): envía a una cuenta de Google los contactos de las etiquetas que marques en **Etiquetas** con la casilla **«Sincronizar con Gmail»** (las subetiquetas entran solas). Añadiendo esa cuenta al nuevo Outlook, que no admite CardDAV, los ves allí. Va en un solo sentido: se edita en Agendario y en Google/Outlook es para consultar. Van nombre, apodo, empresa, cumpleaños, notas, foto y los teléfonos, correos y direcciones de esas etiquetas y los sin etiqueta; cada etiqueta es una etiqueta de Google Contactos. Quitar la marca, la etiqueta o borrar el contacto lo quita de Google (solo lo que creó Agendario). Se sincroniza al minuto de cada cambio y cada 15 minutos. Hace falta crear una vez una app de Google «Aplicación web» (pasos en el manual, capítulo 10).
 - **Novedades** en el menú, justo antes de Salir y con el número de tu versión: este historial de cambios dentro de Agendario (también sin conexión).

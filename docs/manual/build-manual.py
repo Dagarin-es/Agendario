@@ -1,20 +1,20 @@
 """
 Manual en PDF: no hay fuente del manual original (1.1.0). Este script toma ese PDF (commit 79ae2e6,
 `git show 79ae2e6:apps/web/public/manual/Agendario-Manual.pdf > base-1.1.pdf`), cambia la versión de la
-portada y de los pies de página, corrige «20m» → «30m» (Nginx Proxy Manager) y le añade los capítulos 9 y 10
-(capitulo9.html y capitulo10.html, hechos con Chromium).
+portada y de los pies de página, corrige «20m» → «30m» (Nginx Proxy Manager) y le añade los capítulos 9, 10 y 11
+(capitulo9.html, capitulo10.html y capitulo11.html, hechos con Chromium).
 Uso:  python3 docs/manual/build-manual.py base-1.1.pdf apps/web/public/manual/Agendario-Manual.pdf
-Necesita playwright (Chromium), pypdf y la fuente Inter Display. Al cambiar de versión, edita la versión aquí (VERSION) y en los pies de capitulo9/10.html.
+Necesita playwright (Chromium), pypdf y la fuente Inter Display. Al cambiar de versión, edita la versión aquí (VERSION) y en los pies de capitulo9/10/11.html.
 """
 import os, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE, OUT = sys.argv[1], sys.argv[2]
 TMP = tempfile.mkdtemp()
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
     b = p.chromium.launch(); pg = b.new_page()
-    for ch in ("capitulo9", "capitulo10"):
+    for ch in ("capitulo9", "capitulo10", "capitulo11"):
         pg.goto("file://" + os.path.join(HERE, ch + ".html")); pg.wait_for_timeout(500)
         pg.pdf(path=os.path.join(TMP, ch + ".pdf"), width="8.2767in", height="11.7067in", print_background=True, margin={"top":"0","bottom":"0","left":"0","right":"0"})
     # «client_max_body_size 20m;» → «30m;» (capítulo 2, página 8, bloque oscuro; y tabla de problemas, página 40)
@@ -43,7 +43,7 @@ for i, page in enumerate(src.pages):
     if i in fixes: page.merge_page(fixes[i])
     w.add_page(page)
 for pg_ in w.pages: pg_.compress_content_streams()
-for ch in ("capitulo9", "capitulo10"):
+for ch in ("capitulo9", "capitulo10", "capitulo11"):
     for page in PdfReader(os.path.join(TMP, ch + ".pdf")).pages: w.add_page(page)
 w.add_metadata({"/Title": f"Agendario · Manual de instalación y uso {VERSION}", "/Author": "Agendario"})
 w.compress_identical_objects(remove_identicals=True, remove_orphans=True)

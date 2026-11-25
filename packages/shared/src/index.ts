@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // IS_BETA = true muestra la etiqueta «Beta» (desde la 1.0, false).
 export * from "./themes";
 
-export const APP_VERSION = "1.3.0";
+export const APP_VERSION = "1.3.1";
 export const IS_BETA = false;
 
 // ---------- Enumeraciones ----------
@@ -592,21 +592,41 @@ export const todoistSettingsSchema = z.object({
 
 // ---------- Gmail (contactos de Agendario → Google Contactos) ----------
 
+export interface GmailAccountStatus {
+  /** Identificador de la cuenta dentro de Agendario («main» = la conectada antes de la 1.3.1) */
+  id: string;
+  /** Dirección de la cuenta de Google (puede faltar si nunca se llegó a conectar) */
+  email: string | null;
+  /** Tiene permiso de Google; si no, hay que volver a conectarla */
+  connected: boolean;
+  /** Etiquetas que van a esta cuenta (sin contar las subetiquetas, que entran solas) */
+  tagIds: string[];
+  /** Contactos que están ahora en esta cuenta */
+  linked: number;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  lastResult: { created: number; updated: number; deleted: number } | null;
+  running: boolean;
+  /** Última búsqueda de fotos en Google y cuántas se añadieron */
+  photosAt: string | null;
+  photosAdded: number | null;
+  photosError: string | null;
+}
+
 export interface GmailStatus {
   /** El administrador ha puesto el ID y el secreto de la app de Google (Ajustes → Sincronización) */
   appConfigured: boolean;
   /** ID de cliente (público) para mostrarlo; el secreto nunca se devuelve */
   appClientId: string;
+  /** Cuentas de Google del usuario (1.3.1) */
+  accounts: GmailAccountStatus[];
+  // Lo de abajo es la primera cuenta, para las APK de la 1.3.0 (que solo conocían una)
   connected: boolean;
-  /** Cuenta de Google conectada */
   email: string | null;
-  /** Etiquetas marcadas «Sincronizar con Gmail» (sin contar las subetiquetas, que entran solas) */
   tagIds: string[];
-  /** Contactos que están ahora en Gmail */
   linked: number;
   lastSyncAt: string | null;
   lastError: string | null;
-  /** Resumen de la última sincronización */
   lastResult: { created: number; updated: number; deleted: number } | null;
   running: boolean;
 }
@@ -614,7 +634,10 @@ export const gmailAppSchema = z.object({
   clientId: z.string().trim().min(10).max(300),
   clientSecret: z.string().trim().min(6).max(300).optional(),
 });
-export const gmailTagsSchema = z.object({ tagIds: z.array(z.string().uuid()).max(500) });
+/** Etiquetas de una cuenta (sin `accountId`: la primera, como en la 1.3.0) */
+export const gmailTagsSchema = z.object({ tagIds: z.array(z.string().uuid()).max(500), accountId: z.string().max(40).optional() });
+/** A qué cuentas va una etiqueta */
+export const gmailTagAccountsSchema = z.object({ accountIds: z.array(z.string().max(40)).max(50) });
 
 export const giftReceivedInputSchema = z.object({
   description: z.string().min(1).max(300),

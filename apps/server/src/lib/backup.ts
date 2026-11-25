@@ -539,6 +539,8 @@ export async function restoreArchive(work: string) {
       const prepared =
         t === "contacts" ? rows.map((r) => ({ ...(r as object), organization_contact_id: null }))
         : t === "tags" ? rows.map((r) => ({ ...(r as object), parent_id: null }))
+        // Copias anteriores a la 1.3.1: sin cuenta → la conexión de entonces («main»)
+        : t === "gmail_links" ? rows.map((r) => ({ account_id: "main", ...(r as object) }))
         : rows;
       for (let i = 0; i < prepared.length; i += 2000) {
         const chunk = JSON.stringify(prepared.slice(i, i + 2000));

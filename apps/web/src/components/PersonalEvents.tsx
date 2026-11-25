@@ -64,24 +64,32 @@ export function ago(date: string, today = new Date()) {
 }
 
 type Sort = "recent" | "next";
+/** Clave nueva en la 1.3.1: así a todos les sale por defecto la próxima que llega */
+const SORT_KEY = "agendario-efemerides-orden-v2";
+
+/** De la próxima que se cumple (hoy, la primera) a la más lejana. */
+export function byNextAnniversary<T extends { date: string; title: string }>(list: T[]) {
+  const today = new Date();
+  return [...list].sort((a, b) => nextAnniversary(a.date, today).daysLeft - nextAnniversary(b.date, today).daysLeft || a.title.localeCompare(b.title, "es"));
+}
 
 /** Pestaña «Efemérides»: lista tipo diario, con detalle (foto en grande y comentario) y edición. */
 export function PersonalEventsView({ openId, onOpen }: { openId: string | null; onOpen: (id: string | null) => void }) {
   const { data: events, isLoading } = usePersonalEvents();
   const [sort, setSort] = useState<Sort>(() => {
-    try { return (localStorage.getItem("agendario-efemerides-orden") as Sort) || "recent"; } catch { return "recent"; }
+    try { return (localStorage.getItem(SORT_KEY) as Sort) || "next"; } catch { return "next"; }
   });
   const [editing, setEditing] = useState<PersonalEvent | "new" | null>(null);
   const list = useMemo(() => {
+    if (sort === "next") return byNextAnniversary(events ?? []);
     const l = [...(events ?? [])];
-    if (sort === "next") l.sort((a, b) => nextAnniversary(a.date).daysLeft - nextAnniversary(b.date).daysLeft || a.title.localeCompare(b.title, "es"));
-    else l.sort((a, b) => b.date.replace(/^--/, "0000-").localeCompare(a.date.replace(/^--/, "0000-")));
+    l.sort((a, b) => b.date.replace(/^--/, "0000-").localeCompare(a.date.replace(/^--/, "0000-")));
     return l;
   }, [events, sort]);
   const open = events?.find((e) => e.id === openId) ?? null;
   const changeSort = (s: Sort) => {
     setSort(s);
-    try { localStorage.setItem("agendario-efemerides-orden", s); } catch { /* sin almacenamiento */ }
+    try { localStorage.setItem(SORT_KEY, s); } catch { /* sin almacenamiento */ }
   };
 
   return (
@@ -90,8 +98,8 @@ export function PersonalEventsView({ openId, onOpen }: { openId: string | null; 
         <p className="min-w-0 basis-full text-sm text-slate-500 sm:flex-1 sm:basis-auto">Tus fechas para recordar: un coche nuevo, un ascenso, un viaje…</p>
         <span className="flex-1 sm:hidden" />
         <select className="select py-1.5 text-sm" value={sort} onChange={(e) => changeSort(e.target.value as Sort)} aria-label="Ordenar">
-          <option value="recent">Más recientes</option>
           <option value="next">Próximo aniversario</option>
+          <option value="recent">Más recientes</option>
         </select>
         <button className="btn-primary" onClick={() => setEditing("new")}>+ Efeméride</button>
       </div>

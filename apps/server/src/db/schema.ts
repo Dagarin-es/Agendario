@@ -482,6 +482,8 @@ export const gmailLinks = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    /** Cuenta de Google del usuario (las conectadas antes de la 1.3.1 son «main») */
+    accountId: text("account_id").notNull().default("main"),
     contactId: uuid("contact_id").notNull(),
     /** «people/c123…» en la People API */
     resourceName: text("resource_name").notNull(),
@@ -491,7 +493,7 @@ export const gmailLinks = pgTable(
     photoKey: text("photo_key").notNull().default(""),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.contactId] })],
+  (t) => [primaryKey({ columns: [t.userId, t.accountId, t.contactId] })],
 );
 
 // ---------- Preferencias de cada usuario y por contacto ----------

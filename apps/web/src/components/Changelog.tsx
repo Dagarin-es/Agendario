@@ -26,11 +26,11 @@ function parse(md: string): Block[] {
   return blocks;
 }
 
-/** «Novedades»: el historial de cambios de todas las versiones, la actual primero. */
+/** «Changelog»: el historial de cambios de todas las versiones, la actual primero. */
 export function ChangelogModal({ onClose }: { onClose: () => void }) {
   const blocks = parse(changelog);
   return (
-    <Modal title={`Novedades · v${APP_VERSION}`} onClose={onClose} size="lg" full>
+    <Modal title={`Changelog ${APP_VERSION}`} onClose={onClose} size="lg" full>
       <div className="space-y-6 px-5 py-4">
         {blocks.map((b, i) => {
           const [version, ...rest] = b.title.split(" — ");

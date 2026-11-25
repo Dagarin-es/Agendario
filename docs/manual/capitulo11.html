@@ -1,0 +1,67 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><style>
+@page { size: 595.92pt 842.88pt; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Inter Display", Inter, sans-serif; color: #1e293b; font-size: 10.6pt; line-height: 1.55; letter-spacing: .1pt; }
+.page { width: 595.92pt; height: 842.88pt; position: relative; padding: 52pt 48pt 60pt 48pt; page-break-after: always; overflow: hidden; }
+.page:last-child { page-break-after: auto; }
+h1 { font-size: 21pt; color: #3730a3; margin: 0 0 6pt; font-weight: 700; padding-bottom: 8pt; border-bottom: 1px solid #1e293b; }
+h1 .n { color: #a5b4fc; margin-right: 6pt; }
+h2 { font-size: 12.5pt; color: #1e1b4b; margin: 16pt 0 4pt; font-weight: 700; }
+h3 { font-size: 10.8pt; color: #3730a3; margin: 10pt 0 2pt; font-weight: 700; }
+p { margin: 4pt 0; }
+ul, ol { margin: 4pt 0; padding-left: 16pt; }
+li { margin: 2pt 0; }
+b { color: #1e1b4b; }
+.tip { background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.warn { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.foot { position: absolute; bottom: 14pt; left: 48pt; right: 48pt; display: flex; justify-content: space-between; font-size: 8.5pt; color: #5b5f77; }
+.row { display: flex; gap: 14pt; align-items: flex-start; }
+img.shot { border: 1px solid #e2e8f0; border-radius: 8pt; display: block; }
+.cap { font-size: 8.6pt; color: #64748b; text-align: center; margin-top: 3pt; }
+code { background: #eef2ff; color: #3730a3; padding: 0 3pt; border-radius: 3pt; font-size: 9pt; word-break: break-all; }
+</style></head><body>
+
+<div class="page">
+<h1><span class="n">11</span>Novedades de la versión 1.3.1</h1>
+<p>La 1.3.1 permite enviar los contactos a <b>varias cuentas de Google</b>, trae de Google las <b>fotos</b> que les faltan a tus contactos, cambia el nombre de «Novedades» a <b>Changelog</b> y ordena las <b>efemérides</b> por la próxima que llega.</p>
+
+<h2>Varias cuentas de Google</h2>
+<ul>
+<li>En <b>Ajustes → Sincronización → Gmail</b> cada cuenta tiene su recuadro. Con <b>«+ Añadir otra cuenta de Google»</b> (desde la web) conectas otra: Google te deja elegir con cuál entras. Si vuelves a conectar una que ya estaba, se renueva y no sale repetida.</li>
+<li>En <b>Etiquetas</b>, cada etiqueta tiene una casilla <b>por cuenta</b> («Gmail: tu@gmail.com»). Una etiqueta puede ir a una cuenta, a varias o a ninguna; las subetiquetas entran solas. Con una sola cuenta, la casilla sigue llamándose «Sincronizar con Gmail».</li>
+<li>La cuenta que tenías conectada en la 1.3.0 sigue igual, con sus etiquetas y sus contactos, sin volver a subir nada.</li>
+<li><b>Pasar estas etiquetas a…</b> (desplegable en cada cuenta): todas sus etiquetas pasan a otra cuenta. Agendario crea los contactos en la nueva y los quita de la antigua. Sirve para el día en que sustituyas una cuenta por otra.</li>
+<li><b>Quitar cuenta</b> pregunta si borras también de Google los contactos y etiquetas que creó Agendario o los dejas allí.</li>
+</ul>
+<div class="warn">⚠️ Si cambias una cuenta por otra, no copies sus contactos con herramientas de Google o Microsoft: saldrían duplicados. Pasa las etiquetas de cuenta y deja que Agendario los cree.</div>
+<img class="shot" src="gmail-etiquetas-cuentas.png" style="width:100%; margin-top:6pt"><div class="cap">Etiquetas: una casilla por cada cuenta de Google.</div>
+<img class="shot" src="gmail-cuentas.png" style="width:48%; margin:6pt auto 0"><div class="cap">Ajustes → Sincronización → Gmail con dos cuentas.</div>
+<div class="foot"><span>Agendario · Manual 1.3.1</span><span>49</span></div>
+</div>
+
+<div class="page">
+<h2 style="margin-top:0">Fotos desde Google</h2>
+<p>Si un contacto de Agendario <b>no tiene foto</b> y en alguna de tus cuentas de Google hay una de esa persona, Agendario la descarga y se la pone.</p>
+<ul>
+<li><b>De dónde sale</b>: de un contacto que ya tuvieras en esa cuenta de Google (no de los que creó Agendario) o de la <b>foto de perfil</b> que la persona tenga en su cuenta de Google. Si hay las dos, gana la del contacto. Las fotos genéricas de Google (la inicial sobre un círculo de color) no se traen.</li>
+<li><b>Cómo reconoce a la persona</b>: por un <b>email</b> o un <b>teléfono</b> que coincida, buscando entre todos tus contactos (no solo los de las etiquetas sincronizadas). Si un teléfono o un email encaja con varios contactos, o un contacto tiene varias fotos distintas en Google, <b>no se toca</b>: mejor sin foto que con una equivocada.</li>
+<li><b>Cuándo</b>: sola cada 15 minutos, al conectar una cuenta y con el botón <b>«📷 Buscar fotos en Google ahora»</b>, que dice cuántas ha añadido.</li>
+<li><b>Nunca cambia una foto que ya tengas</b>. Y si quitas una foto que vino de Google, no vuelve.</li>
+<li>Queda apuntado en el <b>historial</b> del contacto («Foto traída de Google»). Si el contacto se sincroniza con Google, la foto viaja después hacia allí como cualquier otra.</li>
+</ul>
+
+<h2>Changelog en el menú</h2>
+<ul>
+<li>«📋 Novedades» se llama ahora <b>📋 Changelog</b> y lleva tu versión en el propio nombre: <b>Changelog 1.3.1</b>. Está en el menú (web) y en «Más» (app), justo antes de Salir.</li>
+</ul>
+
+<h2>Efemérides por la próxima que llega</h2>
+<ul>
+<li>En <b>Fechas → Efemérides</b> salen primero las que antes cumplen aniversario (las de hoy, las primeras), luego la siguiente, y así todas. Las que ya han pasado este año van al final, por su aniversario del año que viene.</li>
+<li>Es el orden por defecto (<b>«Próximo aniversario»</b>); en el desplegable sigue «Más recientes». También se ordenan así en el recuadro de efemérides de la ficha del contacto.</li>
+</ul>
+<img class="shot" src="efemerides-orden.png" style="width:100%; margin-top:6pt"><div class="cap">Efemérides: hoy, dentro de 7 días, dentro de 105…</div>
+<div class="foot"><span>Agendario · Manual 1.3.1</span><span>50</span></div>
+</div>
+
+</body></html>

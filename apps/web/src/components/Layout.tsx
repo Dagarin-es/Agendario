@@ -88,7 +88,7 @@ function MoreMenu() {
           <div className="my-1 border-t border-slate-100" />
           <button className={item} onClick={() => { setOpen(false); setAbout(true); }}>📒 Acerca de Agendario</button>
           <a className={item} href={manualUrl()} target="_blank" rel="noopener" onClick={() => setOpen(false)}>📘 Manual (PDF)</a>
-          <button className={item} onClick={() => { setOpen(false); setNews(true); }}>📋 Novedades <span className="ml-auto text-xs text-slate-400">v{APP_VERSION}</span></button>
+          <button className={item} onClick={() => { setOpen(false); setNews(true); }}>📋 Changelog {APP_VERSION}</button>
           <button className={`${item} text-red-700`} onClick={logout}>🚪 Salir</button>
         </div>
       )}

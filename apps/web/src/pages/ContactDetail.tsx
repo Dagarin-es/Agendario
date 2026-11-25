@@ -26,7 +26,7 @@ import { addressLine, MapLinks, MiniMap } from "../components/MapLinks";
 import { MapPickerButton } from "../components/AddressSearch";
 import { VisibilityBadge } from "../components/VisibilityBadge";
 import { ContactPicker } from "../components/ContactPicker";
-import { usePersonalEvents } from "../components/PersonalEvents";
+import { byNextAnniversary, usePersonalEvents } from "../components/PersonalEvents";
 import { PhotoCropper } from "../components/PhotoCropper";
 import { PhotoViewer, viewerBtn } from "../components/PhotoViewer";
 import { apiUrl } from "../lib/platform";
@@ -709,7 +709,8 @@ function Relationships({ c, onChange }: { c: ContactDetail; onChange: () => void
 /** Efemérides tuyas en las que aparece este contacto (solo si hay alguna). */
 function LinkedPersonalEvents({ contactId }: { contactId: string }) {
   const { data } = usePersonalEvents();
-  const list = (data ?? []).filter((e) => e.contacts.some((p) => p.id === contactId));
+  // De la próxima que se cumple a la más lejana
+  const list = byNextAnniversary((data ?? []).filter((e) => e.contacts.some((p) => p.id === contactId)));
   if (!list.length) return null;
   return (
     <section className="card">

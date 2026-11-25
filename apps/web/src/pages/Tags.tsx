@@ -17,18 +17,22 @@ export function TagsPage() {
   const [draft, setDraft] = useState<{ name: string; color: TagColor }>({ name: "", color: "teal" });
   const confirm = useConfirm();
   const showAlert = useAlert();
-  // «Sincronizar con Gmail» en cada etiqueta (las subetiquetas entran solas)
+  // «Sincronizar con Gmail» en cada etiqueta, por cada cuenta de Google (las subetiquetas entran solas)
   const { data: gmail } = useQuery({ queryKey: ["gmail"], queryFn: () => api.get<GmailStatus>("/gmail") });
-  const gmailSet = new Set(gmail?.tagIds ?? []);
+  const gmailAccounts = gmail?.accounts ?? [];
   const setGmail = useMutation({
-    mutationFn: (tagIds: string[]) => api.put<GmailStatus>("/gmail/tags", { tagIds }),
+    mutationFn: ({ tagId, accountIds }: { tagId: string; accountIds: string[] }) => api.put<GmailStatus>(`/gmail/tag/${tagId}`, { accountIds }),
     onSuccess: (st) => qc.setQueryData(["gmail"], st),
     onError: (e) => showAlert("No se ha podido guardar", (e as Error).message),
   });
-  const gmailInherited = (t: Tag): Tag | undefined => {
+  const toggleGmail = (tagId: string, accId: string, on: boolean) => {
+    const accountIds = gmailAccounts.filter((a) => (a.id === accId ? on : a.tagIds.includes(tagId))).map((a) => a.id);
+    setGmail.mutate({ tagId, accountIds });
+  };
+  const gmailInherited = (t: Tag, set: Set<string>): Tag | undefined => {
     let p = t.parentId ? tags?.find((x) => x.id === t.parentId) : undefined;
     for (let i = 0; p && i < 10; i++) {
-      if (gmailSet.has(p.id)) return p;
+      if (set.has(p.id)) return p;
       p = p.parentId ? tags?.find((x) => x.id === p!.parentId) : undefined;
     }
     return undefined;
@@ -126,9 +130,9 @@ export function TagsPage() {
       </form>
       {tree.length > 1 && <p className="text-xs text-slate-500">Usa ↑ ↓ para ordenarlas y «Mover a» para meter una etiqueta dentro de otra. Filtrar o sincronizar una etiqueta incluye sus subetiquetas.</p>}
 
-      {gmail && gmail.tagIds.length > 0 && !gmail.connected && (
+      {gmailAccounts.some((a) => a.tagIds.length > 0 && !a.connected) && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Has marcado etiquetas para Gmail, pero tu cuenta de Google no está conectada: <Link to="/settings?tab=sync" className="font-medium underline">Ajustes → Sincronización</Link>.
+          Hay etiquetas marcadas para una cuenta de Google que no está conectada: <Link to="/settings?tab=sync" className="font-medium underline">Ajustes → Sincronización</Link>.
         </p>
       )}
       {tags?.length === 0 && <div className="card text-center text-slate-500">Todavía no tienes etiquetas.</div>}
@@ -173,20 +177,23 @@ export function TagsPage() {
                   {t.contactCount > 0 && (
                     <a className="btn-ghost px-2 py-1 text-xs" href={apiUrl(`/export/contacts.vcf?tag=${t.id}`)} title="Exporta sus contactos con los teléfonos, emails y direcciones de esta etiqueta">⤒ Exportar</a>
                   )}
-                  {(() => {
-                    const via = gmailInherited(t);
+                  {gmailAccounts.map((acc) => {
+                    const set = new Set(acc.tagIds);
+                    const via = gmailInherited(t, set);
+                    const on = set.has(t.id) || !!via;
+                    const name = gmailAccounts.length === 1 ? "Sincronizar con Gmail" : `Gmail: ${acc.email ?? "cuenta sin conectar"}`;
                     return (
-                      <label className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${gmailSet.has(t.id) || via ? "border-sky-200 bg-sky-50 text-sky-900" : "border-slate-200 text-slate-600"}`} title={via ? `Ya entra por «${via.name}»` : "Envía sus contactos a Google Contactos (para verlos en Outlook)"}>
+                      <label key={acc.id} className={`flex min-w-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${on ? "border-sky-200 bg-sky-50 text-sky-900" : "border-slate-200 text-slate-600"}`} title={via ? `Ya entra por «${via.name}»` : `Envía sus contactos a ${acc.email ?? "esta cuenta de Google"} (para verlos en Outlook)`}>
                         <input
                           type="checkbox"
-                          checked={gmailSet.has(t.id) || !!via}
+                          checked={on}
                           disabled={!!via || setGmail.isPending}
-                          onChange={(e) => setGmail.mutate(e.target.checked ? [...gmailSet, t.id] : [...gmailSet].filter((x) => x !== t.id))}
+                          onChange={(e) => toggleGmail(t.id, acc.id, e.target.checked)}
                         />
-                        Sincronizar con Gmail{via ? ` (por ${via.name})` : ""}
+                        <span className="truncate">{name}{via ? ` (por ${via.name})` : ""}</span>
                       </label>
                     );
-                  })()}
+                  })}
                   <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { setEditing(t.id); setDraft({ name: t.name, color: t.color }); }}>Editar</button>
                   <button className="btn-danger px-2 py-1 text-xs" onClick={() => askDelete(t)}>Borrar</button>
                   {t.contactCount > 0 && (
