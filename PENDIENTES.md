@@ -2,7 +2,12 @@
 
 Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «genera»; al generar, se borra de aquí lo hecho (el detalle técnico queda en `CLAUDE.md` y el resumen en `CHANGELOG.md`).
 
-## Para la próxima versión
+## Para la próxima versión (1.3.1)
+
+- **«Novedades» pasa a llamarse «Changelog», con la versión detrás en el propio texto**: «📋 Changelog 1.3.1» (sin la «v» y sin el número aparte en gris a la derecha). En el menú de la web (`components/Layout.tsx`) y de la app (`components/AppShell.tsx`, en «Más»), y el título de la ventana (`components/Changelog.tsx`) también «Changelog 1.3.1». Cambiar «Novedades» por «Changelog» donde se nombre la opción (comentarios, CHANGELOG de esta versión, manual si sale).
+- **Efemérides ordenadas por la próxima que llega**: primero la que antes cumple aniversario a partir de hoy, luego la siguiente, y así todas (las de hoy, las primeras; las que ya pasaron este año, al final, por su aniversario del año que viene). Ya existe el orden «Próximo aniversario» en el desplegable de la pestaña Efemérides (`components/PersonalEvents.tsx`, `nextAnniversary`), pero por defecto sale «Más recientes»: pasa a ser **el orden por defecto y la primera opción** del desplegable (se mantiene «Más recientes» como alternativa). Usar una clave nueva de `localStorage` para que a todos les salga así aunque antes hubieran elegido otro orden. Mismo orden en el recuadro «📔 Efemérides» de la ficha del contacto (`LinkedPersonalEvents` en `pages/ContactDetail.tsx`).
+
+## Para la 1.4.0
 
 - **Varias cuentas de Google por usuario** (para la 1.4.0). Ejemplo: los contactos de una etiqueta a una Gmail y los de otra etiqueta a otra.
   - **Ajustes → Sincronización → Gmail** pasa a ser una **lista de cuentas** (añadir, sincronizar ahora, desconectar con la opción de borrar en Google lo creado por Agendario, estado y último error de cada una). La app de Google Cloud (`gmail.app`) es la misma para todas.
