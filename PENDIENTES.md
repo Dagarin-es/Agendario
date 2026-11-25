@@ -4,7 +4,12 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Para la próxima versión
 
-_(nada apuntado todavía)_
+- **Organizar una revisión en Google Play (prueba interna)**, para instalar y actualizar la app desde Play Store sin el aviso de «app no fiable». Se intenta **una sola vez**: si Google la rechaza, no se insiste y se sigue con la APK (el registro de desarrollador ya cubre la instalación en 2027). Más adelante, cuando esté más terminada, se valorará una **versión Lite sin llamadas** para Play (de momento no).
+  - **Compilación para Play**: GitHub Actions genera también el AAB firmado con la misma clave (secretos de siempre) y lo deja en la Release (o lo sube a la pista de prueba interna con la API de Play Console, si es sencillo y seguro: credenciales solo como secreto de GitHub). Revisar Play App Signing para conservar la clave actual (`BE:1E:…:09:75`) y no obligar a desinstalar.
+  - **Formulario de declaración de permisos** (`READ_CALL_LOG`, `PROCESS_OUTGOING_CALLS`): redactarlo enfocado al uso como **CRM de negocio** (excepción «Enterprise archive, business & enterprise CRM»): el registro de llamadas y las notas en la ficha de cada contacto son la función principal. Repasar también lo que pida Play para `SYSTEM_ALERT_WINDOW`, el servicio en primer plano `specialUse`, `SCHEDULE_EXACT_ALARM` y `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, la ficha de la tienda, la seguridad de los datos y la política de privacidad (dagarin.es/agendario/privacidad).
+  - **Vídeo de demostración** (obligatorio, YouTube oculto, 1–2 min): guion para Daniel (llamada → aviso al colgar → nota → ficha con la llamada; número desconocido → guardarlo).
+  - **Acceso para los revisores**: usuario de demostración en su servidor (accesible desde internet) con contactos inventados y sin ver nada real (ojo a los contactos públicos/compartidos); instrucciones de acceso para el formulario. Mantenerlo mientras dure la revisión.
+  - Lista de testers de la prueba interna (por email) y pasos para que Daniel instale desde el enlace de invitación.
 
 ## Más adelante / tareas de Daniel
 
