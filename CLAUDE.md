@@ -8,7 +8,7 @@ Agenda de contactos **autoalojada** («agenda + diario»): servidor Docker + web
 
 - Todo en **español** (código comentado en español, textos de la interfaz, commits, CHANGELOG y README).
 - Es principiante con la terminal: instrucciones **paso a paso**, comandos completos para copiar y pegar. Trabaja como **root**: nunca pongas `sudo`.
-- Patrón de trabajo: va dando cambios y **solo se apuntan en `PENDIENTES.md`**. Cuando dice «genera», se hace la versión, se prueba, se entrega el zip `agendario-X.Y.Z.zip` (lo instala con `bash /opt/actualizar-agendario.sh`, que también sube el código y la etiqueta a GitHub) y se vacía de `PENDIENTES.md` lo hecho.
+- Patrón de trabajo: va dando cambios y **solo se apuntan en `PENDIENTES.md`**, que se **sube a GitHub (`main`) en cuanto se apunta** algo (commit pequeño, sin etiqueta: las Actions solo se disparan con etiquetas `v*`), para que cualquier chat del proyecto lo vea. Los cambios de código no se suben así: van en el zip. Cuando dice «genera», se hace la versión, se prueba, se entrega el zip `agendario-X.Y.Z.zip` (lo instala con `bash /opt/actualizar-agendario.sh`, que también sube el código y la etiqueta a GitHub) y se vacía de `PENDIENTES.md` lo hecho.
 - Le gusta ver capturas de lo que cambia y un resumen corto al final: qué hay nuevo y cómo actualizar.
 - Nada de diálogos nativos del navegador (`alert/confirm`): usar `useConfirm`/`useAlert` de `components/Dialogs.tsx`.
 
