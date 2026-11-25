@@ -13,6 +13,8 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Más adelante / tareas de Daniel
 
+- **Al generar la próxima versión**: copiar la landing del proyecto de Claude (`web/agendario-landing.html`, puesta al día tras la 1.3.1: versión, tarjeta «Gmail y Outlook», hoja de ruta y pregunta sobre Outlook) a `docs/web/agendario-landing.html` para que entre en el zip.
+
 - **Norma fija**: cada versión lleva su entrada en `CHANGELOG.md` (lo que se ve en «Changelog»), apuntando ahí todos los cambios de la versión.
 - **Gmail (tras instalar la 1.3.0/1.3.1)**: crear el cliente «Aplicación web» en Google Cloud con la People API, publicar la app «En producción», pegar ID y secreto en Ajustes → Sincronización → Gmail, conectar la Gmail normal y marcar las etiquetas (capítulo 10 del manual).
 - Verificación de desarrollador Android: **hecha** (25-11-2026). `es.dagarin.agendario` registrado en Play Console con la clave de firma `BE:1E:…:09:75` verificada (y las 3 de Google por la app en borrador, que hay que conservar).
