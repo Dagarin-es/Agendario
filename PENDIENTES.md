@@ -4,6 +4,10 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Para la próxima versión
 
+- **Logo de Fastmail** (Daniel lo ha conseguido, 26-11-2026): ponerlo como `FastmailLogo` en `components/BrandIcons.tsx` (mismo estilo que Gmail/Todoist; en el comentario de cabecera, que es el logo oficial de Fastmail, no CC0) y usarlo en lugar del ✉️ de las cuentas Fastmail en `SyncSettings.tsx` (línea `a.provider === "fastmail" ? "✉️"`) y donde más salga Fastmail. Pasar los `style="fill:…"` a atributos `fill`. **Modo oscuro**: la parte gris oscura (`#333e48`, el sobre) desaparece sobre fondo oscuro; darle una clase y aclararla en `dark.css` (p. ej. `#cbd5e1`). SVG tal cual lo pasó:
+  ```svg
+  <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 512 512"><path d="M53.8 256c0-111.7 90.5-202.2 202.2-202.2 70.2 0 132 35.7 168.2 90l39.7 7.8 5-37.7C423 45.3 344.8 0 256 0 114.7 0 0 114.7 0 256c0 52.6 15.8 101.3 43 142.1l38.5 5 6.3-35c-21.4-32.1-34-70.6-34-112.1" style="fill:#0067b9"/><path d="M469.5 114.9c-.3-.3-.5-.5-.8-1L424 143.8c.3.3.5.5.8 1 21.1 31.9 33.4 70.2 33.4 111.2 0 111.7-90.5 202.2-202.2 202.2-69.7 0-131.3-35.2-167.5-89-.3-.3-.5-.8-.5-1l-44.8 29.9c.3.3.5.8.5 1C89.8 467.2 167.7 512 256 512c141.3 0 256-114.7 256-256 0-52.1-15.6-100.6-42.5-141.1" style="fill:#69b3e7"/><path d="m256 256-121.7-81.2V337c1.3-.8 2.3-1.5 0 0l76.4-23.6z" style="fill:#ffc107"/><path d="M134.3 337h234.9c4.8 0 8.6-3.8 8.6-8.6V174.8z" style="fill:#333e48"/></svg>
+  ```
 - **App: barra «Agendario › Sección» de las páginas del menú de usuario** (`menuPages` en `components/AppShell.tsx`).
   - Al pulsar «Agendario» para volver al menú, la navegación ya funciona bien (no tocarla), pero **el texto de la barra de título se queda desfasado**: sigue poniendo «Agendario › Etiquetas» (por ejemplo). Solo hay que actualizar ese texto para que, al volver, quede solo «Agendario» (también mientras la hoja del menú está abierta).
   - Cambiar el separador `›` (gris y pequeño) por una **flecha más vistosa**: icono SVG tipo chevron grueso en color índigo del tema (que se vea bien en oscuro y con Material You).
@@ -22,7 +26,6 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Más adelante / tareas de Daniel
 
-- **Logo de Fastmail** en la ficha de sincronización: no está en las colecciones de logos libres (Simple Icons lo retiró), así que sigue con 🔄/✉️. Si Daniel consigue el SVG oficial (kit de prensa de Fastmail), ponerlo en `components/BrandIcons.tsx`.
 - **Norma fija**: cada versión lleva su entrada en `CHANGELOG.md` (lo que se ve en «Changelog»), apuntando ahí todos los cambios de la versión.
 - **Gmail (tras instalar la 1.3.0/1.3.1)**: crear el cliente «Aplicación web» en Google Cloud con la People API, publicar la app «En producción», pegar ID y secreto en Ajustes → Aplicaciones externas → Gmail, conectar la Gmail normal y marcar las etiquetas (capítulo 10 del manual).
 - Verificación de desarrollador Android: **hecha** (25-11-2026). `es.dagarin.agendario` registrado en Play Console con la clave de firma `BE:1E:…:09:75` verificada (y las 3 de Google por la app en borrador, que hay que conservar).
