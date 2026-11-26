@@ -2,7 +2,9 @@
 
 Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «genera»; al generar, se borra de aquí lo hecho (el detalle técnico queda en `CLAUDE.md` y el resumen en `CHANGELOG.md`).
 
-## Para la próxima versión
+## Para la próxima versión (1.3.2)
+
+Decidido por Daniel: esta versión será la **1.3.2** (no 1.4.0), aunque lleve cambios grandes como los regalos recibidos.
 
 - **⚠️ Importante · Corrección (app): en Ajustes → Sincronización → Gmail no se ve cómo añadir otra cuenta.** En la app el botón «+ Añadir otra cuenta de Google» está oculto (las cuentas se conectan desde la web, por la redirección de Google) y el aviso «se conectan desde la web» solo sale si no hay ninguna cuenta. Arreglo: en la app, mostrar siempre debajo de las cuentas un aviso claro «Para añadir otra cuenta de Google, entra en la web de Agendario: Ajustes → Sincronización → Gmail», con un botón que abra esa página en el navegador (`GmailSettings.tsx`).
 - **Corrección (app): «Cambiar de servidor» necesita un botón Cancelar.** Ahora, al pulsar «🔁 Cambiar de servidor» en el menú, se borra el servidor guardado y se cierra la sesión *antes* de mostrar la pantalla, así que no hay vuelta atrás. Arreglo: abrir la pantalla «Conecta con tu Agendario» sin tocar nada (servidor actual relleno en el campo y sesión intacta), con un botón **Cancelar** que vuelve a donde estabas sin ningún cambio. Solo al pulsar «Continuar» y comprobar que el nuevo servidor responde se guarda y se cierra la sesión del anterior; si es el mismo servidor, no se cierra la sesión. En la primera configuración (sin servidor guardado) no sale Cancelar (`AppShell.tsx`, `ServerSetup.tsx`, `App.tsx`).
