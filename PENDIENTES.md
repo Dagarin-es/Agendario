@@ -16,6 +16,10 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
   - **Acceso para los revisores**: usuario de demostración en su servidor (accesible desde internet) con contactos inventados y sin ver nada real (ojo a los contactos públicos/compartidos); instrucciones de acceso para el formulario. Mantenerlo mientras dure la revisión.
   - Lista de testers de la prueba interna (por email) y pasos para que Daniel instale desde el enlace de invitación.
 
+## Para la versión siguiente (después de la 1.3.2)
+
+- **Web (landing): capturas nuevas de «Regalos» en la galería.** Las de ahora (`app_regalos`, `app_regalos_oscuro`, `web_regalos`, `web_regalos_oscuro`) son anteriores a la 1.3.2 y no enseñan el botón de estado (Pendiente · Comprado · Regalado) ni la pestaña «Recibidos». Hacerlas con Playwright y datos inventados, en .webp con esos mismos nombres, para que Daniel solo tenga que subirlas a la biblioteca de medios de WordPress sustituyendo las antiguas (sin tocar el HTML). Valorar cambiar el texto de la galería «Comprar y regalar» por algo como «Ideas, comprados y recibidos».
+
 ## Más adelante / tareas de Daniel
 
 - **Logo de Fastmail** en la ficha de sincronización: no está en las colecciones de logos libres (Simple Icons lo retiró), así que sigue con 🔄/✉️. Si Daniel consigue el SVG oficial (kit de prensa de Fastmail), ponerlo en `components/BrandIcons.tsx`.
