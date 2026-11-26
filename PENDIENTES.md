@@ -4,6 +4,10 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Para la próxima versión
 
+- **App: barra «Agendario › Sección» de las páginas del menú de usuario** (`menuPages` en `components/AppShell.tsx`).
+  - Al pulsar «Agendario» para volver, ahora se abre la hoja del menú pero la página sigue debajo y la barra se queda en «Agendario › Etiquetas» (por ejemplo). Debe **salir de la sección**: volver a la pantalla de donde se vino (o a Contactos si se entró directo) y abrir la hoja del menú encima, de modo que desaparezca «› Etiquetas». Ojo con el `useEffect` que cierra la hoja al cambiar de ruta (abrirla después de navegar).
+  - Cambiar el separador `›` (gris y pequeño) por una **flecha más vistosa**: icono SVG tipo chevron grueso en color índigo del tema (que se vea bien en oscuro y con Material You).
+
 - **Web (landing): capturas nuevas de «Regalos» en la galería.** Las de ahora (`app_regalos`, `app_regalos_oscuro`, `web_regalos`, `web_regalos_oscuro`) son anteriores a la 1.3.2 y no enseñan el botón de estado (Pendiente · Comprado · Regalado) ni la pestaña «Recibidos». Hacerlas con Playwright y datos inventados, en .webp con esos mismos nombres, para que Daniel solo tenga que subirlas a la biblioteca de medios de WordPress sustituyendo las antiguas (sin tocar el HTML). Valorar cambiar el texto de la galería «Comprar y regalar» por algo como «Ideas, comprados y recibidos».
 
 ## Revisión en Google Play (cuando Daniel diga; no en la 1.3.2)
