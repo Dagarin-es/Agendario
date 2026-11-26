@@ -4,7 +4,13 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Para la próxima versión
 
-(Nada todavía: lo de la 1.4.0 ya está hecho.)
+- **Web (landing `docs/web/agendario-landing.html`): capturas nuevas y repaso de textos.** Muchas capturas de la galería son anteriores a la 1.3.2 y la 1.4.0 y no enseñan lo nuevo:
+  - **Regalos** (web y app, claro y oscuro): las pestañas **🎁 Para regalar · 🎀 Recibidos**, el botón de estado **⏳ Pendiente · 🛒 Comprado · 🎁 Regalado** y algún regalo recibido de varias personas.
+  - **Etiquetas**: la pantalla nueva (árbol + panel en la web; filas grandes con hoja inferior en la app, asa ⠿ para arrastrar, 20 colores, Gmail en desplegable).
+  - **Contactos y ficha**: favoritos (★ en la lista, estrella junto al buscador y en la ficha) y el aviso «Detectados X duplicados · Revisar ›».
+  - **Todas las de la app**: la banda fija translúcida de abajo con iconos grandes y los títulos grandes de cada sección (ya no hay pestaña «Duplicados»).
+  - Hacerlas con Playwright y datos inventados, en .webp **con los mismos nombres** (`web_regalos`, `app_regalos_oscuro`, etc.), para que Daniel solo tenga que subirlas a la biblioteca de medios de WordPress sustituyendo las antiguas. Comprobar antes cuáles siguen valiendo y rehacer solo las que han cambiado; entregarlas en un zip aparte.
+  - **Textos**: repasar toda la landing para que refleje los regalos recibidos y el estado de los regalos, favoritos, etiquetas renovadas y el nuevo menú. Por ejemplo, el pie de la galería web de Regalos dice «Ideas por persona y fecha» → algo como «Ideas, comprados y recibidos» (como el de la app). Revisar también la sección de funciones, «Novedades», la parte de la app Android y las preguntas frecuentes. Si cambia el HTML, entregarlo para pegarlo en el bloque HTML de WordPress y actualizar el doc del proyecto `web/agendario-landing.html`.
 
 ## Revisión en Google Play (cuando Daniel diga)
 
