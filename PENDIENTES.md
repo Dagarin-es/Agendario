@@ -4,6 +4,7 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Para la próxima versión
 
+- **Marcar favoritos desde la lista de contactos** (web y app): en cada fila, la estrella siempre visible, rellena ★ si es favorito y vacía ☆ si no, y al tocarla se marca o desmarca al momento (actualización optimista con `PUT /contacts/:id/favorite`), **sin abrir la ficha**. Que no estorbe a la selección por pulsación larga de la app ni al botón Combinar, y que con el filtro ★ activo, al desmarcar uno, desaparezca de la lista. Ahora la ★ de la fila solo sale en los favoritos y no se puede tocar.
 - **Web (landing `docs/web/agendario-landing.html`): capturas nuevas y repaso de textos.** Muchas capturas de la galería son anteriores a la 1.3.2 y la 1.4.0 y no enseñan lo nuevo:
   - **Regalos** (web y app, claro y oscuro): las pestañas **🎁 Para regalar · 🎀 Recibidos**, el botón de estado **⏳ Pendiente · 🛒 Comprado · 🎁 Regalado** y algún regalo recibido de varias personas.
   - **Etiquetas**: la pantalla nueva (árbol + panel en la web; filas grandes con hoja inferior en la app, asa ⠿ para arrastrar, 20 colores, Gmail en desplegable).
