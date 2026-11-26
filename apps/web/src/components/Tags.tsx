@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { tagColors, type Tag, type TagColor, type TagLite } from "@agendario/shared";
+import { tagColors, tagColorNames, type Tag, type TagColor, type TagLite } from "@agendario/shared";
 import { api } from "../lib/api";
 import { useAlert } from "./Dialogs";
 
@@ -16,6 +16,17 @@ export const tagColorClasses: Record<TagColor, { chip: string; dot: string }> = 
   blue: { chip: "bg-blue-50 text-blue-700 ring-blue-200", dot: "bg-blue-500" },
   violet: { chip: "bg-violet-50 text-violet-700 ring-violet-200", dot: "bg-violet-500" },
   pink: { chip: "bg-pink-50 text-pink-700 ring-pink-200", dot: "bg-pink-500" },
+  // 1.4: tonos exactos en styles.css / dark.css
+  navy: { chip: "tagc-navy", dot: "tagd-navy" },
+  lime: { chip: "tagc-lime", dot: "tagd-lime" },
+  forest: { chip: "tagc-forest", dot: "tagd-forest" },
+  turquoise: { chip: "tagc-turquoise", dot: "tagd-turquoise" },
+  cyan: { chip: "tagc-cyan", dot: "tagd-cyan" },
+  eggplant: { chip: "tagc-eggplant", dot: "tagd-eggplant" },
+  fuchsia: { chip: "tagc-fuchsia", dot: "tagd-fuchsia" },
+  maroon: { chip: "tagc-maroon", dot: "tagd-maroon" },
+  brown: { chip: "tagc-brown", dot: "tagd-brown" },
+  black: { chip: "tagc-black", dot: "tagd-black" },
 };
 
 export function TagChip({
@@ -90,16 +101,20 @@ export function descendantIds(tags: Tag[] | undefined, id: string): Set<string> 
   return out;
 }
 
-export function ColorPicker({ value, onChange }: { value: TagColor; onChange: (c: TagColor) => void }) {
+/** Selector de color: dos filas de 10 círculos (en pequeño, los que quepan por fila). */
+export function ColorPicker({ value, onChange, large }: { value: TagColor; onChange: (c: TagColor) => void; large?: boolean }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className={large ? "grid max-w-[30rem] grid-cols-10 gap-2" : "flex flex-wrap gap-1.5"} role="radiogroup" aria-label="Color">
       {tagColors.map((c) => (
         <button
           key={c}
           type="button"
+          role="radio"
+          aria-checked={value === c}
           onClick={() => onChange(c)}
-          className={`h-6 w-6 rounded-full ${tagColorClasses[c].dot} ${value === c ? "ring-2 ring-slate-900 ring-offset-2" : ""}`}
-          aria-label={c}
+          className={`${large ? "aspect-square w-full max-w-9" : "h-6 w-6"} rounded-full ${tagColorClasses[c].dot} ${value === c ? "ring-2 ring-slate-900 ring-offset-2 ring-offset-white" : ""}`}
+          aria-label={tagColorNames[c]}
+          title={tagColorNames[c]}
         />
       ))}
     </div>

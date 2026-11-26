@@ -137,6 +137,10 @@ export async function mergeContacts(userId: string, req: MergeRequest) {
     await tx.update(schema.giftsReceived).set({ contactId: keepId }).where(eq(schema.giftsReceived.contactId, removeId));
     await tx.update(schema.interactions).set({ contactId: keepId }).where(eq(schema.interactions.contactId, removeId));
     await tx.delete(schema.contactPrefs).where(eq(schema.contactPrefs.contactId, removeId));
+    // Favoritos: si era favorito para alguien, lo sigue siendo el que se queda
+    await tx.execute(sql`INSERT INTO contact_favorites (user_id, contact_id)
+      SELECT user_id, ${keepId}::uuid FROM contact_favorites WHERE contact_id = ${removeId}::uuid ON CONFLICT DO NOTHING`);
+    await tx.delete(schema.contactFavorites).where(eq(schema.contactFavorites.contactId, removeId));
 
     await tx.execute(sql`
       INSERT INTO contact_tags (contact_id, tag_id)

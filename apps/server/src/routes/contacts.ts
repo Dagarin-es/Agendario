@@ -39,6 +39,7 @@ import { addTags, assertOwnTags, expandTagIds, tagsForContacts } from "../lib/ta
 import { deleteContacts, syncOrgName } from "../lib/merge.js";
 import { idsWithHistory, rawContact, recordHistory } from "../lib/history.js";
 import { contactPrefsOf, interactionsOf } from "../lib/personal.js";
+import { favoritesOf, setFavorite } from "../lib/favorites.js";
 import { adoptUnknownCalls, remindersOf } from "../lib/reminders.js";
 import { deletePhoto, photoType, readPhoto, saveCover, storeUpload } from "../lib/photos.js";
 
@@ -62,7 +63,7 @@ function baseSelect(userId: string) {
 
 type Row = { contact: typeof c.$inferSelect; ownerName: string; canEdit: boolean };
 
-function toSummary(r: Row, userId: string, tags: TagLite[] = [], shown?: { phone?: string; email?: string }): ContactSummary {
+function toSummary(r: Row, userId: string, tags: TagLite[] = [], shown?: { phone?: string; email?: string }, favorite = false): ContactSummary {
   return {
     id: r.contact.id,
     displayName: r.contact.displayName,
@@ -81,6 +82,7 @@ function toSummary(r: Row, userId: string, tags: TagLite[] = [], shown?: { phone
     phone: shown ? shown.phone : r.contact.phones[0]?.value,
     email: shown ? shown.email : r.contact.emails[0]?.value,
     geo: geoStatusOf(r.contact.addresses),
+    favorite,
   };
 }
 
@@ -104,10 +106,10 @@ async function checkOrgLink(orgId: string | null | undefined, selfId: string | n
   await getAccess(orgId, userId);
 }
 
-function toContact(r: Row, userId: string, tags: TagLite[] = [], org: OrgContact = null): Contact {
+function toContact(r: Row, userId: string, tags: TagLite[] = [], org: OrgContact = null, favorite = false): Contact {
   const x = r.contact;
   return {
-    ...toSummary(r, userId, tags),
+    ...toSummary(r, userId, tags, undefined, favorite),
     organizationContactId: org ? x.organizationContactId : null,
     organizationContact: org,
     givenName: x.givenName,
@@ -209,7 +211,7 @@ async function buildDetail(id: string, userId: string): Promise<ContactDetail> {
         id: e.id, displayName: e.displayName, jobTitle: e.jobTitle, hasPhoto: !!e.photoKey, updatedAt: e.updatedAt.toISOString(),
         phone: e.phones[0]?.value, email: e.emails[0]?.value,
       })),
-      ...toContact(row, userId, tagMap.get(id), await orgContactOf(row, userId)),
+      ...toContact(row, userId, tagMap.get(id), await orgContactOf(row, userId), (await favoritesOf(userId, [id])).has(id)),
       importantDates: dates.map(({ id, contactId, label, type, date, remindDaysBefore }) => ({
         id, contactId, label, type, date, remindDaysBefore,
       })),
@@ -306,6 +308,7 @@ export const contactRoutes = new Hono<AppEnv>()
       .limit(20000);
     const tags = await tagsForContacts(rows.map((r) => r.contact.id), user.id);
     const withHistory = await idsWithHistory(rows.map((r) => r.contact.id));
+    const favs = await favoritesOf(user.id);
     // Con filtro por etiqueta, el teléfono/email que se muestran son los de esa etiqueta
     const itemTags = tag ? await itemTagsFor(rows.map((r) => r.contact.id), user.id) : null;
     return ctx.json(
@@ -316,7 +319,7 @@ export const contactRoutes = new Hono<AppEnv>()
               email: pickForTag(r.contact.emails, itemTags.get(r.contact.id), new Set(tagSet))[0]?.value,
             }
           : undefined;
-        return { ...toSummary(r, user.id, tags.get(r.contact.id), shown), hasHistory: withHistory.has(r.contact.id) };
+        return { ...toSummary(r, user.id, tags.get(r.contact.id), shown, favs.has(r.contact.id)), hasHistory: withHistory.has(r.contact.id) };
       }),
     );
   })
@@ -474,6 +477,14 @@ export const contactRoutes = new Hono<AppEnv>()
   })
 
   // ---------- Etiquetas (personales: basta con poder ver el contacto) ----------
+  // Favorito (personal): basta con poder ver el contacto
+  .put("/:id/favorite", idParam, zValidator("json", z.object({ favorite: z.boolean() })), async (ctx) => {
+    const user = ctx.get("user");
+    const { id } = ctx.req.valid("param");
+    await getAccess(id, user.id);
+    await setFavorite(user.id, id, ctx.req.valid("json").favorite);
+    return ctx.json({ favorite: ctx.req.valid("json").favorite });
+  })
   .put("/:id/tags", idParam, zValidator("json", contactTagsSchema), async (ctx) => {
     const user = ctx.get("user");
     const { id } = ctx.req.valid("param");

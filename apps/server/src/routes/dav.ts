@@ -13,6 +13,7 @@
  * uno, los datos de esa etiqueta y los que no tienen etiqueta. Lo creado en el móvil recibe la
  * etiqueta de la libreta; lo borrado en el móvil va a la papelera de Agendario.
  */
+import { FAVORITES_CATEGORY, favoritesOf, setFavorite } from "../lib/favorites.js";
 import { createHash } from "node:crypto";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Hono, type Context } from "hono";
@@ -138,12 +139,15 @@ async function bookContents(userId: string, book: Book) {
   const ids = rows.map((r) => r.id);
   const tagMap = await tagsForContacts(ids, userId);
   const paths = await tagPaths(userId);
+  const favs = await favoritesOf(userId, ids);
   const inBook = book.tagIds ? rows.filter((r) => (tagMap.get(r.id) ?? []).some((t) => book.tagIds!.has(t.id))) : rows;
   const itemTags = await itemTagsFor(inBook.map((r) => r.id), userId);
   const names = new Map((await db.select().from(dr).where(inArray(dr.contactId, inBook.length ? inBook.map((r) => r.id) : ["00000000-0000-0000-0000-000000000000"]))).map((r) => [r.contactId, r.name]));
   return inBook.map((row) => {
     const items: Items = book.tagIds ? exportedItems(row, itemTags.get(row.id), book.tagIds) : { phones: row.phones, emails: row.emails, urls: row.urls, addresses: row.addresses };
-    const categories = (tagMap.get(row.id) ?? []).map((t) => paths.get(t.id) ?? t.name).sort((a, b) => a.localeCompare(b, "es"));
+    const categories = (tagMap.get(row.id) ?? []).map((t) => paths.get(t.id) ?? t.name).filter((x) => x.toLowerCase() !== FAVORITES_CATEGORY.toLowerCase()).sort((a, b) => a.localeCompare(b, "es"));
+    // Favoritos: grupo «Favoritos» en el móvil (el vCard no tiene campo de favorito)
+    if (favs.has(row.id)) categories.push(FAVORITES_CATEGORY);
     // La ETag incluye las etiquetas: al cambiarlas (o al actualizar a la 1.0) el móvil vuelve a descargar el contacto
     const etag = `"${createHash("sha256").update(`v2|${row.id}|${row.revision}|${row.updatedAt.toISOString()}|${row.photoKey ?? ""}|${mobileAlias(row) ?? ""}|${JSON.stringify(items)}|${categories.join("\n")}`).digest("hex").slice(0, 24)}"`;
     return { row, items, categories, etag, name: names.get(row.id) ?? `${row.id}.vcf` };
@@ -212,6 +216,10 @@ async function applyCategories(userId: string, contactId: string, book: Book, te
   if (!hasLine && !davx5) return;
   const cache = new Map<string, string>();
   const want = new Set<string>();
+  // «Favoritos» no es una etiqueta: marca o quita el favorito
+  const isFav = (x: string) => x.trim().toLowerCase() === FAVORITES_CATEGORY.toLowerCase();
+  await setFavorite(userId, contactId, cats.some(isFav));
+  cats = cats.filter((x) => !isFav(x));
   for (const cat of cats) {
     const id = await ensureTagPath(userId, cat, cache);
     if (id) want.add(id);

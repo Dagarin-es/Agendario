@@ -1,3 +1,4 @@
+import { FastmailLogo } from "./BrandIcons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router";
@@ -79,7 +80,7 @@ export function SyncSettings({ Section }: { Section: (p: { title: string; icon: 
           return (
             <div key={a.id} className="space-y-2 rounded-xl border border-slate-200 p-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-lg" aria-hidden="true">{a.provider === "fastmail" ? "✉️" : "🗂️"}</span>
+                {a.provider === "fastmail" ? <FastmailLogo className="h-6 w-6 shrink-0" /> : <span className="text-lg" aria-hidden="true">🗂️</span>}
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-indigo-950">{a.name}</p>
                   <p className="truncate text-xs text-slate-500">{a.username} · {a.addressBookName || "libreta"} · {intervalLabel(a.intervalMin)}{!a.enabled && " · en pausa"}</p>

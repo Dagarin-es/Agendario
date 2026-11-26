@@ -2,8 +2,9 @@ import { useOverdueCount } from "./Reminders";
 import { ForcedPasswordChange } from "./UsersSettings";
 import { keepInView } from "../lib/keepInView";
 /**
- * Marco de la app de Android con Material 3 (Material You): barra superior, píldora de navegación
- * inferior flotante (los destinos al alcance del pulgar; tu foto abre la hoja con el resto), botón flotante.
+ * Marco de la app de Android con Material 3 (Material You): barra superior con el título grande de la
+ * sección, banda de navegación inferior fija y translúcida (los destinos al alcance del pulgar; tu foto
+ * abre la hoja con el resto), aviso de duplicados encima de la banda y botón flotante.
  * La web (PWA) sigue usando Layout; las páginas son las mismas.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -54,7 +55,6 @@ const tabs = [
   { to: "/gifts", label: "Regalos", icon: icons.gift },
   { to: "/upcoming", label: "Fechas", icon: icons.event },
   { to: "/reminders", label: "Recordatorios", icon: icons.alarm },
-  { to: "/duplicates", label: "Duplicados", icon: icons.merge },
 ] as const;
 
 const titles: [RegExp, string][] = [
@@ -134,6 +134,7 @@ export function AppShell() {
   const icon = useThemeIcon();
   const headerRef = useRef<HTMLElement>(null);
   const isTab = tabs.some((t) => location.pathname === t.to);
+  const tabTitle = tabs.find((t) => location.pathname === t.to)?.label;
   const title = titles.find(([re]) => re.test(location.pathname))?.[1] ?? APP_NAME;
   const menuPage = menuPages.find(([re]) => re.test(location.pathname));
   // Pantalla ancha (Galaxy Fold abierto, tablet): barra lateral y lista + ficha en dos paneles
@@ -155,7 +156,7 @@ export function AppShell() {
   // La barra superior cambia de tono al desplazarse (como en Material 3)
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 4);
+    const on = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", on, { passive: true });
     return () => window.removeEventListener("scroll", on);
   }, []);
@@ -174,10 +175,13 @@ export function AppShell() {
     return () => { window.removeEventListener("agendario-share", on); window.removeEventListener("agendario-open", open); window.removeEventListener("agendario-share-image", img); };
   }, [nav]);
 
-  // «Duplicados» solo aparece cuando los hay (o si estás en esa pantalla)
-  // «Duplicados» solo cuando los hay (o si estás en esa pantalla). «Recordatorios», siempre (tras Fechas)
-  const visibleTabs = tabs.filter((t) => t.to !== "/duplicates" || dupCount > 0 || location.pathname.startsWith("/duplicates"));
-  const badge = (to: string) => (to === "/duplicates" ? dupCount || null : to === "/upcoming" ? gifts.count + pending || null : to === "/reminders" ? overdue || null : null);
+  // «Duplicados» ya no es una pestaña: si los hay, sale un aviso encima de la banda inferior (en cualquier pestaña)
+  const visibleTabs = tabs;
+  const showDupBand = dupCount > 0 && !kb && !location.pathname.startsWith("/duplicates") && !me?.mustChangePassword;
+  const badge = (to: string) => (to === "/upcoming" ? gifts.count + pending || null : to === "/reminders" ? overdue || null : null);
+  const iconSize = wide ? "h-6 w-6" : "h-7 w-7";
+  // Con el aviso de duplicados, lo que flota abajo (botón «Nuevo», índice de letras) sube un poco
+  useEffect(() => { document.documentElement.classList.toggle("has-dup-band", showDupBand && !wide); }, [showDupBand, wide]);
   const navItems = (
     <>
       {visibleTabs.map((t) => (
@@ -185,19 +189,19 @@ export function AppShell() {
           {({ isActive }) => (
             <>
               <span className={`m3-nav-indicator ${isActive || (t.to === "/" && twoPane && location.pathname.startsWith("/contacts/")) ? "is-active" : ""}`}>
-                {t.icon(isActive)}
+                <span className={`flex ${iconSize} [&>svg]:h-full [&>svg]:w-full`}>{t.icon(isActive)}</span>
                 {badge(t.to) && <span className={`m3-badge ${t.to === "/upcoming" && !gifts.red ? "bg-amber-600" : "bg-red-600"}`}>{badge(t.to)}</span>}
               </span>
-              <span className={`max-w-full truncate px-0.5 leading-none ${t.label.length > 11 ? "text-[10px] tracking-tight" : "text-[11px]"} ${isActive ? "font-bold" : "font-medium"}`}>{t.label}</span>
+              <span className={`m3-nav-label max-w-full truncate px-0.5 leading-none ${t.label.length > 11 ? "is-long" : ""} ${isActive ? "font-bold" : "font-medium"}`}>{t.label}</span>
             </>
           )}
         </NavLink>
       ))}
       <button className="m3-nav-item" onClick={() => { void haptic(); setSheet(true); }} aria-haspopup="dialog" aria-label="Tu cuenta y más opciones">
         <span className={`m3-nav-indicator ${sheet || location.pathname.startsWith("/settings") ? "is-active" : ""}`}>
-          <UserAvatar me={me} size={26} className="ring-2 ring-white/70" />
+          <UserAvatar me={me} size={wide ? 26 : 30} className="ring-2 ring-white/70" />
         </span>
-        <span className="max-w-full truncate px-1 text-[11px] font-medium leading-none">{me?.name?.split(" ")[0] ?? "Tú"}</span>
+        <span className="m3-nav-label max-w-full truncate px-1 font-medium leading-none">{me?.name?.split(" ")[0] ?? "Tú"}</span>
       </button>
     </>
   );
@@ -211,12 +215,17 @@ export function AppShell() {
         ) : (
           <button className="m3-icon-btn" onClick={() => nav(-1)} aria-label="Atrás">{icons.back()}</button>
         )}
-        {menuPage ? (
-          <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[20px] font-medium tracking-tight text-indigo-950">
+        {menuPage && !sheet ? (
+          <span className="flex min-w-0 flex-1 items-center gap-2 text-[20px] font-medium tracking-tight text-indigo-950">
             <button className="shrink-0 rounded-full px-1 -mx-1 active:bg-indigo-100" onClick={() => { void haptic(); setSheet(true); }} aria-haspopup="dialog" aria-label="Abrir el menú de usuario">{APP_NAME}</button>
-            <span className="shrink-0 text-slate-400" aria-hidden="true">›</span>
+            <span className="crumb-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 5l7 7-7 7" /></svg>
+            </span>
             <span className="min-w-0 truncate"><span aria-hidden="true">{menuPage[1]}</span> {menuPage[2]}</span>
           </span>
+        ) : isTab && !wide && tabTitle ? (
+          /* Pestañas: el título grande va bajo la barra; al desplazar, aparece pequeño aquí */
+          <span className={`min-w-0 flex-1 truncate text-[20px] font-medium tracking-tight text-indigo-950 transition-opacity duration-200 ${scrolled ? "opacity-100" : "opacity-0"}`} aria-hidden={!scrolled}>{tabTitle}</span>
         ) : (
           <span className="min-w-0 flex-1 truncate text-[20px] font-medium tracking-tight text-indigo-950">{APP_NAME}</span>
         )}
@@ -247,14 +256,15 @@ export function AppShell() {
           </div>
         </main>
       ) : (
-        <main className={`flex-1 px-4 pt-1 ${wide ? "pb-8" : "pb-[calc(104px+var(--sab))]"}`}>
+        <main className={`flex-1 px-4 pt-1 ${wide ? "pb-8" : showDupBand ? "pb-[calc(150px+var(--sab))]" : "pb-[calc(104px+var(--sab))]"}`}>
+          {isTab && !wide && tabTitle && <h2 className="m3-large-title" aria-hidden="true">{tabTitle}</h2>}
           <Outlet />
         </main>
       )}
 
       {/* Botón flotante: nuevo contacto (en pantalla ancha va arriba en la barra lateral) */}
       {!wide && !kb && location.pathname === "/" && (
-        <Link to="/contacts/new" onClick={() => void haptic()} className="m3-fab fixed bottom-[calc(92px+var(--sab))] right-4 z-20" aria-label="Nuevo contacto">
+        <Link to="/contacts/new" onClick={() => void haptic()} className={`m3-fab fixed right-4 z-20 transition-[bottom] duration-200 ${showDupBand ? "bottom-[calc(138px+var(--sab))]" : "bottom-[calc(90px+var(--sab))]"}`} aria-label="Nuevo contacto">
           {icons.add()} <span className="pr-1 text-sm font-medium">Nuevo</span>
         </Link>
       )}
@@ -266,10 +276,23 @@ export function AppShell() {
           <div className="flex flex-1 flex-col gap-3">{navItems}</div>
         </nav>
       ) : (
-        /* Píldora de navegación flotante translúcida; se esconde con el teclado abierto */
-        <nav className={`m3-pill fixed bottom-[calc(12px+var(--sab))] left-1/2 z-20 grid w-[min(calc(100vw-24px),460px)] -translate-x-1/2 transition-[opacity,transform] duration-200 ${kb ? "pointer-events-none translate-y-24 opacity-0" : ""}`} aria-label="Navegación principal" style={{ gridTemplateColumns: `repeat(${visibleTabs.length + 1}, minmax(0, 1fr))` }}>
+        /* Banda de navegación fija y translúcida, de lado a lado; se esconde con el teclado abierto */
+        <nav className={`m3-band fixed inset-x-0 bottom-0 z-20 grid transition-[opacity,transform] duration-200 ${kb ? "pointer-events-none translate-y-24 opacity-0" : ""}`} aria-label="Navegación principal" style={{ gridTemplateColumns: `repeat(${visibleTabs.length + 1}, minmax(0, 1fr))` }}>
           {navItems}
         </nav>
+      )}
+
+      {/* Aviso de duplicados: banda translúcida encima del menú, en cualquier pestaña, mientras los haya */}
+      {showDupBand && (
+        <Link
+          to="/duplicates"
+          onClick={() => void haptic()}
+          className={`m3-dup-band fixed right-0 z-20 flex items-center gap-2.5 px-4 ${wide ? "bottom-0 left-[calc(88px+var(--sal,0px))] pb-[var(--sab)]" : "bottom-[calc(72px+var(--sab))] left-0"}`}
+        >
+          <span className="flex h-6 w-6 shrink-0">{icons.merge(true)}</span>
+          <span className="min-w-0 flex-1 truncate">Detectados <strong>{dupCount} {dupCount === 1 ? "duplicado" : "duplicados"}</strong></span>
+          <span className="shrink-0 font-semibold">Revisar ›</span>
+        </Link>
       )}
 
       {sheet && <MoreSheet onClose={() => setSheet(false)} onAbout={() => { setSheet(false); setAbout(true); }} />}
@@ -286,7 +309,7 @@ function SortMenu() {
   const label = sortOptions.find((o) => o.id === sort)?.label ?? "";
   return (
     <div className="relative mr-1">
-      <button className="flex max-w-[11rem] items-center gap-1 rounded-full px-3 py-1.5 text-sm text-slate-600 active:bg-indigo-100" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open}>
+      <button className="flex max-w-[14rem] items-center gap-1 rounded-full px-3 py-1.5 text-sm text-slate-600 active:bg-indigo-100" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open}>
         <span className="truncate"><span className="text-slate-400">Ordenar por</span> <span className="font-medium text-slate-800">{label}</span></span>
         <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="currentColor" aria-hidden="true"><path d="M5.2 7.2a.75.75 0 0 1 1.06 0L10 10.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L5.2 8.26a.75.75 0 0 1 0-1.06Z" /></svg>
       </button>

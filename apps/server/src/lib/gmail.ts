@@ -21,6 +21,7 @@
  * Se autoriza con redirección (la People API no admite el flujo de «código de dispositivo» que usamos con Drive).
  */
 import { createHash, randomBytes } from "node:crypto";
+import { favoritesOf } from "./favorites.js";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Address, GmailAccountStatus, GmailStatus, LabeledValue, TagLite } from "@agendario/shared";
 import { db, schema } from "../db/index.js";
@@ -532,12 +533,15 @@ async function doSync(r: AccountRef): Promise<{ created: number; updated: number
 
   const links = new Map((await db.select().from(gl).where(mine)).map((l) => [l.contactId, l]));
   const keep = new Set<string>();
+  // Favoritos de Agendario → «Destacados» de Google (grupo del sistema contactGroups/starred)
+  const favs = await favoritesOf(userId, inScope.map((x) => x.id));
 
   for (const row of inScope) {
     keep.add(row.id);
     const items = exportedItems(row, itemTags.get(row.id) as Record<string, TagLite> | undefined, tagIds);
     const myTags = (tagMap.get(row.id) ?? []).filter((t) => tagIds.has(t.id));
     const groupRns = myTags.map((t) => groups[t.id]).filter((x): x is string => !!x);
+    if (favs.has(row.id)) groupRns.push("contactGroups/starred");
     const { person, hash } = personOf(row, items, groupRns);
     person.memberships = [{ contactGroupMembership: { contactGroupResourceName: "contactGroups/myContacts" } }, ...groupRns.map((rn) => ({ contactGroupMembership: { contactGroupResourceName: rn } }))];
     const link = links.get(row.id);

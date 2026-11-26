@@ -534,6 +534,21 @@ export const contactPrefs = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.contactId] })],
 );
 
+/** Favoritos (1.4.0): personales, como las etiquetas (cada usuario marca los suyos). */
+export const contactFavorites = pgTable(
+  "contact_favorites",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.contactId] }), index("contact_favorites_contact_idx").on(t.contactId)],
+);
+
 // ---------- Ajustes del servidor y copias de seguridad ----------
 
 export const settings = pgTable("settings", {

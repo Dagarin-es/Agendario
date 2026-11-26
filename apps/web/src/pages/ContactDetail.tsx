@@ -41,6 +41,8 @@ import { Modal, useAlert, useConfirm } from "../components/Dialogs";
 import { ContactReminders } from "../components/Reminders";
 import { noteDial } from "../lib/native";
 import { formatPartialDate } from "../lib/format";
+import { StarIcon } from "../components/StarIcon";
+import { haptic } from "../lib/native";
 
 function PencilIcon({ className }: { className?: string }) {
   return (
@@ -172,7 +174,7 @@ export function ContactDetailPage() {
   const removeCover = useMutation({ mutationFn: () => api.del(`/contacts/${id}/cover`), onSuccess: () => { setViewer(null); refresh(); } });
   const remove = useMutation({
     mutationFn: () => api.del(`/contacts/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["contacts"] }); qc.invalidateQueries({ queryKey: ["trash"] }); nav("/", { replace: true }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["contacts"] }); qc.invalidateQueries({ queryKey: ["trash"] }); qc.invalidateQueries({ queryKey: ["duplicates"] }); nav("/", { replace: true }); },
   });
 
   if (isLoading) return <p className="text-slate-500">Cargando…</p>;
@@ -256,6 +258,7 @@ export function ContactDetailPage() {
         <div className="detail-name self-center sm:self-start">
             <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold leading-tight">
               {c.displayName}
+              <FavoriteButton id={c.id} favorite={!!c.favorite} />
               <span className="text-xs font-normal"><VisibilityBadge v={c.visibility} /></span>
             </h1>
             {(c.jobTitle || (c.organization && c.organization !== c.displayName)) && (
@@ -728,5 +731,33 @@ function LinkedPersonalEvents({ contactId }: { contactId: string }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+/** ☆/★ de la ficha: favorito personal (se ve en la lista y viaja a Gmail, Fastmail y el móvil). */
+function FavoriteButton({ id, favorite }: { id: string; favorite: boolean }) {
+  const qc = useQueryClient();
+  const showAlert = useAlert();
+  const [on, setOn] = useState(favorite);
+  useEffect(() => setOn(favorite), [favorite]);
+  const save = useMutation({
+    mutationFn: (v: boolean) => api.put<{ favorite: boolean }>(`/contacts/${id}/favorite`, { favorite: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contacts"] });
+      qc.invalidateQueries({ queryKey: ["contact", id] });
+    },
+    onError: (e) => { setOn(favorite); showAlert("No se ha podido guardar", (e as Error).message); },
+  });
+  return (
+    <button
+      type="button"
+      className={`inline-flex rounded-full p-1 transition ${on ? "text-amber-500" : "text-slate-400 hover:text-amber-500"}`}
+      onClick={() => { void haptic(); setOn(!on); save.mutate(!on); }}
+      aria-pressed={on}
+      aria-label={on ? "Quitar de favoritos" : "Añadir a favoritos"}
+      title={on ? "Favorito (toca para quitarlo)" : "Añadir a favoritos"}
+    >
+      <StarIcon filled={on} className="h-6 w-6" />
+    </button>
   );
 }

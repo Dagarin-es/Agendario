@@ -315,3 +315,28 @@
 .dark .btn-primary:hover { background-color: oklch(45.7% 0.24 277.023); }
 /* Inputs y tarjetas: un poco más claros que el fondo */
 .dark .input { background-color: oklch(21% 0.028 265); }
+
+/* Logo de Fastmail: el sobre gris oscuro, aclarado sobre fondo oscuro */
+.dark .fm-dark { fill: #cbd5e1; }
+
+/* Colores de etiqueta nuevos (1.4) en oscuro: los tonos oscuros se aclaran */
+.dark .tagc-navy { background-color: color-mix(in oklab, #7b9cf2 18%, transparent); color: color-mix(in oklab, #7b9cf2 70%, white); --tw-ring-color: color-mix(in oklab, #7b9cf2 40%, transparent); }
+.dark .tagd-navy { background-color: #7b9cf2; }
+.dark .tagc-lime { background-color: color-mix(in oklab, #a3e635 18%, transparent); color: color-mix(in oklab, #a3e635 70%, white); --tw-ring-color: color-mix(in oklab, #a3e635 40%, transparent); }
+.dark .tagd-lime { background-color: #a3e635; }
+.dark .tagc-forest { background-color: color-mix(in oklab, #4fb37a 18%, transparent); color: color-mix(in oklab, #4fb37a 70%, white); --tw-ring-color: color-mix(in oklab, #4fb37a 40%, transparent); }
+.dark .tagd-forest { background-color: #4fb37a; }
+.dark .tagc-turquoise { background-color: color-mix(in oklab, #2dd4bf 18%, transparent); color: color-mix(in oklab, #2dd4bf 70%, white); --tw-ring-color: color-mix(in oklab, #2dd4bf 40%, transparent); }
+.dark .tagd-turquoise { background-color: #2dd4bf; }
+.dark .tagc-cyan { background-color: color-mix(in oklab, #22d3ee 18%, transparent); color: color-mix(in oklab, #22d3ee 70%, white); --tw-ring-color: color-mix(in oklab, #22d3ee 40%, transparent); }
+.dark .tagd-cyan { background-color: #22d3ee; }
+.dark .tagc-eggplant { background-color: color-mix(in oklab, #b583e8 18%, transparent); color: color-mix(in oklab, #b583e8 70%, white); --tw-ring-color: color-mix(in oklab, #b583e8 40%, transparent); }
+.dark .tagd-eggplant { background-color: #b583e8; }
+.dark .tagc-fuchsia { background-color: color-mix(in oklab, #e879f9 18%, transparent); color: color-mix(in oklab, #e879f9 70%, white); --tw-ring-color: color-mix(in oklab, #e879f9 40%, transparent); }
+.dark .tagd-fuchsia { background-color: #e879f9; }
+.dark .tagc-maroon { background-color: color-mix(in oklab, #e66a8a 18%, transparent); color: color-mix(in oklab, #e66a8a 70%, white); --tw-ring-color: color-mix(in oklab, #e66a8a 40%, transparent); }
+.dark .tagd-maroon { background-color: #e66a8a; }
+.dark .tagc-brown { background-color: color-mix(in oklab, #c9925f 18%, transparent); color: color-mix(in oklab, #c9925f 70%, white); --tw-ring-color: color-mix(in oklab, #c9925f 40%, transparent); }
+.dark .tagd-brown { background-color: #c9925f; }
+.dark .tagc-black { background-color: color-mix(in oklab, #d4d4d8 18%, transparent); color: color-mix(in oklab, #d4d4d8 70%, white); --tw-ring-color: color-mix(in oklab, #d4d4d8 40%, transparent); }
+.dark .tagd-black { background-color: #d4d4d8; }

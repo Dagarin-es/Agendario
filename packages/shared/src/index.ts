@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // IS_BETA = true muestra la etiqueta «Beta» (desde la 1.0, false).
 export * from "./themes";
 
-export const APP_VERSION = "1.3.2";
+export const APP_VERSION = "1.4.0";
 export const IS_BETA = false;
 
 // ---------- Enumeraciones ----------
@@ -285,6 +285,8 @@ export interface ContactSummary {
   geo: GeoStatus;
   /** ¿Tiene cambios en el historial después de su creación? */
   hasHistory?: boolean;
+  /** Favorito para ti (personal, como las etiquetas). */
+  favorite?: boolean;
 }
 
 export interface Contact extends ContactSummary, ContactInput {
@@ -297,7 +299,13 @@ export interface Contact extends ContactSummary, ContactInput {
 
 // ---------- Etiquetas (personales de cada usuario) ----------
 
-export const tagColors = ["slate", "red", "orange", "amber", "green", "teal", "sky", "blue", "violet", "pink"] as const;
+/** Colores de etiqueta. «teal» se pinta en índigo (el color del tema) por compatibilidad; los 10 últimos llegaron en la 1.4. */
+export const tagColors = ["slate", "red", "orange", "amber", "green", "teal", "sky", "blue", "violet", "pink", "navy", "lime", "forest", "turquoise", "cyan", "eggplant", "fuchsia", "maroon", "brown", "black"] as const;
+/** Nombre en castellano de cada color. */
+export const tagColorNames: Record<(typeof tagColors)[number], string> = {
+  slate: "Gris", red: "Rojo", orange: "Naranja", amber: "Ámbar", green: "Verde", teal: "Índigo (tema)", sky: "Celeste", blue: "Azul", violet: "Violeta", pink: "Rosa",
+  navy: "Azul marino", lime: "Lima", forest: "Verde bosque", turquoise: "Turquesa", cyan: "Cian", eggplant: "Berenjena", fuchsia: "Fucsia", maroon: "Granate", brown: "Marrón", black: "Negro",
+};
 export type TagColor = (typeof tagColors)[number];
 
 export const tagInputSchema = z.object({

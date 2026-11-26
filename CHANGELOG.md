@@ -1,5 +1,24 @@
 # Historial de cambios
 
+## 1.4.0 — favoritos, etiquetas renovadas y nuevo menú de la app
+- **Favoritos**: estrella ☆ junto al nombre en la ficha de cada contacto. Son **personales**, como las etiquetas (en un contacto compartido, tu favorito es solo tuyo). En la lista salen con ★ y, con la **estrella a la derecha del buscador**, ves solo tus favoritos (se combina con lo que busques y con la etiqueta elegida); vuelve a tocarla para ver todos.
+- **Los favoritos viajan**: a **Gmail** como **Destacados** (y así también en Outlook a través de Google); a **Fastmail**, al **móvil** (servidor CardDAV, DAVx⁵) y en los **.vcf** como la categoría «Favoritos». En el móvil, meter o sacar un contacto del grupo «Favoritos» lo marca o desmarca en Agendario, y al importar un .vcf de Agendario se respetan. Al combinar duplicados, el favorito se conserva.
+- **Etiquetas, pantalla nueva**:
+  - En el ordenador y en el Fold abierto: el árbol a la izquierda y, a la derecha, todo lo de la etiqueta elegida con letra grande (contactos, subetiquetas, nombre, color, «Dentro de», Gmail, ver contactos, exportar y borrar).
+  - En el móvil: filas grandes con la inicial en color y una hoja inferior con todas las opciones; «＋ Nueva» abajo a la derecha.
+  - **Se ordenan arrastrando** por el asa ⠿ (con el ratón o con el dedo; en el móvil también manteniendo pulsada la fila): suéltala **encima** de otra para meterla dentro, **entre dos** para ordenarla o en la zona de abajo para sacarla al nivel principal. Las que tienen subetiquetas se pliegan y despliegan.
+  - Las **cuentas de Gmail** de cada etiqueta, en un **desplegable con casillas** (ya no alargan la fila aunque tengas varias); en el móvil, un interruptor por cuenta.
+  - **20 colores** (antes 10): azul marino, lima, verde bosque, turquesa, cian, berenjena, fucsia, granate, marrón y negro, además de los de siempre (en modo oscuro, los tonos oscuros se aclaran para que se vean).
+- **App, nuevo diseño**:
+  - La píldora de abajo pasa a ser una **banda fija y translúcida** de lado a lado, con **iconos más grandes**.
+  - **«Duplicados» ya no es una pestaña**: cuando los hay, sale encima del menú, en cualquier pantalla, un aviso «**Detectados X duplicados** · Revisar ›».
+  - Cada sección pone su **título grande** arriba (Contactos, Regalos, Fechas, Recordatorios), que pasa a la barra en pequeño al bajar.
+  - En las páginas del menú de usuario, la flecha de «Agendario › Sección» es más visible y, al pulsar «Agendario» para volver al menú, la barra ya no se queda con el nombre de la página anterior.
+- **Logo de Fastmail** en sus cuentas de Ajustes → Sincronización.
+- Correcciones: al borrar un contacto desde su ficha, el aviso de duplicados se actualiza al momento.
+- Manual: capítulo 13 con las novedades.
+- La APK anterior sigue funcionando con este servidor; los favoritos, el nuevo menú y la pantalla nueva de Etiquetas llegan a la app con la APK nueva (en la web, al actualizar el servidor).
+
 ## 1.3.2 — regalos con estado y regalos recibidos de varios
 - **Estado de cada idea de regalo**: botón **⏳ Pendiente · 🛒 Comprado · 🎁 Regalado** en cada idea, en la ficha y en la pestaña Regalos (antes allí no se podía cambiar). «Comprado» pregunta para qué fecha es; **«Regalado» pregunta siempre el día en que lo regalaste** (antes se marcaba sin preguntar). El calendario de Fechas sigue marcando el evento como regalado aunque lo entregaras otro día.
 - **Regalos recibidos de una o varias personas** («de mis padres», «de los compañeros»): salen en la ficha de cada uno, con los demás nombres, y ahora se pueden **editar**. Los que ya tenías se conservan.

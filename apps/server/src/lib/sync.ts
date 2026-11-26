@@ -11,6 +11,7 @@
  * - La primera vez: vista previa y emparejado de los que ya existen en los dos lados, que se
  *   combinan sin perder datos.
  */
+import { favoritesOf, withFavoriteCategory } from "./favorites.js";
 import { createHash } from "node:crypto";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Address, LabeledValue, SyncPreview, SyncSummary, TagLite } from "@agendario/shared";
@@ -104,8 +105,9 @@ function vcardCore(row: ContactRow, items: Items, uid: string, mobile = false): 
   return lines;
 }
 
-function localHash(row: ContactRow, items: Items, uid: string) {
-  return createHash("sha256").update(vcardCore(row, items, uid).join("\n")).update(`|photo:${row.photoKey ?? ""}`).digest("hex").slice(0, 32);
+function localHash(row: ContactRow, items: Items, uid: string, fav = false) {
+  // «|fav» solo en los favoritos: así los demás conservan el hash de antes de la 1.4 (no se reenvía todo)
+  return createHash("sha256").update(vcardCore(row, items, uid).join("\n")).update(`|photo:${row.photoKey ?? ""}`).update(fav ? "|fav" : "").digest("hex").slice(0, 32);
 }
 
 export async function buildVCard(row: ContactRow, items: Items, uid: string, extra: string, mobile = false): Promise<string> {
@@ -363,6 +365,9 @@ async function doSync(account: Account, force: boolean, log: LogEntry[]): Promis
   const remoteByHref = new Map(remoteList.map((r) => [r.href, r]));
   const linkByContact = new Map(st.links.map((l) => [l.contactId, l]));
   const linkedHrefs = new Set(st.links.map((l) => l.href));
+  // Favoritos del usuario de la cuenta: viajan como categoría «Favoritos» (Fastmail no tiene favoritos)
+  const favs = await favoritesOf(account.userId);
+  const lh = (row: ContactRow, items: Items, uid: string) => localHash(row, items, uid, favs.has(row.id));
   const linkByHref = new Map(st.links.map((l) => [l.href, l]));
 
   // --- Frenos de seguridad ante borrados masivos ---
@@ -411,7 +416,7 @@ async function doSync(account: Account, force: boolean, log: LogEntry[]): Promis
       continue;
     }
     const exported = exportedItems(row, st.itemTags.get(row.id), st.tagIds);
-    const localChanged = localHash(row, exported, link.uid) !== link.localHash;
+    const localChanged = lh(row, exported, link.uid) !== link.localHash;
     const remote = fetched.get(link.href);
     const remoteChanged = !!remote && remoteMeta.etag !== link.etag;
     if (remoteChanged && remote && remote.isGroup) continue;
@@ -431,7 +436,7 @@ async function doSync(account: Account, force: boolean, log: LogEntry[]): Promis
       const freshExported = exportedItems(fresh, st.itemTags.get(row.id), st.tagIds);
       // Si Agendario tiene foto y el servicio nunca la tuvo, se envía
       const needsPhoto = !!fresh.photoKey && !remote.photoHash && !link.remotePhotoHash;
-      linkUpdates.push({ ...link, etag: remoteMeta.etag, uid: remote.uid, extra: remote.extra, remotePhotoHash: remote.photoHash, localHash: needsPhoto ? "" : localHash(fresh, freshExported, remote.uid), syncedAt: now });
+      linkUpdates.push({ ...link, etag: remoteMeta.etag, uid: remote.uid, extra: remote.extra, remotePhotoHash: remote.photoHash, localHash: needsPhoto ? "" : lh(fresh, freshExported, remote.uid), syncedAt: now });
       if (needsPhoto) uploads.push({ row: fresh, link, href: link.href, uid: remote.uid, extra: remote.extra, etag: remoteMeta.etag });
       sum.downloaded++;
     } else if (localChanged) {
@@ -462,7 +467,7 @@ async function doSync(account: Account, force: boolean, log: LogEntry[]): Promis
     } else {
       const created = await createFromRemote(account, remote, source);
       const exported = exportedItems(created, undefined, st.tagIds);
-      await db.insert(sl).values({ accountId: account.id, contactId: created.id, href: remote.card.href, etag: remote.card.etag, uid: remote.uid, localHash: localHash(created, exported, remote.uid), remotePhotoHash: remote.photoHash, extra: remote.extra, syncedAt: now }).onConflictDoNothing();
+      await db.insert(sl).values({ accountId: account.id, contactId: created.id, href: remote.card.href, etag: remote.card.etag, uid: remote.uid, localHash: lh(created, exported, remote.uid), remotePhotoHash: remote.photoHash, extra: remote.extra, syncedAt: now }).onConflictDoNothing();
       st.inScope.add(created.id);
       taken.add(created.id);
       sum.created++;
@@ -484,8 +489,8 @@ async function doSync(account: Account, force: boolean, log: LogEntry[]): Promis
     const fresh = (await db.select().from(c).where(eq(c.id, u.row.id)))[0] ?? u.row;
     const exported = exportedItems(fresh, st.itemTags.get(fresh.id), st.tagIds);
     try {
-      await putCard(u.href, auth, await buildVCard(fresh, exported, u.uid, u.extra), u.link ? { etag: u.etag } : { create: true });
-      const values = { accountId: account.id, contactId: fresh.id, href: u.href, uid: u.uid, extra: u.extra, localHash: localHash(fresh, exported, u.uid), syncedAt: now };
+      await putCard(u.href, auth, await buildVCard(fresh, exported, u.uid, withFavoriteCategory(u.extra, favs.has(fresh.id))), u.link ? { etag: u.etag } : { create: true });
+      const values = { accountId: account.id, contactId: fresh.id, href: u.href, uid: u.uid, extra: u.extra, localHash: lh(fresh, exported, u.uid), syncedAt: now };
       await db.insert(sl).values({ ...values, etag: "" }).onConflictDoUpdate({ target: [sl.accountId, sl.contactId], set: values });
       sent.push(u.href);
       sum.uploaded++;

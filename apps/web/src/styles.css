@@ -49,3 +49,53 @@ select.select {
   color: var(--color-slate-900);
   padding-left: 0.75rem;
 }
+
+/* ★ de favoritos junto al buscador (1.4) */
+@utility fav-toggle {
+  @apply inline-flex h-auto min-h-[38px] w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-400 transition hover:text-amber-500;
+}
+.fav-toggle.is-on { border-color: var(--color-amber-300); background: var(--color-amber-50); color: var(--color-amber-500); }
+.app .fav-toggle { min-height: 48px; width: 52px; border-radius: 12px; }
+.app .fav-toggle svg { height: 24px; width: 24px; }
+
+/* Colores de etiqueta nuevos (1.4): ficha (tagc-*) y punto (tagd-*) */
+.tagc-navy { background-color: #eff6ff; color: #1e3a8a; --tw-ring-color: color-mix(in oklab, #1e40af 35%, transparent); }
+.tagd-navy { background-color: #1e40af; }
+.tagc-lime { background-color: #f7fee7; color: #4d7c0f; --tw-ring-color: color-mix(in oklab, #84cc16 35%, transparent); }
+.tagd-lime { background-color: #84cc16; }
+.tagc-forest { background-color: #dcfce7; color: #14532d; --tw-ring-color: color-mix(in oklab, #166534 35%, transparent); }
+.tagd-forest { background-color: #166534; }
+.tagc-turquoise { background-color: #f0fdfa; color: #0f766e; --tw-ring-color: color-mix(in oklab, #14b8a6 35%, transparent); }
+.tagd-turquoise { background-color: #14b8a6; }
+.tagc-cyan { background-color: #ecfeff; color: #0e7490; --tw-ring-color: color-mix(in oklab, #06b6d4 35%, transparent); }
+.tagd-cyan { background-color: #06b6d4; }
+.tagc-eggplant { background-color: #f3e8ff; color: #581c87; --tw-ring-color: color-mix(in oklab, #6b21a8 35%, transparent); }
+.tagd-eggplant { background-color: #6b21a8; }
+.tagc-fuchsia { background-color: #fdf4ff; color: #a21caf; --tw-ring-color: color-mix(in oklab, #d946ef 35%, transparent); }
+.tagd-fuchsia { background-color: #d946ef; }
+.tagc-maroon { background-color: #ffe4e6; color: #881337; --tw-ring-color: color-mix(in oklab, #9f1239 35%, transparent); }
+.tagd-maroon { background-color: #9f1239; }
+.tagc-brown { background-color: #f5ebe0; color: #5b3412; --tw-ring-color: color-mix(in oklab, #7c4a1e 35%, transparent); }
+.tagd-brown { background-color: #7c4a1e; }
+.tagc-black { background-color: #e5e7eb; color: #111111; --tw-ring-color: color-mix(in oklab, #111111 35%, transparent); }
+.tagd-black { background-color: #111111; }
+
+/* Etiquetas (1.4): arrastrar y soltar */
+.tag-dragging, .tag-dragging * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
+.tag-drop-inside { background: var(--color-indigo-50) !important; box-shadow: inset 0 0 0 2px var(--color-indigo-500); }
+.tag-drop-before::before, .tag-drop-after::after {
+  content: ""; position: absolute; left: 8px; right: 8px; height: 3px; border-radius: 3px; background: var(--color-indigo-500); pointer-events: none;
+}
+.tag-drop-before::before { top: -2px; }
+.tag-drop-after::after { bottom: -2px; }
+.tag-field-label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--color-slate-600); }
+.tags-fab { bottom: 24px; }
+.app .tags-fab { bottom: calc(90px + var(--sab)); }
+/* Interruptor (Material 3) con una casilla */
+.m3-switch { appearance: none; -webkit-appearance: none; position: relative; width: 52px; height: 32px; flex-shrink: 0; border-radius: 9999px; background: var(--color-slate-200); border: 2px solid var(--color-slate-400); transition: background .2s, border-color .2s; cursor: pointer; }
+.m3-switch::after { content: ""; position: absolute; top: 50%; left: 6px; width: 16px; height: 16px; border-radius: 9999px; background: var(--color-slate-500); transform: translateY(-50%); transition: all .2s; }
+.m3-switch:checked { background: var(--color-indigo-700); border-color: var(--color-indigo-700); }
+.m3-switch:checked::after { left: 24px; width: 24px; height: 24px; background: #fff; }
+.m3-switch:disabled { opacity: .5; cursor: default; }
+.app.has-dup-band .tags-fab { bottom: calc(138px + var(--sab)); }
+.app.has-dup-band { --fab-gap: 206px; }

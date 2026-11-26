@@ -5,6 +5,7 @@ import { readPhoto } from "./photos.js";
 import { expandTagIds, tagsForContacts } from "./tags.js";
 import { itemTagsFor, pickForTag } from "./items.js";
 import { toVCard } from "./vcard.js";
+import { FAVORITES_CATEGORY, favoritesOf } from "./favorites.js";
 
 /**
  * Genera un .vcf con los contactos visibles para el usuario (todos, o solo los `ids` indicados),
@@ -26,6 +27,7 @@ export async function buildVcf(userId: string, ids: string[] | null, withGifts: 
 
   const gifts = withGifts ? await db.select().from(schema.giftIdeas).where(eq(schema.giftIdeas.userId, userId)) : [];
   const tagMap = await tagsForContacts(rows.map((r) => r.id), userId);
+  const favs = await favoritesOf(userId, rows.map((r) => r.id));
   const itemTags = tagId ? await itemTagsFor(rows.map((r) => r.id), userId) : null;
   const tagSet = new Set(tagId ? await expandTagIds(userId, [tagId]) : []); // con sus subetiquetas
   let out = "";
@@ -49,7 +51,7 @@ export async function buildVcf(userId: string, ids: string[] | null, withGifts: 
     // Portada: campo propio de Agendario (las demás apps lo ignoran); así exportar e importar no la pierde
     const cover = r.coverKey ? await readPhoto(r.coverKey, "full").catch(() => null) : null;
     if (cover) extra.push({ name: "X-AGENDARIO-COVER", value: `data:image/jpeg;base64,${cover.toString("base64")}` });
-    out += toVCard({ ...r, photoJpeg: photo, extra, categories: tagMap.get(r.id)?.map((t) => t.name) });
+    out += toVCard({ ...r, photoJpeg: photo, extra, categories: [...(tagMap.get(r.id)?.map((t) => t.name) ?? []), ...(favs.has(r.id) ? [FAVORITES_CATEGORY] : [])] });
   }
   return { vcf: out, count: rows.length };
 }

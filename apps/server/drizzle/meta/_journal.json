@@ -197,6 +197,13 @@
       "when": 1795650000000,
       "tag": "0027_gifts_received_contacts",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1795750000000,
+      "tag": "0028_contact_favorites",
+      "breakpoints": true
     }
   ]
 }

@@ -16,6 +16,7 @@ import { api } from "../lib/api";
 import { isApp } from "../lib/platform";
 import { haptic } from "../lib/native";
 import { useReminders } from "../components/Reminders";
+import { StarIcon } from "../components/StarIcon";
 
 const PAGE_SIZES = [25, 50, 75, 100, 0] as const; // 0 = todos
 const PAGE_SIZE_KEY = "contactos.pageSize";
@@ -90,6 +91,7 @@ function Pager({ page, pages, onPage }: { page: number; pages: number; onPage: (
 
 const LONG_PRESS_MS = 1000;
 
+
 /**
  * Foto del contacto en la app: mantenerla pulsada empieza la selección (la foto pasa a ser un cuadro marcado);
  * con la selección en marcha, tocar el cuadro marca o desmarca. Tocar el resto de la fila abre la ficha.
@@ -155,6 +157,8 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
   const [params, setParams] = useSearchParams();
   const nav = useNavigate();
   const tag = params.get("tag") ?? "";
+  // ★ junto al buscador: solo favoritos (se combina con la búsqueda y la etiqueta)
+  const favOnly = params.get("fav") === "1";
   const page = Math.max(1, Number(params.get("page")) || 1);
   const [sort, setSortPrefState] = useSortPref();
   // El orden puede cambiarse desde la cabecera de la app: vuelve a la primera página
@@ -196,13 +200,14 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
   });
 
   /** Actualiza la URL (así al volver de una ficha sigues en la misma página). */
-  function update(changes: { tag?: string; page?: number; q?: string }) {
+  function update(changes: { tag?: string; page?: number; q?: string; fav?: boolean }) {
     const next = new URLSearchParams(params);
     const set = (k: string, v: string | number | undefined, empty: string | number) =>
       v === undefined ? null : v === empty || v === "" ? next.delete(k) : next.set(k, String(v));
     set("tag", changes.tag, "");
     set("page", changes.page, 1);
     set("q", changes.q, "");
+    if (changes.fav !== undefined) { if (changes.fav) next.set("fav", "1"); else next.delete("fav"); }
     setParams(next, { replace: true });
   }
 
@@ -238,12 +243,13 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
   // El resto: por el campo elegido; los que no lo tienen, al final (ordenados por nombre a mostrar).
   const sorted = useMemo(() => {
     if (!data) return data;
-    if (sort === "geo") return [...data].sort((a, b) => geoStatuses.indexOf(a.geo) - geoStatuses.indexOf(b.geo) || collator.compare(a.displayName, b.displayName));
-    return [...data]
+    const base = favOnly ? data.filter((c) => c.favorite) : data;
+    if (sort === "geo") return [...base].sort((a, b) => geoStatuses.indexOf(a.geo) - geoStatuses.indexOf(b.geo) || collator.compare(a.displayName, b.displayName));
+    return [...base]
       .map((c) => ({ c, k: sortText(c, sort) }))
       .sort((a, b) => (a.k ? 0 : 1) - (b.k ? 0 : 1) || collator.compare(a.k || a.c.displayName, b.k || b.c.displayName))
       .map((x) => x.c);
-  }, [data, sort]);
+  }, [data, sort, favOnly]);
   // Letra de cada contacto según el orden (los que no tienen el campo van a «#»)
   const letters = useMemo(() => {
     const m = new Map<string, string>();
@@ -260,14 +266,14 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
     if (target) document.getElementById(`letra-${target}`)?.scrollIntoView({ block: "start" });
   };
   const showIndex = sortInHeader && !deferred && selected.size === 0 && sort !== "geo" && present.size > 1;
-  const total = data?.length ?? 0;
+  const total = sorted?.length ?? 0;
   const pages = pageSize ? Math.max(1, Math.ceil(total / pageSize)) : 1;
   const current = Math.min(page, pages);
   const visible = sorted ? (pageSize ? sorted.slice((current - 1) * pageSize, current * pageSize) : sorted) : [];
   const from = total ? (pageSize ? (current - 1) * pageSize + 1 : 1) : 0;
   const to = pageSize ? Math.min(current * pageSize, total) : total;
 
-  const filtered = !!(deferred || tag);
+  const filtered = !!(deferred || tag || favOnly);
   // En el móvil, el buscador se recoge al bajar por la lista y vuelve al subir
   const [compact, setCompact] = useState(false);
   useEffect(() => {
@@ -357,9 +363,19 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
   return (
     <div className="space-y-4" ref={topRef}>
       {/* Buscador, etiquetas y barra de la lista: siempre visibles al desplazar */}
-      <div className="sticky z-[5] -mx-4 -mt-4 space-y-2 bg-slate-50 px-4 pt-4" style={{ top: "var(--header-h, 68px)" }}>
+      <div className="list-sticky sticky z-[5] -mx-4 -mt-4 space-y-2 bg-slate-50 px-4 pt-4" style={{ top: "var(--header-h, 68px)" }}>
       <div className={`gap-2 ${compact ? "hidden sm:flex" : "flex"}`}>
         <input className="input" placeholder="Buscar por nombre, email, teléfono…" value={q} onChange={(e) => setQ(e.target.value)} type="search" />
+        <button
+          type="button"
+          className={`fav-toggle ${favOnly ? "is-on" : ""}`}
+          onClick={() => { void haptic(); update({ fav: !favOnly, page: 1 }); }}
+          aria-pressed={favOnly}
+          aria-label={favOnly ? "Mostrar todos" : "Mostrar solo favoritos"}
+          title={favOnly ? "Mostrando solo favoritos: toca para ver todos" : "Mostrar solo favoritos"}
+        >
+          <StarIcon filled={favOnly} />
+        </button>
         {!isApp && <Link to="/contacts/new" className="btn-primary shrink-0">+ Nuevo</Link>}
       </div>
 
@@ -484,7 +500,7 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
 
       </div>
 
-      {dupCount > 0 && (
+      {dupCount > 0 && !isApp && (
         <Link to="/duplicates" className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 hover:bg-amber-100">
           <span>👥</span>
           <span className="flex-1">
@@ -496,9 +512,9 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
 
       {isLoading && <p className="text-slate-500">Cargando…</p>}
       {error && <p className="text-red-600">{(error as Error).message}</p>}
-      {data && data.length === 0 && (
+      {sorted && sorted.length === 0 && (
         <div className="card text-center text-slate-500">
-          {q || tag ? "Sin resultados." : (
+          {favOnly && !q && !tag ? "Aún no tienes favoritos. Márcalos con la ☆ de su ficha." : q || tag || favOnly ? "Sin resultados." : (
             <>Aún no tienes contactos. Crea el primero con «+ Nuevo» o <Link to="/import" className="text-indigo-700 underline">importa un .vcf</Link>.</>
           )}
         </div>
@@ -536,7 +552,10 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
                 <Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} version={c.updatedAt} />
               )}
               <div className="min-w-0 flex-1">
-                <div className="truncate font-medium">{c.displayName}</div>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate font-medium">{c.displayName}</span>
+                  {c.favorite && <span className="shrink-0 text-amber-500" title="Favorito" aria-label="Favorito"><StarIcon filled className="h-4 w-4" /></span>}
+                </div>
                 {(sort === "family" || sort === "given" || sort === "nickname") && sortText(c, sort) && sortText(c, sort) !== c.displayName && (
                   <div className="truncate text-xs text-indigo-700/80">{sort === "nickname" ? `«${c.nickname}»` : sort === "family" ? `${c.familyName}, ${c.givenName}`.replace(/, $/, "") : sortText(c, sort)}</div>
                 )}

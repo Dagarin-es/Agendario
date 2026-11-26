@@ -82,6 +82,7 @@ const TABLES = [
   "interaction_attachments",
   "user_prefs",
   "contact_prefs",
+  "contact_favorites",
   "sync_accounts",
   "sync_links",
   "sync_log",

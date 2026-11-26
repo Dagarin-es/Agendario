@@ -168,6 +168,18 @@
 #agendario .road .item{background:#fff;border:1px solid var(--line);border-left:4px solid var(--ind-m);border-radius:12px;padding:14px 16px;margin-bottom:10px;font-size:15px}
 #agendario .road .done .item{border-left-color:#10b981}#agendario .road .now .item{border-left-color:var(--yel)}
 @media(max-width:860px){#agendario .road{grid-template-columns:1fr}}
+#agendario .road-all{margin-top:6px;padding:11px 18px;font-size:15px}
+#agendario .cl-back{position:fixed;inset:0;z-index:99999;background:rgba(15,13,40,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px}
+#agendario .cl-box{background:#fff;color:var(--ink);border-radius:22px;width:min(760px,100%);max-height:86vh;display:flex;flex-direction:column;box-shadow:0 30px 80px -20px rgba(15,13,40,.5)}
+#agendario .cl-head{display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid var(--line)}
+#agendario .cl-head h3{font-size:20px;margin:0;flex:1}
+#agendario .cl-x{border:0;background:#f1f3f9;border-radius:50%;width:38px;height:38px;font-size:18px;cursor:pointer;color:var(--ink)}
+#agendario .cl-body{overflow:auto;padding:8px 24px 24px;font-size:15px;line-height:1.55}
+#agendario .cl-body h4{font-size:17px;margin:22px 0 8px;color:var(--ind)}
+#agendario .cl-body ul{margin:0;padding-left:20px}
+#agendario .cl-body li{margin:4px 0}
+#agendario .cl-body li.sub{margin-left:22px;list-style:circle}
+#agendario .cl-body code{background:#f1f3f9;border-radius:6px;padding:1px 6px;font-size:13px}
 
 /* Preguntas */
 #agendario .faq{max-width:820px;margin:40px auto 0}
@@ -249,7 +261,7 @@
           Ver en GitHub
         </a>
       </div>
-      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.3.2</b> <span data-gh-date></span></div>
+      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.4.0</b> <span data-gh-date></span></div>
     </div>
     <div class="devices rv">
       <div class="laptop"><div class="screen"><span data-shot="hero_web"></span></div></div>
@@ -381,7 +393,8 @@
       <div class="card rv"><div class="ico y">📧</div><h3>Gmail y Outlook</h3><p>Envía los contactos de las etiquetas que elijas a una o varias cuentas de Google y míralos en el nuevo Outlook. Y a los que no tienen foto les pone la suya de Google.</p></div>
       <div class="card rv"><div class="ico g">🛟</div><h3>Copias automáticas</h3><p>Varias copias cifradas a la vez: carpeta local, NFS, SMB o Google Drive, con restauración en dos clics.</p></div>
       <div class="card rv"><div class="ico">🧹</div><h3>Duplicados</h3><p>Los detecta y te deja combinarlos de forma automática o campo a campo, con vista previa.</p></div>
-      <div class="card rv"><div class="ico y">🏷️</div><h3>Etiquetas y subetiquetas</h3><p>Como carpetas, también en cada teléfono o email. Filtra y exporta por etiqueta.</p></div>
+      <div class="card rv"><div class="ico y">🏷️</div><h3>Etiquetas y subetiquetas</h3><p>Como carpetas, en 20 colores, también en cada teléfono o email. Ordénalas arrastrando, filtra y exporta por etiqueta.</p></div>
+      <div class="card rv"><div class="ico">⭐</div><h3>Favoritos</h3><p>Marca a los tuyos con una estrella y fíltralos al momento junto al buscador. Viajan a Gmail como destacados y al móvil como grupo.</p></div>
       <div class="card rv"><div class="ico p">🕓</div><h3>Historial y papelera</h3><p>60 días para deshacer cualquier cambio o recuperar un contacto borrado.</p></div>
       <div class="card rv"><div class="ico g">👨‍👩‍👧</div><h3>Varios usuarios</h3><p>Cada uno con su agenda, contactos privados, compartidos o públicos para toda la casa.</p></div>
     </div>
@@ -560,15 +573,12 @@ EOF</div>
     </div>
     <div class="road rv">
       <!-- Hoja de ruta: «Hecho» = lo de las últimas versiones; «En marcha» e «Ideas» son propuestas, edítalas a tu gusto -->
-      <div class="col done"><h3>✅ Hecho · 1.3</h3>
-        <div class="item">Regalos recibidos de varias personas, con su propia lista</div>
-        <div class="item">Cada idea de regalo pasa de pendiente a comprado y regalado, con el día en que lo regalaste</div>
-        <div class="item">Contactos en Gmail para verlos en el nuevo Outlook, ahora en varias cuentas de Google</div>
-        <div class="item">Fotos desde Google para los contactos que no tienen</div>
-        <div class="item">Changelog de cada versión dentro de la app</div>
-        <h3 style="margin-top:22px">✅ Hecho · 1.2</h3>
-        <div class="item">Adjuntos en las llamadas, también durante la llamada</div>
-        <div class="item">«Últimas notas», recordatorios con Todoist y avisos con Android Auto</div>
+      <div class="col done"><h3>✅ Hecho · 1.4</h3>
+        <div class="item">Favoritos con una estrella, para filtrarlos junto al buscador (también en Gmail y en el móvil)</div>
+        <div class="item">Etiquetas renovadas: se ordenan arrastrando, 20 colores y las cuentas de Gmail en un desplegable</div>
+        <div class="item">App con banda de navegación fija, iconos más grandes y título grande en cada sección</div>
+        <div class="item">Aviso de duplicados encima del menú, estés donde estés</div>
+        <button type="button" class="btn btn-g road-all" data-changelog-open>📜 Ver todos los cambios</button>
       </div>
       <div class="col now"><h3>🚧 En marcha</h3>
         <div class="item">Publicar la app en Google Play</div>
@@ -646,6 +656,7 @@ window.AGENDARIO_CONFIG = {
     web_fechas: "", web_fechas_oscuro: "",
     web_efemerides: "", web_efemerides_oscuro: "",
     web_regalos: "", web_regalos_oscuro: "",
+    web_etiquetas: "", web_etiquetas_oscuro: "",
     web_duplicados: "", web_duplicados_oscuro: "",
     web_copias: "", web_copias_oscuro: "",
     // Galería · app
@@ -654,6 +665,7 @@ window.AGENDARIO_CONFIG = {
     app_fechas: "", app_fechas_oscuro: "",
     app_efemerides: "", app_efemerides_oscuro: "",
     app_regalos: "", app_regalos_oscuro: "",
+    app_etiquetas: "", app_etiquetas_oscuro: "",
     app_llamadas: "", app_llamadas_oscuro: ""
   }
 };
@@ -735,15 +747,17 @@ window.AGENDARIO_CONFIG = {
       ["fechas", "Fechas", "Calendario con avisos de regalo"],
       ["efemerides", "Efemérides", "Tus fechas para recordar"],
       ["regalos", "Regalos", "Ideas por persona y fecha"],
+      ["etiquetas", "Etiquetas", "Arrastrar, colores y Gmail"],
       ["duplicados", "Duplicados", "Combinar con vista previa"],
       ["copias", "Copias", "Varias copias cifradas"]
     ],
     app: [
-      ["lista", "Contactos", "Índice de letras y píldora"],
+      ["lista", "Contactos", "Buscador, favoritos y aviso de duplicados"],
       ["ficha", "Ficha", "Llamar, escribir, abrir en mapa"],
       ["fechas", "Fechas", "Calendario y próximos eventos"],
       ["efemerides", "Efemérides", "Foto y comentario personal"],
-      ["regalos", "Regalos", "Comprar y regalar"],
+      ["regalos", "Regalos", "Ideas, comprados y recibidos"],
+      ["etiquetas", "Etiquetas", "Mantén pulsado y arrastra"],
       ["llamadas", "Llamadas", "Registro solo para ti"]
     ]
   };
@@ -784,6 +798,40 @@ window.AGENDARIO_CONFIG = {
   // Avanza sola cada 6 s hasta que el visitante toca algo
   var auto = setInterval(function () { state.i = (state.i + 1) % GAL[state.dev].length; render(); }, 6000);
   $("#capturas").addEventListener("click", function () { clearInterval(auto); }, { once: true });
+
+  /* «Ver todos los cambios»: el CHANGELOG.md del repositorio, siempre al día */
+  (function () {
+    var btn = $("[data-changelog-open]"); if (!btn) return;
+    var esc = function (t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); };
+    var inline = function (t) { return esc(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`(.+?)`/g, "<code>$1</code>"); };
+    function md(text) {
+      var out = "", inList = false;
+      text.split(/\r?\n/).forEach(function (l) {
+        if (/^#\s/.test(l)) return; // título del fichero
+        var h = l.match(/^##+\s+(.*)/), li = l.match(/^\s*[-*]\s+(.*)/);
+        if (!li && inList) { out += "</ul>"; inList = false; }
+        if (h) out += "<h4>" + inline(h[1]) + "</h4>";
+        else if (li) { if (!inList) { out += "<ul>"; inList = true; } out += (/^\s{2,}/.test(l) ? '<li class="sub">' : "<li>") + inline(li[1]) + "</li>"; }
+        else if (l.trim()) out += "<p>" + inline(l) + "</p>";
+      });
+      return out + (inList ? "</ul>" : "");
+    }
+    btn.addEventListener("click", function () {
+      var back = document.createElement("div");
+      back.className = "cl-back";
+      back.innerHTML = '<div class="cl-box" role="dialog" aria-modal="true" aria-label="Todos los cambios"><div class="cl-head"><h3>📜 Todos los cambios</h3><button type="button" class="cl-x" aria-label="Cerrar">✕</button></div><div class="cl-body"><p>Cargando…</p></div></div>';
+      root.appendChild(back);
+      var close = function () { back.remove(); document.removeEventListener("keydown", onKey); };
+      var onKey = function (e) { if (e.key === "Escape") close(); };
+      document.addEventListener("keydown", onKey);
+      back.addEventListener("click", function (e) { if (e.target === back || e.target.closest(".cl-x")) close(); });
+      var body = back.querySelector(".cl-body");
+      fetch("https://raw.githubusercontent.com/" + C.repo + "/main/CHANGELOG.md")
+        .then(function (r) { if (!r.ok) throw 0; return r.text(); })
+        .then(function (t) { body.innerHTML = md(t); })
+        .catch(function () { body.innerHTML = '<p>No se ha podido cargar ahora mismo. Puedes verlo en <a href="https://github.com/' + C.repo + '/blob/main/CHANGELOG.md" target="_blank" rel="noopener">GitHub</a>.</p>'; });
+    });
+  })();
 
   /* Formulario de la APK: prepara un correo (sin servidor intermedio) */
   var f = $("[data-apk-form]");

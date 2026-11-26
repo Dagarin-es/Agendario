@@ -1,0 +1,86 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><style>
+@page { size: 595.92pt 842.88pt; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Inter Display", Inter, sans-serif; color: #1e293b; font-size: 10.6pt; line-height: 1.55; letter-spacing: .1pt; }
+.page { width: 595.92pt; height: 842.88pt; position: relative; padding: 52pt 48pt 60pt 48pt; page-break-after: always; overflow: hidden; }
+.page:last-child { page-break-after: auto; }
+h1 { font-size: 21pt; color: #3730a3; margin: 0 0 6pt; font-weight: 700; padding-bottom: 8pt; border-bottom: 1px solid #1e293b; }
+h1 .n { color: #a5b4fc; margin-right: 6pt; }
+h2 { font-size: 12.5pt; color: #1e1b4b; margin: 16pt 0 4pt; font-weight: 700; }
+h3 { font-size: 10.8pt; color: #3730a3; margin: 10pt 0 2pt; font-weight: 700; }
+p { margin: 4pt 0; }
+ul, ol { margin: 4pt 0; padding-left: 16pt; }
+li { margin: 2pt 0; }
+b { color: #1e1b4b; }
+.tip { background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.warn { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.foot { position: absolute; bottom: 14pt; left: 48pt; right: 48pt; display: flex; justify-content: space-between; font-size: 8.5pt; color: #5b5f77; }
+.row { display: flex; gap: 14pt; align-items: flex-start; }
+img.shot { border: 1px solid #e2e8f0; border-radius: 8pt; display: block; }
+.cap { font-size: 8.6pt; color: #64748b; text-align: center; margin-top: 3pt; }
+code { background: #eef2ff; color: #3730a3; padding: 0 3pt; border-radius: 3pt; font-size: 9pt; word-break: break-all; }
+</style></head><body>
+
+<div class="page">
+<h1><span class="n">13</span>Novedades de la versión 1.4.0</h1>
+<p>La 1.4.0 trae los <b>favoritos</b>, una pantalla de <b>Etiquetas</b> nueva que se ordena arrastrando, <b>20 colores</b> y un diseño renovado de la <b>app</b>: banda de navegación fija, iconos más grandes, títulos grandes y el aviso de duplicados encima del menú.</p>
+
+<h2>Favoritos</h2>
+<ul>
+<li>En la ficha de cada contacto hay una <b>estrella ☆</b> junto al nombre. Tócala para marcarlo como favorito (★) y vuelve a tocarla para quitarlo.</li>
+<li>Son <b>personales</b>, como las etiquetas: si un contacto está compartido, tu favorito solo lo ves tú.</li>
+<li>En la lista, los favoritos llevan una ★ junto al nombre. Con la <b>estrella a la derecha del buscador</b> ves <b>solo tus favoritos</b>; se combina con lo que escribas y con la etiqueta elegida. Tócala otra vez para ver todos.</li>
+<li><b>Se sincronizan</b>: en <b>Gmail</b> salen como <b>Destacados</b> (y así en Outlook a través de Google); en <b>Fastmail</b>, en el <b>móvil</b> (servidor CardDAV con DAVx⁵) y en los <b>.vcf</b> viajan como la categoría <b>«Favoritos»</b>, porque el formato de contactos no tiene un campo de favorito. En el móvil, meter o sacar un contacto del grupo «Favoritos» lo marca o desmarca en Agendario.</li>
+</ul>
+<img class="shot" src="m13-web-ficha.png" style="width:78%; margin:6pt auto 0"><div class="cap">La estrella de la ficha (web).</div>
+<div class="row" style="margin-top:8pt; justify-content:center">
+<div style="width:24%"><img class="shot" src="m13-app-favoritos.png" style="width:100%"><div class="cap">Solo favoritos, con la ★ del buscador marcada.</div></div>
+<div style="width:24%"><img class="shot" src="m13-app-lista.png" style="width:100%"><div class="cap">La app: título grande, buscador, filtros y aviso de duplicados.</div></div>
+</div>
+<div class="foot"><span>Agendario · Manual 1.4.0</span><span>54</span></div>
+</div>
+
+<div class="page">
+<h2 style="margin-top:0">Etiquetas: pantalla nueva</h2>
+<p>En el <b>ordenador</b> y en el <b>Fold abierto</b>, a la izquierda está el árbol de etiquetas y, a la derecha, todo lo de la elegida con letra grande: cuántos contactos, subetiquetas y cuentas de Google tiene, su <b>nombre</b>, su <b>color</b>, <b>«Dentro de»</b>, <b>Sincronizar con Gmail</b> y los botones <b>Ver contactos</b>, <b>Exportar .vcf</b> y <b>Borrar…</b> (solo la etiqueta o también sus contactos). Los cambios de nombre, color y «Dentro de» se guardan con <b>Guardar</b>. Con <b>«＋ Nueva»</b> creas una etiqueta.</p>
+<img class="shot" src="m13-web-etiquetas.png" style="width:100%; margin-top:4pt"><div class="cap">Etiquetas en el ordenador.</div>
+
+<h3>Ordenar arrastrando</h3>
+<ul>
+<li>Coge la etiqueta por el asa <b>⠿</b> (con el ratón o con el dedo; en el móvil también <b>manteniendo pulsada</b> la fila) y suéltala:</li>
+<li><b>encima</b> de otra etiqueta (se recuadra) para <b>meterla dentro</b>;</li>
+<li><b>entre dos</b> (sale una línea) para ponerla en ese orden;</li>
+<li>en la zona <b>«Suelta aquí para dejarla en el nivel principal»</b> para sacarla de su etiqueta madre.</li>
+<li>Mientras arrastras, una etiqueta flotante te dice qué pasará al soltar («Dentro de «Trabajo»»…). Con <b>Esc</b> se cancela.</li>
+<li>Las etiquetas con subetiquetas se pliegan y despliegan con la flecha.</li>
+</ul>
+<div class="foot"><span>Agendario · Manual 1.4.0</span><span>55</span></div>
+</div>
+
+<div class="page">
+<div class="row">
+<div style="width:50%"><img class="shot" src="m13-web-arrastrar.png" style="width:100%"><div class="cap">Arrastrando «Pádel» dentro de «Trabajo».</div></div>
+<div style="width:50%">
+<h3 style="margin-top:0">Gmail en un desplegable</h3>
+<p>Las cuentas de Google de cada etiqueta salen como fichas en una sola línea; al tocarla se abre un desplegable con una casilla por cuenta. Si una subetiqueta ya entra por su etiqueta madre, su casilla sale marcada y bloqueada («por Familia»).</p>
+<img class="shot" src="m13-web-gmail.png" style="width:100%; margin-top:6pt">
+<h3>20 colores</h3>
+<p>A los diez de siempre se suman <b>azul marino, lima, verde bosque, turquesa, cian, berenjena, fucsia, granate, marrón</b> y <b>negro</b>. En modo oscuro, los tonos oscuros se aclaran para que se vean.</p>
+</div>
+</div>
+
+<h2>La app, con diseño nuevo</h2>
+<ul>
+<li>La barra de abajo es una <b>banda fija y translúcida</b> de lado a lado, con <b>iconos más grandes</b>: Contactos, Regalos, Fechas, Recordatorios y tu foto.</li>
+<li><b>Duplicados</b> ya no es una pestaña: cuando los hay, aparece encima del menú, en cualquier pantalla, el aviso <b>«Detectados X duplicados · Revisar ›»</b>.</li>
+<li>Cada sección tiene su <b>título grande</b> arriba; al bajar, pasa a la barra en pequeño.</li>
+<li>En el móvil, <b>Etiquetas</b> tiene filas grandes con la inicial en color; al tocar una se abre una hoja con <b>Ver sus contactos</b>, <b>Mover dentro de…</b>, <b>Exportar .vcf</b>, un <b>interruptor por cuenta de Gmail</b> y <b>Borrar</b>. El lápiz ✏️ cambia el nombre, el color y «Dentro de».</li>
+<li>En las páginas del menú de usuario, la flecha de «Agendario › Etiquetas» es más visible y la barra se pone al día al volver al menú.</li>
+</ul>
+<div class="row" style="justify-content:center; margin-top:4pt">
+<div style="width:16.5%"><img class="shot" src="m13-app-hoja.png" style="width:100%"><div class="cap">La hoja de una etiqueta.</div></div>
+<div style="width:16.5%"><img class="shot" src="m13-app-arrastrar.png" style="width:100%"><div class="cap">Arrastrar en el móvil.</div></div>
+</div>
+<div class="foot"><span>Agendario · Manual 1.4.0</span><span>56</span></div>
+</div>
+</body></html>

@@ -1,3 +1,4 @@
+import { FAVORITES_CATEGORY, setFavorite } from "../lib/favorites.js";
 import { zValidator } from "@hono/zod-validator";
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
@@ -140,8 +141,12 @@ export const importRoutes = new Hono<AppEnv>()
         }
 
         const tagIds = [...baseTags];
-        if (req.categoriesAsTags && p.categories.length) {
-          tagIds.push(...(await ensureTagsByName(p.categories, user.id, tagCache)));
+        // «Favoritos» (como lo exporta Agendario) marca el favorito en vez de crear una etiqueta
+        const isFav = (x: string) => x.trim().toLowerCase() === FAVORITES_CATEGORY.toLowerCase();
+        if (p.categories.some(isFav)) await setFavorite(user.id, contactId, true);
+        const cats = p.categories.filter((x) => !isFav(x));
+        if (req.categoriesAsTags && cats.length) {
+          tagIds.push(...(await ensureTagsByName(cats, user.id, tagCache)));
         }
         await addTags(contactId, [...new Set(tagIds)]);
 

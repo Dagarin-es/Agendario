@@ -50,7 +50,7 @@ export function LetterIndex({ present, onJump }: { present: Set<string>; onJump:
     <div
       ref={ref}
       className="letter-index m3-index fixed right-0 z-10 flex w-[30px] touch-none select-none flex-col items-center justify-between rounded-l-2xl py-1.5"
-      style={{ top: "calc(var(--header-h, 56px) + 118px)", bottom: "calc(160px + var(--sab, 0px))" }}
+      style={{ top: "calc(var(--header-h, 56px) + 172px)", bottom: "calc(var(--fab-gap, 160px) + var(--sab, 0px))" }}
       onPointerDown={(e) => { (e.target as HTMLElement).setPointerCapture(e.pointerId); go(e.clientY); }}
       onPointerMove={(e) => { if (e.buttons || e.pointerType === "touch") go(e.clientY); }}
       onPointerUp={() => { setActive(null); last.current = null; }}

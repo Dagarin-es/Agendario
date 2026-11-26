@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> **Tus contactos, tu servidor.** Versión estable 1.3.2 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
+> **Tus contactos, tu servidor.** Versión estable 1.4.0 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **efemérides**, **contactos compartidos** entre usuarios, **fotos y portadas**, servidor **CardDAV** (con grupos) para el móvil y calendario **.ics** suscribible.
 
-Esta es la **versión 1.3.2**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
+Esta es la **versión 1.4.0**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
 
 ---
 
@@ -27,7 +27,8 @@ Esta es la **versión 1.3.2**: servidor + web app instalable (PWA) en un contene
   - *Compartido*: con las personas o los grupos que elijas, con permiso de **ver** o de **editar**.
   - *Público*: lo ven todos los usuarios del servidor.
 - **Grupos** (por ejemplo "Familia") para compartir con varias personas a la vez.
-- **Etiquetas** con color para clasificar contactos y **filtrar** la lista. Son **personales**: puedes etiquetar también los contactos que te comparten y nadie más verá tus etiquetas.
+- **Etiquetas** en 20 colores, con subetiquetas que se ordenan **arrastrando**, para clasificar contactos y **filtrar** la lista. Son **personales**: puedes etiquetar también los contactos que te comparten y nadie más verá tus etiquetas.
+- **Favoritos** personales con una estrella, con filtro junto al buscador; viajan a Gmail como «Destacados» y al móvil/Fastmail/.vcf como la categoría «Favoritos».
 - **Etiquetas en cada dato**: un teléfono, email o dirección se puede asociar a una etiqueta. Al filtrar o exportar por esa etiqueta se usan sus datos. Ver *Etiquetas en teléfonos, emails y direcciones*.
 - **Importación de .vcf**: uno o varios ficheros, o **una carpeta entera** (con subcarpetas). Ver el apartado *Importar contactos*.
 - **Selección múltiple** con acciones en bloque: exportar, añadir o quitar etiquetas y borrar (en la app, manteniendo pulsada la foto).
@@ -61,7 +62,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-1.3.2.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.4.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -95,7 +96,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-1.3.2.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.4.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -103,7 +104,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-1.3.2.zip
+unzip agendario-1.4.0.zip
 cd agendario
 ```
 
@@ -147,7 +148,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-1.3.2.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-1.4.0.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -617,6 +618,7 @@ Desde la 1.0 `IS_BETA = false` (sin etiqueta «Beta»). La versión está en `AP
    - ✅ 1.3: contactos a Gmail (para Outlook), «Novedades» en el menú y corrección del recorte de fotos en la web.
    - ✅ 1.3.1: varias cuentas de Google, fotos desde Google, «Changelog X.Y.Z» en el menú y efemérides por la próxima que llega.
    - ✅ 1.3.2: estado de cada idea de regalo (pendiente, comprado, regalado con su día), regalos recibidos de varias personas con su lista, Ajustes y menú reordenados, «Cambiar de servidor» con Cancelar y aviso de «autoalojado» en la app.
+   - ✅ 1.4: favoritos (también en Gmail, Fastmail y el móvil), pantalla de Etiquetas nueva con arrastrar y soltar y 20 colores, y app con banda de navegación fija, títulos grandes y aviso de duplicados.
    - ✅ 1.2.1: editar ideas de regalo, avisos con bola en el icono (vencidos y cumpleaños sin regalo) y correcciones de la app.
    - ✅ 1.2: adjuntos en las llamadas, «Últimas notas», recordatorios con pestaña propia y Todoist, selección por pulsación larga y avisos en Android Auto.
    - Más adelante: recordatorios con apps de tareas autoalojadas por CalDAV (Vikunja, Nextcloud Tasks).
