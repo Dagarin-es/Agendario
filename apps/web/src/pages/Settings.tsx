@@ -32,24 +32,12 @@ import { AccountSettings, UsersSettings } from "../components/UsersSettings";
 import { ColorThemePicker, ModeSelector } from "../components/Personalize";
 import { isApp } from "../lib/platform";
 import { useInstalledFilter } from "../lib/installed";
-import { CallLogSettings } from "../components/CallLogSettings";
 import { Link, useSearchParams } from "react-router";
+import { Section } from "../components/Section";
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
 const size = (n: number | null) => (n == null ? "" : n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
 const weekdays = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
-
-function Section({ title, icon, children, desc }: { title: string; icon: string; desc?: string; children: ReactNode }) {
-  return (
-    <section className="card space-y-4">
-      <div>
-        <h2 className="flex items-center gap-2 text-base font-semibold text-indigo-950"><span aria-hidden="true">{icon}</span> {title}</h2>
-        {desc && <p className="mt-0.5 text-sm text-slate-500">{desc}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
 
 function Sub({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -674,15 +662,14 @@ export function SettingsPage() {
   const tab: TabId = (tabs.find((t) => t.id === params.get("tab"))?.id ?? "cuentas") as TabId;
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">⚙️ Ajustes</h1>
-      <nav className="sticky top-[var(--header-h,0px)] z-[5] -mx-4 flex gap-1.5 overflow-x-auto bg-slate-50 px-4 py-2 sm:mx-0 sm:px-0" role="tablist" aria-label="Secciones de ajustes">
+      <h1 className="page-title text-xl font-semibold">⚙️ Ajustes</h1>
+      <nav className="sticky top-[var(--header-h,0px)] z-[5] -mx-4 flex flex-wrap gap-1.5 bg-slate-50 px-4 py-2 sm:mx-0 sm:px-0" role="tablist" aria-label="Secciones de ajustes">
         {tabs.map((t) => (
           <button
             key={t.id}
             role="tab"
             aria-selected={tab === t.id}
-            ref={(el) => { if (el && tab === t.id) el.scrollIntoView({ inline: "center", block: "nearest" }); }}
-            onClick={() => setParams(t.id === "cuentas" ? {} : { tab: t.id }, { replace: true })}
+                        onClick={() => setParams(t.id === "cuentas" ? {} : { tab: t.id }, { replace: true })}
             className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${tab === t.id ? "bg-indigo-700 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
           >
             <span aria-hidden="true">{t.icon}</span> {t.label}
@@ -698,7 +685,8 @@ export function SettingsPage() {
       {tab === "apps" && (
         <>
           <Communication />
-          {isApp && <CallLogSettings Section={Section} />}
+          <TodoistSettings Section={Section} />
+          <GmailSettings Section={Section} />
         </>
       )}
       {tab === "sync" && (
@@ -706,8 +694,6 @@ export function SettingsPage() {
           <SyncSettings Section={Section} />
           {me && <CardDavSettings Section={Section} me={me} />}
           <CalendarFeedSettings Section={Section} />
-          <TodoistSettings Section={Section} />
-          <GmailSettings Section={Section} />
           <Section icon="📇" title="Importar y exportar .vcf" desc="Para traer contactos de otra agenda o sacar una copia que abre cualquier programa de contactos.">
             <div className="flex flex-wrap gap-2">
               <Link to="/import" className="btn-ghost border border-slate-200">📥 Importar .vcf</Link>

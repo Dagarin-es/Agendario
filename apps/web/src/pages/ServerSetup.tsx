@@ -1,10 +1,28 @@
 import { useState, type FormEvent } from "react";
 import { APP_VERSION } from "@agendario/shared";
 import { normalizeServer, setServer } from "../lib/platform";
+import { SelfHostedNotice } from "../components/SelfHosted";
 
-/** Primera pantalla de la app: ¿dónde está tu Agendario? */
-export function ServerSetup({ onDone }: { onDone: () => void }) {
-  const [url, setUrl] = useState("");
+/**
+ * Pantalla «Conecta con tu Agendario».
+ * - Primera vez (sin servidor guardado): pide la dirección.
+ * - Cambiar de servidor (`current` + `onCancel`): viene rellena con el servidor actual y con Cancelar,
+ *   que vuelve sin tocar nada. Solo se cambia al pulsar Continuar y comprobar que el nuevo responde;
+ *   `onChange` se encarga de cerrar la sesión del anterior.
+ */
+export function ServerSetup({
+  onDone,
+  current,
+  onCancel,
+  onChange,
+}: {
+  onDone: () => void;
+  current?: string;
+  onCancel?: () => void;
+  onChange?: (base: string) => Promise<void>;
+}) {
+  const changing = !!onCancel;
+  const [url, setUrl] = useState(current ?? "");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -12,13 +30,16 @@ export function ServerSetup({ onDone }: { onDone: () => void }) {
     e.preventDefault();
     const base = normalizeServer(url);
     if (!base) return;
+    // El mismo servidor: no hay nada que cambiar
+    if (changing && current && base === normalizeServer(current)) return onCancel?.();
     setBusy(true);
     setError("");
     try {
       const res = await fetch(`${base}/api/health`, { signal: AbortSignal.timeout(10000) });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok) throw new Error("not-agendario");
-      setServer(base);
+      if (onChange) await onChange(base);
+      else setServer(base);
       onDone();
     } catch (err) {
       setError(
@@ -32,11 +53,14 @@ export function ServerSetup({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div className="m3 flex min-h-dvh flex-col px-6 pb-[calc(24px+var(--sab))] pt-[calc(4rem+var(--sat))]">
-      <img src="/favicon.svg" alt="" className="h-20 w-20" />
-      <h1 className="mt-8 text-[32px] font-normal leading-10">Conecta con tu Agendario</h1>
-      <p className="mt-3 text-base text-slate-600">Escribe la dirección de tu servidor de Agendario: la misma que usas en el navegador.</p>
-      <form onSubmit={submit} className="mt-8 flex flex-1 flex-col">
+    <div className="m3 flex min-h-dvh flex-col px-6 pb-[calc(24px+var(--sab))] pt-[calc(3rem+var(--sat))]">
+      <img src="/favicon.svg" alt="" className="h-16 w-16" />
+      <h1 className="mt-6 text-[30px] font-normal leading-10">{changing ? "Cambiar de servidor" : "Conecta con tu Agendario"}</h1>
+      {!changing && <div className="mt-5"><SelfHostedNotice /></div>}
+      <p className="mt-5 text-base text-slate-600">
+        {changing ? "Escribe la dirección del otro servidor de Agendario. Si cancelas, todo sigue como estaba." : "Escribe la dirección de tu servidor de Agendario: la misma que usas en el navegador."}
+      </p>
+      <form onSubmit={submit} className="mt-6 flex flex-1 flex-col">
         <label className="m3-field">
           <span>Dirección del servidor</span>
           <input
@@ -47,13 +71,18 @@ export function ServerSetup({ onDone }: { onDone: () => void }) {
             placeholder="agendario.midominio.es"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            autoFocus
+            onFocus={(e) => changing && e.currentTarget.select()}
+            autoFocus={!changing}
           />
         </label>
         <p className="mt-2 px-4 text-xs text-slate-500">Por ejemplo https://agendario.midominio.es o http://192.168.1.50:3002 (solo en casa).</p>
+        {changing && <p className="mt-2 px-4 text-xs text-slate-500">Al cambiar se cierra la sesión en el servidor actual y tendrás que entrar en el nuevo.</p>}
         {error && <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
-        <div className="flex-1" />
-        <button className="m3-filled-btn w-full" disabled={!url.trim() || busy}>{busy ? "Conectando…" : "Continuar"}</button>
+        <div className="min-h-6 flex-1" />
+        <div className="flex gap-3">
+          {changing && <button type="button" className="m3-tonal-btn flex-1" onClick={onCancel} disabled={busy}>Cancelar</button>}
+          <button className="m3-filled-btn flex-1" disabled={!url.trim() || busy}>{busy ? "Conectando…" : "Continuar"}</button>
+        </div>
         <p className="mt-4 text-center text-xs text-slate-400">Agendario {APP_VERSION}</p>
       </form>
     </div>

@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import type { GiftIdea, GiftOverviewItem } from "@agendario/shared";
 import { Avatar } from "../components/Avatar";
 import { Modal } from "../components/Dialogs";
-import { GiftEditDialog, GiftThumb, QuickIdeaForm } from "../components/Gifts";
+import { GiftEditDialog, GiftStatusButton, GiftThumb, QuickIdeaForm } from "../components/Gifts";
+import { ReceivedGiftsList } from "../components/GiftsReceived";
 import { api } from "../lib/api";
 import { syncNativeReminders } from "../lib/native";
 import { formatDate } from "../lib/format";
@@ -18,7 +19,7 @@ function when(days: number) {
   return `En ${days} días`;
 }
 
-function Card({ it, onAdd, onEdit }: { it: GiftOverviewItem; onAdd: () => void; onEdit: (g: GiftIdea) => void }) {
+function Card({ it, onAdd, onEdit, onChanged }: { it: GiftOverviewItem; onAdd: () => void; onEdit: (g: GiftIdea) => void; onChanged: (g: GiftIdea) => void }) {
   const e = it.next;
   const tone = e?.gift === "none" ? "none" : e?.gift === "ideas" ? "ideas" : e?.gift ? "bought" : "grey";
   return (
@@ -46,7 +47,7 @@ function Card({ it, onAdd, onEdit }: { it: GiftOverviewItem; onAdd: () => void; 
               <span className="min-w-0 flex-1 truncate text-sm">
                 {g.url ? <a href={g.url} target="_blank" rel="noreferrer" className="text-slate-800 hover:text-indigo-700">{g.title} ↗</a> : g.title}
               </span>
-              {g.status === "bought" && <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">✅ Comprado</span>}
+              <GiftStatusButton idea={g} onChanged={() => onChanged(g)} />
               <button className="btn-ghost shrink-0 px-1.5 py-1 text-sm" onClick={() => onEdit(g)} aria-label={`Editar ${g.title}`} title="Editar">✏️</button>
             </li>
           ))}
@@ -58,8 +59,37 @@ function Card({ it, onAdd, onEdit }: { it: GiftOverviewItem; onAdd: () => void; 
   );
 }
 
-/** Pestaña Regalos: quién tiene fechas de regalo, cuándo es la próxima y qué ideas hay. */
+/** Regalos: «Para regalar» (fechas e ideas) y «Recibidos» (lo que te han regalado). */
 export function GiftsPage() {
+  const [params, setParams] = useSearchParams();
+  const view = params.get("vista") === "recibidos" ? "recibidos" : "regalar";
+  const tabs = [
+    { id: "regalar", label: "🎁 Para regalar" },
+    { id: "recibidos", label: "🎀 Recibidos" },
+  ] as const;
+  return (
+    <div className="space-y-3">
+      <h1 className="sr-only">Regalos</h1>
+      <nav className="flex gap-1.5" role="tablist" aria-label="Regalos">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={view === t.id}
+            onClick={() => setParams(t.id === "regalar" ? {} : { vista: t.id }, { replace: true })}
+            className={`flex-1 rounded-full px-3.5 py-2 text-sm font-medium transition sm:flex-none ${view === t.id ? "bg-indigo-700 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
+      {view === "recibidos" ? <ReceivedGiftsList /> : <ToGive />}
+    </div>
+  );
+}
+
+/** «Para regalar»: quién tiene fechas de regalo, cuándo es la próxima y qué ideas hay. */
+function ToGive() {
   const [sort, setSort] = useState<Sort>(() => (localStorage.getItem("gifts-sort") as Sort) || "next");
   const [adding, setAdding] = useState<GiftOverviewItem | null>(null);
   const [editing, setEditing] = useState<GiftIdea | null>(null);
@@ -71,10 +101,13 @@ export function GiftsPage() {
     else l.sort((a, b) => (a.next?.date ?? "9").localeCompare(b.next?.date ?? "9"));
     return l;
   }, [data, sort]);
+  const changed = (g: GiftIdea) => {
+    for (const k of [["gifts-overview"], ["contact", g.contactId], ["upcoming"], ["pending-gifts"]]) qc.invalidateQueries({ queryKey: k });
+    void syncNativeReminders();
+  };
   const pick = (s: Sort) => { setSort(s); try { localStorage.setItem("gifts-sort", s); } catch { /* nada */ } };
   return (
     <div className="space-y-3">
-      <h1 className="sr-only">Regalos</h1>
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-slate-500">{data ? `${data.length} ${data.length === 1 ? "persona" : "personas"} con fechas de regalo` : ""}</p>
         <label className="flex shrink-0 items-center gap-2 text-sm text-slate-600">
@@ -88,7 +121,7 @@ export function GiftsPage() {
       {isLoading && <p className="text-slate-500">Cargando…</p>}
       {data && !data.length && <div className="card text-sm text-slate-500">Nadie tiene todavía fechas con 🎁. Márcalas en la ficha de cada contacto (Fechas importantes).</div>}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        {list.map((it) => <Card key={it.contactId} it={it} onAdd={() => setAdding(it)} onEdit={setEditing} />)}
+        {list.map((it) => <Card key={it.contactId} it={it} onAdd={() => setAdding(it)} onEdit={setEditing} onChanged={changed} />)}
       </div>
       {editing && (
         <GiftEditDialog idea={editing} onClose={() => setEditing(null)} onSaved={() => {

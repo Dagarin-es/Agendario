@@ -5,7 +5,7 @@ import { Modal, useAlert } from "./Dialogs";
 const fmt = (ms: number) => (ms ? new Date(ms).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" }) : "nunca");
 
 /** App de Android: guardar solas las llamadas con tus contactos (hechas, recibidas y perdidas). */
-export function CallLogSettings({ Section }: { Section: (p: { icon: string; title: string; desc?: string; children: React.ReactNode }) => React.ReactElement }) {
+export function CallLogSettings({ Section }: { Section: (p: { icon: React.ReactNode; title: string; desc?: string; children: React.ReactNode }) => React.ReactElement }) {
   const [st, setSt] = useState<CallLogStatus | null>(null);
   const [asking, setAsking] = useState(false);
   const [from, setFrom] = useState<"all" | "date" | "now">("all");

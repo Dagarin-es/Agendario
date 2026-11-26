@@ -1,14 +1,15 @@
+import { GmailLogo } from "./BrandIcons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactElement, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import type { GmailAccountStatus, GmailStatus } from "@agendario/shared";
 import { api } from "../lib/api";
-import { isApp } from "../lib/platform";
+import { getServer, isApp } from "../lib/platform";
 import { useMe } from "../lib/auth";
 import { useAlert, useConfirm } from "./Dialogs";
 import { TagChip, useTags } from "./Tags";
 
-type SectionT = (p: { icon: string; title: string; desc?: string; children: ReactNode }) => ReactElement;
+type SectionT = (p: { icon: ReactNode; title: string; desc?: string; children: ReactNode }) => ReactElement;
 
 const when = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "todavía no";
@@ -104,7 +105,7 @@ export function GmailSettings({ Section }: { Section: SectionT }) {
 
   return (
     <Section
-      icon="📧"
+      icon={<GmailLogo />}
       title="Gmail (para verlos en Outlook)"
       desc="Envía a una o varias cuentas de Google los contactos de las etiquetas que elijas en Etiquetas. Va en un solo sentido: los cambios se hacen en Agendario; en Google y Outlook son para consultar. Añadiendo esa cuenta de Gmail al nuevo Outlook, los verás allí. Además, a tus contactos sin foto les pone la que tengan en Google."
     >
@@ -194,7 +195,10 @@ export function GmailSettings({ Section }: { Section: SectionT }) {
 
           {st.appConfigured && (
             isApp ? (
-              accounts.length === 0 && <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">Las cuentas de Google se conectan desde la web de Agendario (en el navegador del ordenador o del móvil).</p>
+              <div className="space-y-2 rounded-lg bg-indigo-50 px-3 py-2.5 text-sm text-slate-700 ring-1 ring-indigo-100">
+                <p>{accounts.length ? "Para añadir otra cuenta de Google" : "Para conectar una cuenta de Google"}, entra en la web de Agendario: <strong>Ajustes → Aplicaciones externas → Gmail</strong>. Google solo deja conectarlas desde el navegador.</p>
+                <a className="btn-ghost inline-flex border border-indigo-200 bg-white" href={`${getServer()}/settings?tab=apps`} target="_blank" rel="noopener">🌐 Abrir en el navegador</a>
+              </div>
             ) : (
               <div className="space-y-2">
                 <button className={accounts.length ? "btn-ghost border border-slate-200" : "btn-primary"} onClick={() => connect.mutate(undefined)} disabled={connect.isPending}>

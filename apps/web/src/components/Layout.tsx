@@ -1,5 +1,4 @@
 import { useOverdueCount } from "./Reminders";
-import { manualUrl } from "../lib/platform";
 import { ForcedPasswordChange } from "./UsersSettings";
 import { keepInView } from "../lib/keepInView";
 import { useQuery } from "@tanstack/react-query";
@@ -87,12 +86,10 @@ function MoreMenu() {
           <Link to="/settings" className={item}>⚙️ Ajustes</Link>
           <div className="my-1 border-t border-slate-100" />
           <button className={item} onClick={() => { setOpen(false); setAbout(true); }}>📒 Acerca de Agendario</button>
-          <a className={item} href={manualUrl()} target="_blank" rel="noopener" onClick={() => setOpen(false)}>📘 Manual (PDF)</a>
-          <button className={item} onClick={() => { setOpen(false); setNews(true); }}>📋 Changelog {APP_VERSION}</button>
           <button className={`${item} text-red-700`} onClick={logout}>🚪 Salir</button>
         </div>
       )}
-      {about && <AboutModal onClose={() => setAbout(false)} />}
+      {about && <AboutModal onClose={() => setAbout(false)} onNews={() => { setAbout(false); setNews(true); }} />}
       {news && <ChangelogModal onClose={() => setNews(false)} />}
     </div>
   );

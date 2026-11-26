@@ -70,6 +70,7 @@ const TABLES = [
   "relationships",
   "gift_ideas",
   "gifts_received",
+  "gift_received_contacts",
   "tags",
   "contact_tags",
   "duplicate_dismissals",
@@ -547,6 +548,17 @@ export async function restoreArchive(work: string) {
         await tx.execute(
           sql`INSERT INTO ${sql.identifier(t)} SELECT * FROM json_populate_recordset(NULL::${sql.identifier(t)}, ${chunk}::json) ON CONFLICT DO NOTHING`,
         );
+      }
+      // Copias anteriores a la 1.3.2: sin fecha de evento aparte (era la de givenAt)
+      if (t === "gift_ideas") {
+        await tx.execute(sql`UPDATE gift_ideas SET event_date = given_at WHERE event_date IS NULL AND event_key IS NOT NULL AND status <> 'idea'`);
+      }
+      // Copias anteriores a la 1.3.2: cada regalo recibido era de un solo contacto (contact_id)
+      if (t === "gift_received_contacts") {
+        await tx.execute(sql`INSERT INTO gift_received_contacts (gift_id, contact_id)
+          SELECT g.id, g.contact_id FROM gifts_received g
+          WHERE g.contact_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM gift_received_contacts l WHERE l.gift_id = g.id)
+          ON CONFLICT DO NOTHING`);
       }
       if (t === "tags") {
         const parents = JSON.stringify((rows as { id: string; parent_id?: string | null }[]).filter((r) => r.parent_id).map((r) => ({ id: r.id, p: r.parent_id })));

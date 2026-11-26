@@ -18,7 +18,8 @@ import {
   type RelationshipType,
 } from "@agendario/shared";
 import { Avatar } from "../components/Avatar";
-import { GiftIdeas, GiftsReceived } from "../components/Gifts";
+import { GiftIdeas } from "../components/Gifts";
+import { GiftsReceived } from "../components/GiftsReceived";
 import { SharePanel } from "../components/SharePanel";
 import { ContactTags } from "../components/Tags";
 import { ItemTag } from "../components/ItemTag";
@@ -474,7 +475,7 @@ export function ContactDetailPage() {
               onAutoOpened={() => { if (remindNow) { const n = new URLSearchParams(params); n.delete("remind"); setParams(n, { replace: true }); } }}
             />
             <ImportantDates c={c} onChange={refresh} />
-            <GiftsReceived contactId={c.id} gifts={c.giftsReceived} />
+            <GiftsReceived contactId={c.id} contactName={c.displayName} gifts={c.giftsReceived} />
             <LinkedPersonalEvents contactId={c.id} />
           </div>
         </div>

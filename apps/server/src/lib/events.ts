@@ -95,14 +95,14 @@ export async function eventsBetween(userId: string, from: Date, to: Date, onlyCo
   const today = utcDay(new Date());
   const [src, ideas] = await Promise.all([
     sources(userId, onlyContact),
-    db.select({ id: gi.id, contactId: gi.contactId, title: gi.title, status: gi.status, eventKey: gi.eventKey, givenAt: gi.givenAt }).from(gi).where(eq(gi.userId, userId)),
+    db.select({ id: gi.id, contactId: gi.contactId, title: gi.title, status: gi.status, eventKey: gi.eventKey, givenAt: gi.givenAt, eventDate: gi.eventDate }).from(gi).where(eq(gi.userId, userId)),
   ]);
   const open = new Map<string, number>();
   const linked = new Map<string, { id: string; title: string; status: GiftStatus }[]>();
   for (const i of ideas) {
     if (i.status === "idea") open.set(i.contactId, (open.get(i.contactId) ?? 0) + 1);
-    else if (i.eventKey && i.givenAt) {
-      const k = `${i.contactId}|${i.eventKey}|${i.givenAt}`;
+    else if (i.eventKey && (i.eventDate ?? i.givenAt)) {
+      const k = `${i.contactId}|${i.eventKey}|${i.eventDate ?? i.givenAt}`;
       linked.set(k, [...(linked.get(k) ?? []), { id: i.id, title: i.title, status: i.status as GiftStatus }]);
     }
   }
@@ -183,7 +183,7 @@ export async function giftOverview(userId: string): Promise<GiftOverviewItem[]> 
         .filter((g) => g.contactId === id)
         .map((g) => ({
           id: g.id, contactId: g.contactId, title: g.title, url: g.url, notes: g.notes, priceCents: g.priceCents, given: g.given, givenAt: g.givenAt,
-          occasion: g.occasion, status: g.status as GiftStatus, eventKey: g.eventKey, eventLabel: g.eventLabel, imageKey: g.imageKey, createdAt: g.createdAt.toISOString(),
+          occasion: g.occasion, status: g.status as GiftStatus, eventKey: g.eventKey, eventLabel: g.eventLabel, eventDate: g.eventDate, imageKey: g.imageKey, createdAt: g.createdAt.toISOString(),
         })),
     };
   });

@@ -10,7 +10,7 @@ import { Link } from "react-router";
 import { useQuery as useQ } from "@tanstack/react-query";
 import type { Contact } from "@agendario/shared";
 
-type SectionT = (p: { title: string; icon: string; desc?: string; children: ReactNode }) => ReactNode;
+type SectionT = (p: { title: string; icon: ReactNode; desc?: string; children: ReactNode }) => ReactNode;
 
 /** Pantalla única mientras la contraseña sea provisional (el servidor no deja hacer nada más). */
 export function ForcedPasswordChange({ me }: { me: User }) {

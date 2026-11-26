@@ -254,6 +254,8 @@ export const giftIdeas = pgTable(
     /** Evento para el que es (birthday · saint · date:<id> · custom) */
     eventKey: text("event_key"),
     eventLabel: text("event_label").notNull().default(""),
+    /** Fecha del evento (givenAt es la del regalo: al regalar puede ser otro día). Nulo = la de givenAt */
+    eventDate: date("event_date"),
     /** Miniatura (clave en photos/): de la web del enlace o subida a mano */
     imageKey: text("image_key"),
     ...timestamps,
@@ -265,9 +267,8 @@ export const giftsReceived = pgTable(
   "gifts_received",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    contactId: uuid("contact_id")
-      .notNull()
-      .references(() => contacts.id, { onDelete: "cascade" }),
+    /** Primer contacto que lo regaló (compatibilidad); la lista completa está en gift_received_contacts */
+    contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -278,6 +279,20 @@ export const giftsReceived = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("gifts_received_contact_user_idx").on(t.contactId, t.userId)],
+);
+
+/** Quién hizo cada regalo recibido (uno o varios contactos). Al quedarse sin ninguno, un trigger borra el regalo. */
+export const giftReceivedContacts = pgTable(
+  "gift_received_contacts",
+  {
+    giftId: uuid("gift_id")
+      .notNull()
+      .references(() => giftsReceived.id, { onDelete: "cascade" }),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.giftId, t.contactId] }), index("gift_received_contacts_contact_idx").on(t.contactId)],
 );
 
 // ---------- Etiquetas (personales) ----------

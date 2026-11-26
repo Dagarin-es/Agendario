@@ -67,7 +67,7 @@ export function NotesPage() {
 
   return (
     <div className="space-y-3">
-      <h1 className="text-lg font-semibold">📝 Últimas notas</h1>
+      <h1 className="page-title text-lg font-semibold">📝 Últimas notas</h1>
       <div className="flex flex-wrap gap-2">
         <input className="input min-w-0 flex-1" type="search" placeholder="Buscar en las notas o por contacto…" value={q} onChange={(e) => setQ(e.target.value)} />
         {tags && tags.length > 0 && (

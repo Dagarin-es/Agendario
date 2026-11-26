@@ -249,7 +249,7 @@
           Ver en GitHub
         </a>
       </div>
-      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.2.0</b> <span data-gh-date></span></div>
+      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.3.2</b> <span data-gh-date></span></div>
     </div>
     <div class="devices rv">
       <div class="laptop"><div class="screen"><span data-shot="hero_web"></span></div></div>
@@ -296,7 +296,7 @@
         <h3>Agendario</h3>
         <p class="sub">Tu agenda, con memoria.</p>
         <div class="diary" aria-label="Ejemplo de diario">
-          <div class="e">📞<div>Llamada con Laura · 12 min<small>«Quedamos el sábado para la cena de su ascenso»</small></div></div>
+          <div class="e">📱<div>Llamada con Laura · 12 min<small>«Quedamos el sábado para la cena de su ascenso»</small></div></div>
           <div class="e">🎁<div>Regalo comprado para Javier<small>Para su cumpleaños, dentro de 9 días</small></div></div>
           <div class="e">🚗<div>Coche nuevo · hace 2 años<small>Efeméride, con Carmen y Álvaro</small></div></div>
           <div class="e">🎂<div>Cumpleaños de Carmen · mañana<small>Tienes 2 ideas de regalo guardadas</small></div></div>
@@ -347,7 +347,7 @@
       <h2 class="h2">Lo que pasa en tu agenda, se queda en tu agenda</h2>
       <p class="lead">Agendario no tiene «nube de Agendario». No hay cuentas en servidores de terceros, ni anuncios, ni análisis de uso. El servidor es tuyo y la app habla solo con él.</p>
       <div class="lock">
-        <div><span>📞</span><span><b>Registro de llamadas solo para ti.</b> La app de Android puede apuntar tus llamadas en la ficha de cada contacto, pero esa información va directa del móvil a <i>tu</i> servidor. No viaja a ningún otro sitio.</span></div>
+        <div><span>📱</span><span><b>Registro de llamadas solo para ti.</b> La app de Android puede apuntar tus llamadas en la ficha de cada contacto, pero esa información va directa del móvil a <i>tu</i> servidor. No viaja a ningún otro sitio.</span></div>
         <div><span>🔒</span><span><b>Ideas de regalo y apuntes privados.</b> Aunque compartas un contacto con tu familia, lo tuyo sigue siendo solo tuyo.</span></div>
         <div><span>🛟</span><span><b>Copias cifradas con tu contraseña.</b> Ni siquiera quien guarde la copia puede leerla.</span></div>
         <div><span>🧾</span><span><b>Código abierto.</b> Cualquiera puede revisar qué hace y qué no hace.</span></div>
@@ -369,7 +369,7 @@
     </div>
     <div class="feat">
       <div class="card rv"><div class="ico">👤</div><h3>Fichas completas</h3><p>Foto y portada, varios teléfonos, emails, webs y direcciones geolocalizadas en el mapa.</p></div>
-      <div class="card rv"><div class="ico y">🎁</div><h3>Ideas para regalos</h3><p>Apunta ideas con enlace y miniatura, márcalas como compradas y regaladas. Guárdalas desde «Compartir» en Android.</p></div>
+      <div class="card rv"><div class="ico y">🎁</div><h3>Regalos</h3><p>Ideas con enlace y miniatura que pasan de pendiente a comprado y regalado. Y la lista de lo que te regalan, aunque sea de varias personas.</p></div>
       <div class="card rv"><div class="ico p">🎂</div><h3>Fechas y avisos</h3><p>Cumpleaños, aniversarios y un calendario que te avisa de los regalos pendientes.</p></div>
       <div class="card rv"><div class="ico g">📔</div><h3>Efemérides</h3><p>Tus propias fechas para recordar: el coche nuevo, un ascenso, un viaje… con foto y comentario.</p></div>
       <div class="card rv"><div class="ico">🔗</div><h3>Relaciones</h3><p>Padres, hijos, primos, cuñados… se crean en las dos fichas a la vez. Y la lista de trabajadores de cada empresa.</p></div>
@@ -378,6 +378,7 @@
       <div class="card rv"><div class="ico p">📝</div><h3>Últimas notas</h3><p>Todo lo que has anotado de todos tus contactos en una pantalla, del más reciente al más antiguo, con buscador y filtros.</p></div>
       <div class="card rv"><div class="ico g">🚗</div><h3>Android Auto</h3><p>En el coche, los avisos se leen en voz alta: dicta la nota de la llamada o responde a un recordatorio sin tocar el móvil.</p></div>
       <div class="card rv"><div class="ico p">🔄</div><h3>Sincronización</h3><p>Con Fastmail u otro CardDAV, y como servidor CardDAV para la agenda del móvil y del Mac. Calendario .ics para suscribirte.</p></div>
+      <div class="card rv"><div class="ico y">📧</div><h3>Gmail y Outlook</h3><p>Envía los contactos de las etiquetas que elijas a una o varias cuentas de Google y míralos en el nuevo Outlook. Y a los que no tienen foto les pone la suya de Google.</p></div>
       <div class="card rv"><div class="ico g">🛟</div><h3>Copias automáticas</h3><p>Varias copias cifradas a la vez: carpeta local, NFS, SMB o Google Drive, con restauración en dos clics.</p></div>
       <div class="card rv"><div class="ico">🧹</div><h3>Duplicados</h3><p>Los detecta y te deja combinarlos de forma automática o campo a campo, con vista previa.</p></div>
       <div class="card rv"><div class="ico y">🏷️</div><h3>Etiquetas y subetiquetas</h3><p>Como carpetas, también en cada teléfono o email. Filtra y exporta por etiqueta.</p></div>
@@ -559,20 +560,21 @@ EOF</div>
     </div>
     <div class="road rv">
       <!-- Hoja de ruta: «Hecho» = lo de las últimas versiones; «En marcha» e «Ideas» son propuestas, edítalas a tu gusto -->
-      <div class="col done"><h3>✅ Hecho · 1.2.0</h3>
-        <div class="item">Adjuntar fotos y documentos a las llamadas, también durante la llamada</div>
-        <div class="item">Pantalla «Últimas notas» con todas tus anotaciones</div>
-        <div class="item">Recordatorios con pestaña propia y sincronización con Todoist</div>
-        <div class="item">Avisos en el coche con Android Auto</div>
-        <h3 style="margin-top:22px">✅ Hecho · 1.1.0</h3>
-        <div class="item">Recordatorios tras una llamada y notas durante la llamada</div>
-        <div class="item">Crear contactos directamente desde la app</div>
+      <div class="col done"><h3>✅ Hecho · 1.3</h3>
+        <div class="item">Regalos recibidos de varias personas, con su propia lista</div>
+        <div class="item">Cada idea de regalo pasa de pendiente a comprado y regalado, con el día en que lo regalaste</div>
+        <div class="item">Contactos en Gmail para verlos en el nuevo Outlook, ahora en varias cuentas de Google</div>
+        <div class="item">Fotos desde Google para los contactos que no tienen</div>
+        <div class="item">Changelog de cada versión dentro de la app</div>
+        <h3 style="margin-top:22px">✅ Hecho · 1.2</h3>
+        <div class="item">Adjuntos en las llamadas, también durante la llamada</div>
+        <div class="item">«Últimas notas», recordatorios con Todoist y avisos con Android Auto</div>
       </div>
       <div class="col now"><h3>🚧 En marcha</h3>
         <div class="item">Publicar la app en Google Play</div>
-        <div class="item">Guía para tener los contactos en Outlook para Windows</div>
       </div>
       <div class="col"><h3>💡 Ideas</h3>
+        <div class="item">Sincronización directa con Outlook y Microsoft 365</div>
         <div class="item">Widget de próximas fechas para Android</div>
         <div class="item">Recordatorios con apps de tareas autoalojadas (Vikunja, Nextcloud Tasks)</div>
       </div>
@@ -591,7 +593,8 @@ EOF</div>
       <details><summary>¿Por qué se llama Agendario?</summary><p>Porque es <b>agenda + diario</b>. Guarda los datos de tus contactos, como cualquier agenda, y además lleva el diario de vuestra relación: llamadas y apuntes, fechas y efemérides, regalos hechos y recibidos, y el historial de cada cambio.</p></details>
       <details><summary>¿Cuánto cuesta?</summary><p>Nada. Agendario es software libre y gratuito. Solo necesitas un sitio donde ejecutar Docker: tu homelab, un NAS o un mini PC.</p></details>
       <details><summary>¿Tengo que saber de servidores?</summary><p>Lo justo para copiar unos comandos en la terminal. Si ya tienes Docker funcionando (Proxmox, un NAS, una Raspberry Pi 4/5…), en cinco minutos lo tienes en marcha.</p></details>
-      <details><summary>¿Mis datos salen de mi casa?</summary><p>No, salvo que tú lo configures: si activas la sincronización con Fastmail o las copias en Google Drive, viajará lo que tú elijas. El registro de llamadas va directo del móvil a tu servidor.</p></details>
+      <details><summary>¿Mis datos salen de mi casa?</summary><p>No, salvo que tú lo configures: si activas la sincronización con Fastmail o con Gmail, o las copias en Google Drive, viajará lo que tú elijas. El registro de llamadas va directo del móvil a tu servidor.</p></details>
+      <details><summary>¿Puedo ver mis contactos en Outlook?</summary><p>Sí. El nuevo Outlook no admite CardDAV, así que Agendario envía a una cuenta de Gmail los contactos de las etiquetas que elijas y, añadiendo esa cuenta a Outlook, los ves allí. Puedes usar varias cuentas de Google, cada una con sus etiquetas. Va en un solo sentido: los cambios se hacen en Agendario.</p></details>
       <details><summary>¿Puedo usarlo en el iPhone o en el Mac?</summary><p>Sí. La web se instala como app en iPhone, iPad y Mac. Además, Agendario es servidor CardDAV: añade la cuenta y tus contactos aparecen en la agenda del sistema.</p></details>
       <details><summary>¿Cómo traigo mis contactos de Google o del iPhone?</summary><p>Exporta un fichero .vcf desde Google Contacts o iCloud e impórtalo en Ajustes → Sincronización. Puedes etiquetarlo todo para deshacer la importación de golpe si no te convence.</p></details>
       <details><summary>¿Y si se rompe mi servidor?</summary><p>Configura una o varias copias automáticas cifradas (NAS por NFS o SMB, Google Drive…). Restaurar es elegir la copia, escribir su contraseña y confirmar.</p></details>

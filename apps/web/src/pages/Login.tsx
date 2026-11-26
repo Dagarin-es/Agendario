@@ -4,7 +4,8 @@ import type { User } from "@agendario/shared";
 import { APP_VERSION } from "@agendario/shared";
 import { BetaBadge } from "../components/BetaBadge";
 import { api } from "../lib/api";
-import { getServer, isApp, setMediaToken, setServer, setToken } from "../lib/platform";
+import { getServer, isApp, setMediaToken, setToken } from "../lib/platform";
+import { SelfHostedNotice } from "../components/SelfHosted";
 
 export function LoginPage() {
   const qc = useQueryClient();
@@ -82,10 +83,11 @@ export function LoginPage() {
             {mode === "login" ? "Crear una cuenta nueva" : "Ya tengo cuenta"}
           </button>
         )}
+        {isApp && <SelfHostedNotice compact />}
         {isApp && (
           <p className="text-center text-xs text-slate-500">
             Servidor: {getServer().replace(/^https?:\/\//, "")} ·{" "}
-            <button type="button" className="text-indigo-700 underline" onClick={() => { setServer(null); window.location.reload(); }}>Cambiar</button>
+            <button type="button" className="text-indigo-700 underline" onClick={() => window.dispatchEvent(new Event("agendario-change-server"))}>Cambiar</button>
           </p>
         )}
         <p className="pt-2 text-center text-[11px] text-slate-400">v{APP_VERSION}</p>

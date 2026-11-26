@@ -1,3 +1,4 @@
+import { TodoistLogo } from "./BrandIcons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactElement, type ReactNode } from "react";
 import type { TodoistStatus } from "@agendario/shared";
@@ -6,7 +7,7 @@ import { getServer, isApp } from "../lib/platform";
 import { useAlert, useConfirm } from "./Dialogs";
 import { syncNativeReminders } from "../lib/native";
 
-type SectionT = (p: { icon: string; title: string; desc?: string; children: ReactNode }) => ReactElement;
+type SectionT = (p: { icon: ReactNode; title: string; desc?: string; children: ReactNode }) => ReactElement;
 
 /** Dirección con la que se abre Agendario desde los enlaces de las tareas. */
 const defaultUrl = () => (isApp ? getServer() ?? "" : window.location.origin);
@@ -79,7 +80,7 @@ export function TodoistSettings({ Section }: { Section: SectionT }) {
   });
 
   return (
-    <Section icon="✅" title="Todoist" desc="Cada recordatorio crea una tarea en Todoist con el contacto y un enlace a su ficha. Lo que completes, cambies o borres en un lado se refleja en el otro (Todoist se revisa cada 5 minutos).">
+    <Section icon={<TodoistLogo />} title="Todoist" desc="Cada recordatorio crea una tarea en Todoist con el contacto y un enlace a su ficha. Lo que completes, cambies o borres en un lado se refleja en el otro (Todoist se revisa cada 5 minutos).">
       {!st ? (
         <p className="text-sm text-slate-500">Cargando…</p>
       ) : !st.connected ? (

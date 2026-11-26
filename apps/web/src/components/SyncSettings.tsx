@@ -43,7 +43,7 @@ export function summaryText(s: SyncSummary | null): string {
   return parts.length ? parts.join(" · ") : "Sin cambios";
 }
 
-export function SyncSettings({ Section }: { Section: (p: { title: string; icon: string; desc?: string; children: ReactNode }) => ReactNode }) {
+export function SyncSettings({ Section }: { Section: (p: { title: string; icon: ReactNode; desc?: string; children: ReactNode }) => ReactNode }) {
   const qc = useQueryClient();
   const confirm = useConfirm();
   const showAlert = useAlert();

@@ -130,6 +130,10 @@ export async function mergeContacts(userId: string, req: MergeRequest) {
       .where(eq(c.id, keepId));
 
     await tx.update(schema.giftIdeas).set({ contactId: keepId }).where(eq(schema.giftIdeas.contactId, removeId));
+    // Regalos recibidos: los del eliminado pasan al que se queda (sin repetir si ya estaba en los dos)
+    await tx.execute(sql`INSERT INTO gift_received_contacts (gift_id, contact_id)
+      SELECT gift_id, ${keepId}::uuid FROM gift_received_contacts WHERE contact_id = ${removeId}::uuid ON CONFLICT DO NOTHING`);
+    await tx.delete(schema.giftReceivedContacts).where(eq(schema.giftReceivedContacts.contactId, removeId));
     await tx.update(schema.giftsReceived).set({ contactId: keepId }).where(eq(schema.giftsReceived.contactId, removeId));
     await tx.update(schema.interactions).set({ contactId: keepId }).where(eq(schema.interactions.contactId, removeId));
     await tx.delete(schema.contactPrefs).where(eq(schema.contactPrefs.contactId, removeId));

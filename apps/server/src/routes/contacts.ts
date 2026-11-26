@@ -23,6 +23,7 @@ import {
   type Share,
   type TagLite,
 } from "@agendario/shared";
+import { listReceived } from "../lib/giftsReceived.js";
 import { db, schema } from "../db/index.js";
 import {
   canEditSql,
@@ -181,11 +182,7 @@ async function buildDetail(id: string, userId: string): Promise<ContactDetail> {
         .from(schema.giftIdeas)
         .where(and(eq(schema.giftIdeas.contactId, id), eq(schema.giftIdeas.userId, userId)))
         .orderBy(schema.giftIdeas.given, schema.giftIdeas.createdAt),
-      db
-        .select()
-        .from(schema.giftsReceived)
-        .where(and(eq(schema.giftsReceived.contactId, id), eq(schema.giftsReceived.userId, userId)))
-        .orderBy(sql`${schema.giftsReceived.receivedAt} DESC NULLS LAST`),
+      listReceived(userId, { contactId: id }),
       isMine ? loadShares(id) : Promise.resolve(null),
       tagsForContacts([id], userId),
     ]);
@@ -230,18 +227,11 @@ async function buildDetail(id: string, userId: string): Promise<ContactDetail> {
         status: g.status as GiftStatus,
         eventKey: g.eventKey,
         eventLabel: g.eventLabel,
+        eventDate: g.eventDate,
         imageKey: g.imageKey,
         createdAt: g.createdAt.toISOString(),
       })),
-      giftsReceived: received.map((g) => ({
-        id: g.id,
-        contactId: g.contactId,
-        description: g.description,
-        receivedAt: g.receivedAt,
-        occasion: g.occasion,
-        notes: g.notes,
-        createdAt: g.createdAt.toISOString(),
-      })),
+      giftsReceived: received,
       shares,
       itemTags,
     };

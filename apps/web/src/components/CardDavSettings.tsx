@@ -8,7 +8,7 @@ import { copyText } from "../lib/clipboard";
 import { useUserPrefs } from "./QuickActions";
 import { TagChip, tagTree, useTags } from "./Tags";
 
-type SectionT = (p: { title: string; icon: string; desc?: string; children: ReactNode }) => ReactNode;
+type SectionT = (p: { title: string; icon: ReactNode; desc?: string; children: ReactNode }) => ReactNode;
 
 /** Servidor CardDAV: qué libretas ve el móvil y cómo configurarlo. */
 export function CardDavSettings({ Section, me }: { Section: SectionT; me: User }) {

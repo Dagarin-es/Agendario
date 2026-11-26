@@ -6,7 +6,7 @@ import { copyText } from "../lib/clipboard";
 import { apiUrl, getServer, isApp } from "../lib/platform";
 import { useConfirm } from "./Dialogs";
 
-type SectionT = (p: { title: string; icon: string; desc?: string; children: ReactNode }) => ReactNode;
+type SectionT = (p: { title: string; icon: ReactNode; desc?: string; children: ReactNode }) => ReactNode;
 
 /** Calendario .ics: enlace privado para suscribirse desde otro calendario y descarga del fichero. */
 export function CalendarFeedSettings({ Section }: { Section: SectionT }) {

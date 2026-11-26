@@ -42,8 +42,9 @@ async function computeGroups(userId: string, userName: string): Promise<Duplicat
       .where(and(eq(schema.giftIdeas.userId, userId), inArray(schema.giftIdeas.contactId, ids))).groupBy(schema.giftIdeas.contactId),
   );
   addExtras(
-    await db.select({ id: schema.giftsReceived.contactId, n: count() }).from(schema.giftsReceived)
-      .where(and(eq(schema.giftsReceived.userId, userId), inArray(schema.giftsReceived.contactId, ids))).groupBy(schema.giftsReceived.contactId),
+    await db.select({ id: schema.giftReceivedContacts.contactId, n: count() }).from(schema.giftReceivedContacts)
+      .innerJoin(schema.giftsReceived, eq(schema.giftsReceived.id, schema.giftReceivedContacts.giftId))
+      .where(and(eq(schema.giftsReceived.userId, userId), inArray(schema.giftReceivedContacts.contactId, ids))).groupBy(schema.giftReceivedContacts.contactId),
   );
   addExtras(
     await db.select({ id: schema.importantDates.contactId, n: count() }).from(schema.importantDates)

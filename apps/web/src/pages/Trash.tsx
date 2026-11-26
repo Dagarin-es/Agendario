@@ -27,7 +27,7 @@ export function TrashPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold">🗑️ Papelera</h1>
+          <h1 className="page-title text-xl font-semibold">🗑️ Papelera</h1>
           <p className="text-sm text-slate-500">Los contactos borrados se pueden recuperar durante {HISTORY_DAYS} días. Después se eliminan del todo.</p>
         </div>
         {!!data?.length && (

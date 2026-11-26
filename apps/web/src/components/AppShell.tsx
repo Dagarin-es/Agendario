@@ -8,11 +8,11 @@ import { keepInView } from "../lib/keepInView";
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { APP_NAME, APP_VERSION } from "@agendario/shared";
+import { APP_NAME } from "@agendario/shared";
 import { useDuplicateCount } from "./Layout";
 import { useLogout, useMe } from "../lib/auth";
 import { useGiftsToBuy, usePendingGifts } from "../lib/gifts";
-import { getServer, manualUrl, setServer } from "../lib/platform";
+import { getServer } from "../lib/platform";
 import { haptic } from "../lib/native";
 import { ModeSelector, useColorThemeFromPrefs, useThemeIcon } from "./Personalize";
 import { UserAvatar } from "./UserAvatar";
@@ -75,6 +75,17 @@ const titles: [RegExp, string][] = [
   [/^\/groups/, "Grupos"],
   [/^\/trash/, "Papelera"],
   [/^\/import/, "Importar"],
+  [/^\/call-log/, "Registro de llamadas"],
+];
+
+/** Páginas del menú de usuario: la barra muestra «← Agendario › Sección» en una sola línea. */
+const menuPages: [RegExp, string, string][] = [
+  [/^\/settings/, "⚙️", "Ajustes"],
+  [/^\/notes/, "📝", "Últimas notas"],
+  [/^\/call-log/, "📞", "Registro de llamadas"],
+  [/^\/tags/, "🏷️", "Etiquetas"],
+  [/^\/groups/, "👪", "Grupos"],
+  [/^\/trash/, "🗑️", "Papelera"],
 ];
 
 function useMedia(q: string) {
@@ -124,6 +135,7 @@ export function AppShell() {
   const headerRef = useRef<HTMLElement>(null);
   const isTab = tabs.some((t) => location.pathname === t.to);
   const title = titles.find(([re]) => re.test(location.pathname))?.[1] ?? APP_NAME;
+  const menuPage = menuPages.find(([re]) => re.test(location.pathname));
   // Pantalla ancha (Galaxy Fold abierto, tablet): barra lateral y lista + ficha en dos paneles
   const wide = useMedia("(min-width: 600px)");
   const kb = useKeyboardOpen();
@@ -199,7 +211,15 @@ export function AppShell() {
         ) : (
           <button className="m3-icon-btn" onClick={() => nav(-1)} aria-label="Atrás">{icons.back()}</button>
         )}
-        <span className="min-w-0 flex-1 truncate text-[20px] font-medium tracking-tight text-indigo-950">{APP_NAME}</span>
+        {menuPage ? (
+          <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[20px] font-medium tracking-tight text-indigo-950">
+            <button className="shrink-0 rounded-full px-1 -mx-1 active:bg-indigo-100" onClick={() => { void haptic(); setSheet(true); }} aria-haspopup="dialog" aria-label="Abrir el menú de usuario">{APP_NAME}</button>
+            <span className="shrink-0 text-slate-400" aria-hidden="true">›</span>
+            <span className="min-w-0 truncate"><span aria-hidden="true">{menuPage[1]}</span> {menuPage[2]}</span>
+          </span>
+        ) : (
+          <span className="min-w-0 flex-1 truncate text-[20px] font-medium tracking-tight text-indigo-950">{APP_NAME}</span>
+        )}
         {!wide && location.pathname === "/" && <SortMenu />}
         <h1 className="sr-only">{title}</h1>
       </header>
@@ -252,8 +272,8 @@ export function AppShell() {
         </nav>
       )}
 
-      {sheet && <MoreSheet onClose={() => setSheet(false)} onAbout={() => { setSheet(false); setAbout(true); }} onNews={() => { setSheet(false); setNews(true); }} />}
-      {about && <AboutModal onClose={() => setAbout(false)} />}
+      {sheet && <MoreSheet onClose={() => setSheet(false)} onAbout={() => { setSheet(false); setAbout(true); }} />}
+      {about && <AboutModal onClose={() => setAbout(false)} onNews={() => { setAbout(false); setNews(true); }} />}
       {news && <ChangelogModal onClose={() => setNews(false)} />}
     </div>
   );
@@ -285,7 +305,7 @@ function SortMenu() {
 }
 
 /** Hoja inferior con tu cuenta y el resto de opciones. Se cierra tocando fuera, con atrás o deslizando hacia abajo. */
-function MoreSheet({ onClose, onAbout, onNews }: { onClose: () => void; onAbout: () => void; onNews: () => void }) {
+function MoreSheet({ onClose, onAbout }: { onClose: () => void; onAbout: () => void }) {
   const logout = useLogout();
   const { data: me } = useMe();
   const [dy, setDy] = useState(0);
@@ -308,7 +328,7 @@ function MoreSheet({ onClose, onAbout, onNews }: { onClose: () => void; onAbout:
           onTouchEnd={() => { const d = dy; start.current = null; if (d > 90) onClose(); else setDy(0); }}
         >
           <div className="flex justify-center py-2.5"><div className="h-1 w-8 rounded-full bg-slate-400/60" /></div>
-          <Link to="/settings" className="mb-3 flex items-center gap-3 rounded-3xl px-3 py-2 active:bg-indigo-100">
+          <Link to="/settings" onClick={onClose} className="mb-3 flex items-center gap-3 rounded-3xl px-3 py-2 active:bg-indigo-100">
             <UserAvatar me={me} size={48} />
             <span className="min-w-0">
               <span className="block text-base font-medium">{me?.name}</span>
@@ -316,16 +336,15 @@ function MoreSheet({ onClose, onAbout, onNews }: { onClose: () => void; onAbout:
             </span>
           </Link>
           <div className="mb-2 px-2"><ModeSelector /></div>
-          <Link to="/notes" className={item}>📝 Últimas notas</Link>
-          <Link to="/tags" className={item}>🏷️ Etiquetas</Link>
-          <Link to="/groups" className={item}>👪 Grupos</Link>
-          <Link to="/trash" className={item}>🗑️ Papelera</Link>
-          <Link to="/settings" className={item}>⚙️ Ajustes</Link>
+          <Link to="/notes" className={item} onClick={onClose}>📝 Últimas notas</Link>
+          <Link to="/call-log" className={item} onClick={onClose}>📞 Registro de llamadas</Link>
+          <Link to="/tags" className={item} onClick={onClose}>🏷️ Etiquetas</Link>
+          <Link to="/groups" className={item} onClick={onClose}>👪 Grupos</Link>
+          <Link to="/trash" className={item} onClick={onClose}>🗑️ Papelera</Link>
+          <Link to="/settings" className={item} onClick={onClose}>⚙️ Ajustes</Link>
           <div className="my-1 h-px bg-slate-200" />
-          <button className={item} onClick={() => { setServer(null); void logout().then(() => window.location.reload()); }}>🔁 Cambiar de servidor</button>
+          <button className={item} onClick={() => { onClose(); window.dispatchEvent(new Event("agendario-change-server")); }}>🔁 Cambiar de servidor</button>
           <button className={item} onClick={onAbout}>📒 Acerca de {APP_NAME}</button>
-          <a className={item} href={manualUrl()} target="_blank" rel="noopener">📘 Manual (PDF)</a>
-          <button className={item} onClick={onNews}>📋 Changelog {APP_VERSION}</button>
           <button className={`${item} text-red-700`} onClick={() => void logout()}>🚪 Salir</button>
         </div>
       </div>

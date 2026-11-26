@@ -1,5 +1,20 @@
 # Historial de cambios
 
+## 1.3.2 — regalos con estado y regalos recibidos de varios
+- **Estado de cada idea de regalo**: botón **⏳ Pendiente · 🛒 Comprado · 🎁 Regalado** en cada idea, en la ficha y en la pestaña Regalos (antes allí no se podía cambiar). «Comprado» pregunta para qué fecha es; **«Regalado» pregunta siempre el día en que lo regalaste** (antes se marcaba sin preguntar). El calendario de Fechas sigue marcando el evento como regalado aunque lo entregaras otro día.
+- **Regalos recibidos de una o varias personas** («de mis padres», «de los compañeros»): salen en la ficha de cada uno, con los demás nombres, y ahora se pueden **editar**. Los que ya tenías se conservan.
+- **Regalos con dos pestañas**: **🎁 Para regalar** (lo de siempre) y **🎀 Recibidos**, con todos los regalos que te han hecho, buscador, filtro por persona y botón «+ Regalo recibido».
+- **Ajustes**: Todoist y Gmail pasan a **Aplicaciones externas**, con su logo; las pestañas bajan a una segunda fila en el móvil para que se vean todas.
+- **Menú**: «Manual (PDF)» y «Changelog» son ahora botones dentro de **Acerca de Agendario**.
+- **App**:
+  - «📞 Registro de llamadas» tiene su propia opción en el menú de usuario.
+  - Las páginas del menú ponen el título en una sola línea («← Agendario › Ajustes»); tocando «Agendario» vuelves al menú.
+  - **«Cambiar de servidor» con Cancelar**: ya no cierra la sesión al entrar; solo cambia al pulsar Continuar y comprobar que el nuevo servidor responde.
+  - En Gmail, un aviso siempre visible con botón para añadir otra cuenta de Google desde el navegador.
+  - **Aviso de «autoalojado»** en la primera pantalla y en la de entrada, con enlaces a «Conoce Agendario» y «Cómo instalarlo» (en inglés si el móvil está en inglés).
+- Manual: capítulo 12 con las novedades.
+- La APK anterior sigue funcionando con este servidor; los cambios de la app (menú, título en una línea, Cancelar al cambiar de servidor, aviso de autoalojado) llegan con la APK nueva.
+
 ## 1.3.1 — varias cuentas de Google y fotos desde Google
 - **Varias cuentas de Google** (Ajustes → Sincronización → Gmail): conecta todas las que quieras con **«+ Añadir otra cuenta de Google»**. En **Etiquetas** cada etiqueta tiene una casilla por cuenta para elegir a cuál va (puede ir a varias a la vez; las subetiquetas entran solas). Tu cuenta de antes sigue igual, con lo que ya tenía, sin volver a subir nada.
 - **Pasar las etiquetas de una cuenta a otra**, con un desplegable en cada cuenta: los contactos se crean en la nueva y se quitan de la antigua. Pensado para el día en que cambies una cuenta por otra.

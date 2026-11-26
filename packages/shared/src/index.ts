@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // IS_BETA = true muestra la etiqueta «Beta» (desde la 1.0, false).
 export * from "./themes";
 
-export const APP_VERSION = "1.3.1";
+export const APP_VERSION = "1.3.2";
 export const IS_BETA = false;
 
 // ---------- Enumeraciones ----------
@@ -461,6 +461,8 @@ export const giftIdeaInputSchema = z.object({
   eventKey: z.string().max(80).nullable().default(null),
   /** Texto del evento («Cumpleaños 2027»…) */
   eventLabel: z.string().max(120).default(""),
+  /** Fecha del evento (si se regaló otro día, givenAt es ese día). Nulo = la de givenAt */
+  eventDate: z.string().date().nullable().optional(),
 });
 export type GiftIdeaInput = z.infer<typeof giftIdeaInputSchema>;
 export const giftIdeaPatchSchema = giftIdeaInputSchema.partial();
@@ -644,12 +646,24 @@ export const giftReceivedInputSchema = z.object({
   receivedAt: z.string().date().nullable().default(null),
   occasion: z.enum(occasions).nullable().default(null),
   notes: z.string().max(2000).default(""),
+  /** Quién lo regaló (uno o varios contactos). Desde la ficha, si falta, ese contacto. */
+  contactIds: z.array(z.string().uuid()).max(50).optional(),
 });
 export type GiftReceivedInput = z.infer<typeof giftReceivedInputSchema>;
+export const giftReceivedPatchSchema = giftReceivedInputSchema.partial().extend({
+  contactIds: z.array(z.string().uuid()).min(1).max(50).optional(),
+});
 
-export interface GiftReceived extends GiftReceivedInput {
+export interface GiftReceived {
   id: string;
-  contactId: string;
+  description: string;
+  receivedAt: string | null;
+  occasion: Occasion | null;
+  notes: string;
+  /** Primer contacto (compatibilidad) */
+  contactId: string | null;
+  /** Todos los que lo regalaron (solo los que puedes ver) */
+  contacts: { id: string; displayName: string; hasPhoto: boolean; updatedAt: string }[];
   createdAt: string;
 }
 

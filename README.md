@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> **Tus contactos, tu servidor.** Versión estable 1.3.1 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
+> **Tus contactos, tu servidor.** Versión estable 1.3.2 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **efemérides**, **contactos compartidos** entre usuarios, **fotos y portadas**, servidor **CardDAV** (con grupos) para el móvil y calendario **.ics** suscribible.
 
-Esta es la **versión 1.3.1**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
+Esta es la **versión 1.3.2**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
 
 ---
 
@@ -36,8 +36,8 @@ Esta es la **versión 1.3.1**: servidor + web app instalable (PWA) en un contene
 - **Changelog** en el menú (con el número de versión): el historial de cambios de cada versión, dentro de la app.
 - **Android Auto**: los avisos de la app (nota al colgar, recordatorios) se leen en el coche y se contestan con la voz.
 - **Duplicados** al estilo de Google Contacts: borrar uno, combinar automáticamente o combinar manualmente eligiendo qué conservar. Ver *Buscar y combinar duplicados*.
-- **Ideas para regalos**: idea, enlace, precio, notas y estado regalado (fecha y motivo). **Siempre son privadas**: aunque el contacto esté compartido, nadie más ve tus ideas.
-- **Regalos recibidos**: qué te regaló, cuándo y por qué. También son privados.
+- **Ideas para regalos**: idea, enlace, precio y notas, con su estado (⏳ pendiente → 🛒 comprado para un evento → 🎁 regalado, con el día en que lo regalaste). **Siempre son privadas**: aunque el contacto esté compartido, nadie más ve tus ideas.
+- **Regalos recibidos**: qué te regalaron, cuándo, por qué y quién (uno o varios contactos), en la ficha de cada uno y en **Regalos → Recibidos**, con buscador y filtro por persona. También son privados.
 - **Fechas importantes** (aniversarios, santos…) y **relaciones** entre contactos ("pareja de", "hijo/a de"…).
 - **Próximas fechas**: cumpleaños y fechas importantes de los próximos días, con aviso de cuántas ideas de regalo tienes guardadas para esa persona.
 - **Exportación .vcf** (vCard 4.0 con foto y tus etiquetas como `CATEGORIES`), opcionalmente con tus ideas de regalo como propiedades `X-CONTACTOS-GIFT`. Lo que exportas se puede volver a importar sin perder nada.
@@ -61,7 +61,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-1.3.1.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.3.2.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -95,7 +95,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-1.3.1.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.3.2.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -103,7 +103,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-1.3.1.zip
+unzip agendario-1.3.2.zip
 cd agendario
 ```
 
@@ -147,7 +147,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-1.3.1.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-1.3.2.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -616,6 +616,7 @@ Desde la 1.0 `IS_BETA = false` (sin etiqueta «Beta»). La versión está en `AP
    - ✅ 1.1: recordatorios y notas durante las llamadas.
    - ✅ 1.3: contactos a Gmail (para Outlook), «Novedades» en el menú y corrección del recorte de fotos en la web.
    - ✅ 1.3.1: varias cuentas de Google, fotos desde Google, «Changelog X.Y.Z» en el menú y efemérides por la próxima que llega.
+   - ✅ 1.3.2: estado de cada idea de regalo (pendiente, comprado, regalado con su día), regalos recibidos de varias personas con su lista, Ajustes y menú reordenados, «Cambiar de servidor» con Cancelar y aviso de «autoalojado» en la app.
    - ✅ 1.2.1: editar ideas de regalo, avisos con bola en el icono (vencidos y cumpleaños sin regalo) y correcciones de la app.
    - ✅ 1.2: adjuntos en las llamadas, «Últimas notas», recordatorios con pestaña propia y Todoist, selección por pulsación larga y avisos en Android Auto.
    - Más adelante: recordatorios con apps de tareas autoalojadas por CalDAV (Vikunja, Nextcloud Tasks).

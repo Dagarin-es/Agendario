@@ -3,12 +3,13 @@ import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { giftIdeaInputSchema, giftIdeaPatchSchema, giftReceivedInputSchema } from "@agendario/shared";
+import { giftIdeaInputSchema, giftIdeaPatchSchema, giftReceivedInputSchema, giftReceivedPatchSchema } from "@agendario/shared";
 import { db, schema } from "../db/index.js";
 import { getAccess } from "../lib/access.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
 import { giftOverview, occasionsFor } from "../lib/events.js";
 import { imageForLink, linkPreview, saveImageFromUrl } from "../lib/linkpreview.js";
+import { checkContacts, getReceived, listReceived, setGiftContacts } from "../lib/giftsReceived.js";
 import { deletePhoto, photoType, readPhoto, storeUpload } from "../lib/photos.js";
 
 const gi = schema.giftIdeas;
@@ -20,11 +21,13 @@ const idParam = zValidator("param", z.object({ id: z.string().uuid() }));
  * para guardar tus ideas; nadie más (ni el propietario del contacto) las ve.
  */
 /** Mantiene coherentes estado, «regalado» y evento. */
-function normalizeGift<T extends { status?: string; given?: boolean; givenAt?: string | null; occasion?: unknown; eventKey?: string | null; eventLabel?: string }>(b: T): T {
+function normalizeGift<T extends { status?: string; given?: boolean; givenAt?: string | null; occasion?: unknown; eventKey?: string | null; eventLabel?: string; eventDate?: string | null }>(b: T): T {
   const out = { ...b };
   if (out.status === undefined && out.given !== undefined) out.status = out.given ? "given" : "idea"; // clientes antiguos
   if (out.status !== undefined) out.given = out.status === "given";
-  if (out.status === "idea") Object.assign(out, { givenAt: null, occasion: null, eventKey: null, eventLabel: "" });
+  if (out.status === "idea") Object.assign(out, { givenAt: null, occasion: null, eventKey: null, eventLabel: "", eventDate: null });
+  // Comprado (o cliente antiguo sin eventDate): el evento es el de la fecha elegida
+  else if (out.status !== undefined && out.eventDate === undefined && out.givenAt !== undefined) out.eventDate = out.givenAt;
   return out;
 }
 
@@ -45,6 +48,7 @@ export const giftRoutes = new Hono<AppEnv>()
   // Pestaña Regalos: contactos con fechas de regalo
   .get("/gifts/overview", async (c) => c.json(await giftOverview(c.get("user").id)))
   .use("/gift-ideas/*", requireAuth)
+  .use("/gifts-received", requireAuth)
   .use("/gifts-received/*", requireAuth)
 
   // ----- Ideas para regalos -----
@@ -132,16 +136,38 @@ export const giftRoutes = new Hono<AppEnv>()
     return c.body(null, 204);
   })
 
-  // ----- Regalos recibidos -----
+  // ----- Regalos recibidos (de uno o varios contactos) -----
+  .get("/gifts-received", zValidator("query", z.object({ contact: z.string().uuid().optional() })), async (c) => {
+    return c.json(await listReceived(c.get("user").id, { contactId: c.req.valid("query").contact }));
+  })
+  .post("/gifts-received", zValidator("json", giftReceivedInputSchema), async (c) => {
+    const user = c.get("user");
+    const { contactIds = [], ...body } = c.req.valid("json");
+    const ids = await checkContacts(user.id, contactIds);
+    const [row] = await db.insert(gr).values({ ...body, contactId: ids[0]!, userId: user.id }).returning({ id: gr.id });
+    await setGiftContacts(row!.id, ids);
+    return c.json(await getReceived(user.id, row!.id), 201);
+  })
+  // Desde la ficha: ese contacto y los demás que se elijan
   .post("/contacts/:id/gifts-received", idParam, zValidator("json", giftReceivedInputSchema), async (c) => {
     const user = c.get("user");
     const { id } = c.req.valid("param");
     await getAccess(id, user.id);
-    const [row] = await db
-      .insert(gr)
-      .values({ ...c.req.valid("json"), contactId: id, userId: user.id })
-      .returning();
-    return c.json(row, 201);
+    const { contactIds = [], ...body } = c.req.valid("json");
+    const ids = await checkContacts(user.id, [id, ...contactIds]);
+    const [row] = await db.insert(gr).values({ ...body, contactId: ids[0]!, userId: user.id }).returning({ id: gr.id });
+    await setGiftContacts(row!.id, ids);
+    return c.json(await getReceived(user.id, row!.id), 201);
+  })
+  .patch("/gifts-received/:id", idParam, zValidator("json", giftReceivedPatchSchema), async (c) => {
+    const user = c.get("user");
+    const { id } = c.req.valid("param");
+    const { contactIds, ...body } = c.req.valid("json");
+    const [old] = await db.select({ id: gr.id }).from(gr).where(and(eq(gr.id, id), eq(gr.userId, user.id)));
+    if (!old) throw new HTTPException(404, { message: "Regalo no encontrado" });
+    if (Object.keys(body).length) await db.update(gr).set(body).where(eq(gr.id, id));
+    if (contactIds) await setGiftContacts(id, await checkContacts(user.id, contactIds));
+    return c.json(await getReceived(user.id, id));
   })
 
   .delete("/gifts-received/:id", idParam, async (c) => {

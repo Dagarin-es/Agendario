@@ -5,7 +5,6 @@ import {
   occasions,
   type GiftIdea,
   type GiftOccasion,
-  type GiftReceived,
   type Occasion,
 } from "@agendario/shared";
 import { api, apiUrl } from "../lib/api";
@@ -78,7 +77,6 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
   };
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ title: "", url: "", price: "", notes: "" });
-  const [buying, setBuying] = useState<string | null>(null);
   const [editing, setEditing] = useState<GiftIdea | null>(null);
   const [error, setError] = useState("");
   const confirm = useConfirm();
@@ -97,10 +95,6 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
       refresh();
     },
     onError: (e) => setError((e as Error).message),
-  });
-  const patch = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Partial<GiftIdea> }) => api.patch(`/gift-ideas/${id}`, body),
-    onSuccess: () => { setBuying(null); refresh(); },
   });
   const remove = useMutation({ mutationFn: (id: string) => api.del(`/gift-ideas/${id}`), onSuccess: refresh });
 
@@ -151,14 +145,13 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
                   <div className="min-w-0 flex-1">
                     <div className="font-medium">{title(g)}</div>
                     <div className="text-sm text-slate-600">
-                      <span className="mr-1 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">✅ Comprado</span> para <strong>{g.eventLabel || (g.occasion ? occasionLabels[g.occasion] : "una fecha")}</strong> · {formatDate(g.givenAt)}
+                      Para <strong>{g.eventLabel || (g.occasion ? occasionLabels[g.occasion] : "una fecha")}</strong> · {formatDate(g.givenAt)}
                       {late && <span className="font-medium text-amber-800"> · ¿ya lo has regalado?</span>}
                     </div>
                   </div>
-                  <div className="flex w-full justify-end gap-1 sm:w-auto">
+                  <div className="flex w-full items-center justify-end gap-1 sm:w-auto">
                     <button className="btn-ghost px-2 py-1.5" onClick={() => setEditing(g)} aria-label="Editar" title="Editar">✏️</button>
-                    <button className="btn-ghost px-2 py-1.5 text-xs" onClick={() => patch.mutate({ id: g.id, body: { status: "idea" } })} title="Volver a idea">Deshacer</button>
-                    <button className="btn-primary px-3 py-1.5" onClick={() => patch.mutate({ id: g.id, body: { status: "given" } })}>🎁 Regalar</button>
+                    <GiftStatusButton idea={g} onChanged={refresh} />
                   </div>
                 </div>
               </li>
@@ -177,17 +170,10 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
                 <div className="font-medium">{title(g)}</div>
                 <div className="text-sm text-slate-500">{[euros(g.priceCents), g.notes].filter(Boolean).join(" · ")}</div>
               </div>
+              <GiftStatusButton idea={g} onChanged={refresh} className="mt-0.5" />
               <button className="btn-ghost px-2" onClick={() => setEditing(g)} aria-label="Editar" title="Editar">✏️</button>
-              <button
-                className="btn-ghost whitespace-nowrap border border-emerald-200 text-emerald-800"
-                title={g.url ? "Abre la tienda y luego marca para qué fecha lo has comprado" : "Marcar como comprado"}
-                onClick={() => { if (g.url && buying !== g.id) window.open(g.url, "_blank", "noopener"); setBuying(buying === g.id ? null : g.id); }}
-              >🛒 Comprar</button>
               <button className="btn-danger" onClick={async () => (await confirm({ title: "¿Borrar esta idea de regalo?", message: g.title, confirmText: "Borrar", danger: true })) && remove.mutate(g.id)}>✕</button>
             </div>
-            {buying === g.id && (
-              <BuyForm contactId={contactId} onCancel={() => setBuying(null)} onSave={(body) => patch.mutate({ id: g.id, body })} />
-            )}
           </li>
         ))}
       </ul>
@@ -204,7 +190,7 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
                     · {formatDate(g.givenAt)}{g.eventLabel ? ` · ${g.eventLabel}` : g.occasion ? ` · ${occasionLabels[g.occasion]}` : ""}
                   </span>
                 </span>
-                <button className="btn-ghost text-xs" onClick={() => patch.mutate({ id: g.id, body: { status: "bought" } })}>Deshacer</button>
+                <GiftStatusButton idea={g} onChanged={refresh} />
               </li>
             ))}
           </ul>
@@ -258,36 +244,58 @@ export function GiftEditDialog({ idea, onClose, onSaved }: { idea: GiftIdea; onC
   );
 }
 
-/** Al comprar: ¿para qué evento? (próximas fechas del contacto, Navidad, Reyes… u otra fecha). */
-function BuyForm({ contactId, onCancel, onSave }: { contactId: string; onCancel: () => void; onSave: (b: Partial<GiftIdea>) => void }) {
+/**
+ * ¿Para qué evento? (próximas fechas del contacto, Navidad, Reyes… u otra fecha).
+ * - Comprado: la fecha es la del evento.
+ * - Regalado: además pregunta la fecha en que se regaló (por defecto la del evento, si ya pasó, o hoy).
+ */
+function EventForm({ idea, mode, onCancel, onSave, busy }: { idea: GiftIdea; mode: "bought" | "given"; onCancel: () => void; onSave: (b: Partial<GiftIdea>) => void; busy?: boolean }) {
+  const contactId = idea.contactId;
   const { data: occ } = useQuery({ queryKey: ["gift-occasions", contactId], queryFn: () => api.get<GiftOccasion[]>(`/contacts/${contactId}/gift-occasions`) });
-  const [sel, setSel] = useState<string>("");
-  const [custom, setCustom] = useState<{ date: string; occasion: Occasion | null; label: string }>({ date: today(), occasion: null, label: "" });
-  const [alreadyGiven, setAlreadyGiven] = useState(false);
   const todayIso = today();
+  const hasEvent = idea.status !== "idea" && !!idea.eventKey;
+  const [sel, setSel] = useState<string>(hasEvent ? "current" : "");
+  const [custom, setCustom] = useState<{ date: string; occasion: Occasion | null; label: string }>({ date: todayIso, occasion: null, label: "" });
+  const evDate = idea.eventDate ?? idea.givenAt;
+  const [givenOn, setGivenOn] = useState(idea.status === "given" && idea.givenAt ? idea.givenAt : evDate && evDate <= todayIso ? evDate : todayIso);
   const upcoming = (occ ?? []).filter((o) => o.date >= todayIso);
   const recent = (occ ?? []).filter((o) => o.date < todayIso);
-  const chosen = sel && sel !== "custom" ? occ?.find((o) => `${o.key}|${o.date}` === sel) : null;
-  // Por defecto, la próxima ocasión
-  const value = sel || (upcoming[0] ? `${upcoming[0].key}|${upcoming[0].date}` : "custom");
-  const current = sel ? chosen : upcoming[0] ?? null;
+  // Por defecto: el evento que ya tenía; si no, al comprar la próxima ocasión y al regalar la más reciente
+  const fallback = mode === "bought" ? upcoming[0] ?? null : recent[0] ?? upcoming[0] ?? null;
+  const value = sel || (fallback ? `${fallback.key}|${fallback.date}` : "custom");
+  const chosen = value !== "custom" && value !== "current" ? occ?.find((o) => `${o.key}|${o.date}` === value) ?? null : null;
+
+  function pickEvent(v: string) {
+    setSel(v);
+    // Al regalar, si el evento ya pasó, su fecha es la propuesta
+    const o = occ?.find((x) => `${x.key}|${x.date}` === v);
+    if (mode === "given" && o) setGivenOn(o.date <= todayIso ? o.date : todayIso);
+  }
 
   function save() {
-    const status = alreadyGiven ? "given" : "bought";
-    if (value === "custom") {
-      if (!custom.date) return;
-      onSave({ status, givenAt: custom.date, occasion: custom.occasion, eventKey: "custom", eventLabel: custom.label.trim() || (custom.occasion ? occasionLabels[custom.occasion] : "Otra fecha") });
-    } else if (current) {
-      onSave({ status, givenAt: current.date, occasion: current.occasion, eventKey: current.key, eventLabel: current.label });
+    let ev: Partial<GiftIdea>;
+    if (value === "current") {
+      const d = idea.eventDate ?? idea.givenAt;
+      ev = { givenAt: d, eventDate: d, occasion: idea.occasion, eventKey: idea.eventKey, eventLabel: idea.eventLabel };
+    } else if (value === "custom") {
+      if (mode === "bought" && !custom.date) return;
+      const d = mode === "bought" ? custom.date : givenOn;
+      ev = { givenAt: d, eventDate: d, occasion: custom.occasion, eventKey: "custom", eventLabel: custom.label.trim() || (custom.occasion ? occasionLabels[custom.occasion] : "Otra fecha") };
+    } else if (chosen) ev = { givenAt: chosen.date, eventDate: chosen.date, occasion: chosen.occasion, eventKey: chosen.key, eventLabel: chosen.label };
+    else return;
+    if (mode === "given") {
+      if (!givenOn) return;
+      ev.givenAt = givenOn;
     }
+    onSave({ status: mode, ...ev });
   }
 
   return (
-    <div className="mt-2 space-y-2 rounded-lg bg-emerald-50 p-2.5">
-      <p className="text-sm font-medium text-emerald-900">¿Lo has comprado? Elige para qué fecha es.</p>
+    <div className={`space-y-3 rounded-2xl p-3 ${mode === "given" ? "bg-violet-50" : "bg-emerald-50"}`}>
       <label className="block">
         <span className="label">¿Para qué es?</span>
-        <select className="input" value={value} onChange={(e) => setSel(e.target.value)}>
+        <select className="input" value={value} onChange={(e) => pickEvent(e.target.value)}>
+          {hasEvent && <option value="current">{idea.eventLabel || (idea.occasion ? occasionLabels[idea.occasion] : "La fecha elegida")} · {formatDate(idea.eventDate ?? idea.givenAt)}</option>}
           {upcoming.map((o) => <option key={`${o.key}|${o.date}`} value={`${o.key}|${o.date}`}>{o.label} · {formatDate(o.date)}</option>)}
           {recent.length > 0 && (
             <optgroup label="Recientes (ya pasadas)">
@@ -299,19 +307,91 @@ function BuyForm({ contactId, onCancel, onSave }: { contactId: string; onCancel:
       </label>
       {value === "custom" && (
         <div className="grid gap-2 sm:grid-cols-3">
-          <input className="input" type="date" value={custom.date} onChange={(e) => setCustom({ ...custom, date: e.target.value })} />
+          {mode === "bought" && <input className="input" type="date" value={custom.date} onChange={(e) => setCustom({ ...custom, date: e.target.value })} aria-label="Fecha" />}
           <OccasionSelect value={custom.occasion} onChange={(o) => setCustom({ ...custom, occasion: o })} />
           <input className="input" placeholder="Descripción (opcional)" value={custom.label} onChange={(e) => setCustom({ ...custom, label: e.target.value })} />
         </div>
       )}
-      <label className="flex items-center gap-2 text-sm text-slate-700">
-        <input type="checkbox" checked={alreadyGiven} onChange={(e) => setAlreadyGiven(e.target.checked)} /> Ya lo he regalado
-      </label>
+      {mode === "given" && (
+        <label className="block">
+          <span className="label">¿Qué día lo regalaste?</span>
+          <input className="input" type="date" value={givenOn} max={todayIso} onChange={(e) => setGivenOn(e.target.value)} required />
+        </label>
+      )}
       <div className="flex justify-end gap-2">
-        <button className="btn-ghost" onClick={onCancel}>Cancelar</button>
-        <button className="btn-primary" onClick={save}>✅ Comprado</button>
+        <button type="button" className="btn-ghost" onClick={onCancel}>Cancelar</button>
+        <button type="button" className="btn-primary" disabled={busy || (mode === "given" && !givenOn)} onClick={save}>{mode === "given" ? "🎁 Regalado" : "🛒 Comprado"}</button>
       </div>
     </div>
+  );
+}
+
+const statusChip: Record<GiftIdea["status"], { label: string; cls: string }> = {
+  idea: { label: "⏳ Pendiente", cls: "border-slate-300 bg-white text-slate-700" },
+  bought: { label: "🛒 Comprado", cls: "border-emerald-300 bg-emerald-100 text-emerald-900" },
+  given: { label: "🎁 Regalado", cls: "border-violet-300 bg-violet-100 text-violet-900" },
+};
+
+/**
+ * Botón con el estado de una idea (Pendiente · Comprado · Regalado). Al tocarlo se elige el estado:
+ * Comprado pregunta para qué evento; Regalado, además, el día en que se regaló.
+ */
+export function GiftStatusButton({ idea, onChanged, className = "" }: { idea: GiftIdea; onChanged: () => void; className?: string }) {
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<"menu" | "bought" | "given">("menu");
+  const showAlert = useAlert();
+  const patch = useMutation({
+    mutationFn: (body: Partial<GiftIdea>) => api.patch(`/gift-ideas/${idea.id}`, body),
+    onSuccess: () => { setOpen(false); onChanged(); },
+    onError: (e) => showAlert("No se ha podido cambiar el estado", (e as Error).message),
+  });
+  const chip = statusChip[idea.status];
+  const close = () => { setOpen(false); setStep("menu"); };
+  const options: { id: GiftIdea["status"]; title: string; desc: string }[] = [
+    { id: "idea", title: "⏳ Pendiente", desc: "Es solo una idea: todavía no lo has comprado." },
+    { id: "bought", title: "🛒 Comprado", desc: "Ya lo tienes. Eliges para qué fecha es." },
+    { id: "given", title: "🎁 Regalado", desc: "Ya lo has entregado. Eliges el día en que lo regalaste." },
+  ];
+  return (
+    <>
+      <button
+        type="button"
+        className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${chip.cls} ${className}`}
+        onClick={() => { setStep("menu"); setOpen(true); }}
+        aria-haspopup="dialog"
+        title="Cambiar el estado"
+      >
+        {chip.label} <span aria-hidden="true" className="opacity-60">▾</span>
+      </button>
+      {open && (
+        <Modal title={idea.title} onClose={close}>
+          <div className="space-y-2 p-4">
+            {step === "menu" ? (
+              <>
+                <p className="text-sm text-slate-500">¿En qué estado está este regalo?</p>
+                {options.map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    disabled={patch.isPending}
+                    className={`flex w-full items-start gap-3 rounded-2xl border p-3 text-left ${idea.status === o.id ? "border-indigo-400 bg-indigo-50" : "border-slate-200 hover:bg-slate-50"}`}
+                    onClick={() => (o.id === "idea" ? idea.status !== "idea" && patch.mutate({ status: "idea" }) : setStep(o.id))}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold">{o.title}</span>
+                      <span className="block text-sm text-slate-500">{o.desc}</span>
+                    </span>
+                    {idea.status === o.id && <span className="text-indigo-700" aria-label="Estado actual">✓</span>}
+                  </button>
+                ))}
+              </>
+            ) : (
+              <EventForm idea={idea} mode={step} busy={patch.isPending} onCancel={() => setStep("menu")} onSave={(b) => patch.mutate(b)} />
+            )}
+          </div>
+        </Modal>
+      )}
+    </>
   );
 }
 
@@ -345,49 +425,3 @@ export function QuickIdeaForm({ contactId, initial, onDone, onCancel }: { contac
   );
 }
 
-/** Regalos que te ha hecho este contacto: también privados. */
-export function GiftsReceived({ contactId, gifts }: { contactId: string; gifts: GiftReceived[] }) {
-  const qc = useQueryClient();
-  const refresh = () => qc.invalidateQueries({ queryKey: ["contact", contactId] });
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState<{ description: string; receivedAt: string; occasion: Occasion | null }>({ description: "", receivedAt: today(), occasion: null });
-
-  const add = useMutation({
-    mutationFn: () => api.post(`/contacts/${contactId}/gifts-received`, { ...draft, receivedAt: draft.receivedAt || null }),
-    onSuccess: () => { setAdding(false); setDraft({ description: "", receivedAt: today(), occasion: null }); refresh(); },
-  });
-  const remove = useMutation({ mutationFn: (id: string) => api.del(`/gifts-received/${id}`), onSuccess: refresh });
-  const confirm = useConfirm();
-
-  return (
-    <section className="card">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="section-title mb-0">🎀 Regalos recibidos</h2>
-        {!adding && <button className="btn-ghost" onClick={() => setAdding(true)}>+ Añadir</button>}
-      </div>
-      {adding && (
-        <form onSubmit={(e) => { e.preventDefault(); if (draft.description.trim()) add.mutate(); }} className="mb-3 grid gap-2 rounded-lg bg-slate-50 p-3 sm:grid-cols-3">
-          <input className="input sm:col-span-3" placeholder="¿Qué te regaló?" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} autoFocus required />
-          <input className="input" type="date" value={draft.receivedAt} onChange={(e) => setDraft({ ...draft, receivedAt: e.target.value })} />
-          <OccasionSelect value={draft.occasion} onChange={(o) => setDraft({ ...draft, occasion: o })} />
-          <div className="flex justify-end gap-2">
-            <button type="button" className="btn-ghost" onClick={() => setAdding(false)}>Cancelar</button>
-            <button className="btn-primary">Guardar</button>
-          </div>
-        </form>
-      )}
-      {gifts.length === 0 && !adding && <p className="text-sm text-slate-500">Nada anotado.</p>}
-      <ul className="space-y-1">
-        {gifts.map((g) => (
-          <li key={g.id} className="flex items-center gap-2 text-sm">
-            <span className="flex-1">
-              {g.description}{" "}
-              <span className="text-slate-500">· {formatDate(g.receivedAt)}{g.occasion ? ` · ${occasionLabels[g.occasion]}` : ""}</span>
-            </span>
-            <button className="btn-danger text-xs" onClick={async () => (await confirm({ title: "¿Borrar este regalo recibido?", message: g.description, confirmText: "Borrar", danger: true })) && remove.mutate(g.id)}>✕</button>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}

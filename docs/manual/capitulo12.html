@@ -1,0 +1,79 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><style>
+@page { size: 595.92pt 842.88pt; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Inter Display", Inter, sans-serif; color: #1e293b; font-size: 10.6pt; line-height: 1.55; letter-spacing: .1pt; }
+.page { width: 595.92pt; height: 842.88pt; position: relative; padding: 52pt 48pt 60pt 48pt; page-break-after: always; overflow: hidden; }
+.page:last-child { page-break-after: auto; }
+h1 { font-size: 21pt; color: #3730a3; margin: 0 0 6pt; font-weight: 700; padding-bottom: 8pt; border-bottom: 1px solid #1e293b; }
+h1 .n { color: #a5b4fc; margin-right: 6pt; }
+h2 { font-size: 12.5pt; color: #1e1b4b; margin: 16pt 0 4pt; font-weight: 700; }
+h3 { font-size: 10.8pt; color: #3730a3; margin: 10pt 0 2pt; font-weight: 700; }
+p { margin: 4pt 0; }
+ul, ol { margin: 4pt 0; padding-left: 16pt; }
+li { margin: 2pt 0; }
+b { color: #1e1b4b; }
+.tip { background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.warn { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.foot { position: absolute; bottom: 14pt; left: 48pt; right: 48pt; display: flex; justify-content: space-between; font-size: 8.5pt; color: #5b5f77; }
+.row { display: flex; gap: 14pt; align-items: flex-start; }
+img.shot { border: 1px solid #e2e8f0; border-radius: 8pt; display: block; }
+.cap { font-size: 8.6pt; color: #64748b; text-align: center; margin-top: 3pt; }
+code { background: #eef2ff; color: #3730a3; padding: 0 3pt; border-radius: 3pt; font-size: 9pt; word-break: break-all; }
+</style></head><body>
+
+<div class="page">
+<h1><span class="n">12</span>Novedades de la versión 1.3.2</h1>
+<p>La 1.3.2 pone orden en los <b>regalos</b> (estado de cada idea y lista de los que te regalan), reorganiza <b>Ajustes</b> y el <b>menú</b>, y deja la app lista para la revisión de Google Play.</p>
+
+<h2>Estado de cada idea de regalo</h2>
+<p>Cada idea lleva un botón con su estado: <b>⏳ Pendiente</b>, <b>🛒 Comprado</b> o <b>🎁 Regalado</b>. Está en la ficha del contacto y en la pestaña <b>Regalos → Para regalar</b>. Al tocarlo eliges el estado:</p>
+<ul>
+<li><b>Pendiente</b>: es solo una idea (se olvida la fecha y el evento).</li>
+<li><b>Comprado</b>: eliges para qué fecha es (su cumpleaños, Navidad, Reyes u otra fecha).</li>
+<li><b>Regalado</b>: además del evento, Agendario pregunta <b>qué día lo regalaste</b>. Propone la fecha del evento si ya pasó o, si no, la de hoy. El calendario de Fechas sigue marcando ese evento como regalado aunque lo entregaras otro día.</li>
+</ul>
+<div class="row" style="margin-top:6pt">
+<div style="width:50%"><img class="shot" src="regalo-estado.png" style="width:100%"><div class="cap">Al tocar el estado.</div></div>
+<div style="width:50%"><img class="shot" src="regalo-regalado.png" style="width:100%"><div class="cap">Regalado: evento y día en que lo regalaste.</div></div>
+</div>
+
+<h2>Regalos recibidos, de una o varias personas</h2>
+<ul>
+<li>La opción <b>Regalos</b> tiene dos pestañas: <b>🎁 Para regalar</b> (lo de siempre) y <b>🎀 Recibidos</b>, con todos los regalos que te han hecho, del más reciente al más antiguo, un <b>buscador</b> y un <b>filtro por persona</b>.</li>
+<li>Con <b>«+ Regalo recibido»</b> apuntas qué es, la fecha, el motivo, notas y <b>quién te lo regaló</b>: uno o varios contactos («de mis padres», «de los compañeros»).</li>
+<li>Sale en la ficha de cada uno de los que lo regalaron, con los demás nombres («con Ana y Pedro»), y se puede <b>editar</b> con ✏️.</li>
+<li>Los regalos recibidos que ya tenías se conservan. Si combinas duplicados, pasan al contacto que se queda; si borras a una persona, el regalo sigue con las demás.</li>
+</ul>
+<div class="foot"><span>Agendario · Manual 1.3.2</span><span>51</span></div>
+</div>
+
+<div class="page">
+<div class="row">
+<div style="width:50%"><img class="shot" src="regalos-recibidos.png" style="width:100%"><div class="cap">Regalos → Recibidos.</div></div>
+<div style="width:50%"><img class="shot" src="regalo-recibido-nuevo.png" style="width:100%"><div class="cap">Un regalo de dos personas.</div></div>
+</div>
+
+<h2>Ajustes y menú</h2>
+<ul>
+<li><b>Todoist</b> y <b>Gmail</b> están ahora en <b>Ajustes → Aplicaciones externas</b>, con su logo. En <b>Sincronización</b> quedan Fastmail/CardDAV, el servidor CardDAV, el calendario e importar/exportar .vcf.</li>
+<li>Las pestañas de Ajustes bajan a una segunda fila en el móvil, para que se vean todas.</li>
+<li><b>Manual (PDF)</b> y <b>Changelog</b> son ahora dos botones dentro de <b>Acerca de Agendario</b>.</li>
+<li>En la app, <b>📞 Registro de llamadas</b> tiene su propia opción en el menú de usuario (en la web no aparece).</li>
+<li>En la app, las páginas del menú de usuario ponen el título en una sola línea: <b>«← Agendario › Ajustes»</b>. Tocando «Agendario» vuelves al menú; con «atrás», a la página en la que estabas.</li>
+<li>Para añadir otra cuenta de Google desde la app, el aviso de Gmail tiene un botón que abre esa página en el navegador.</li>
+</ul>
+<img class="shot" src="app-titulo-ajustes.png" style="width:52%; margin:6pt auto 0"><div class="cap">El título en una línea y las pestañas en dos filas.</div>
+
+<div class="foot"><span>Agendario · Manual 1.3.2</span><span>52</span></div>
+</div>
+
+<div class="page">
+<h2 style="margin-top:0">Cambiar de servidor, con Cancelar</h2>
+<p>«🔁 Cambiar de servidor» ya no cierra la sesión al entrar: la pantalla viene con el servidor actual escrito y un botón <b>Cancelar</b> que te devuelve sin tocar nada. Solo al pulsar <b>Continuar</b> y comprobar que el nuevo servidor responde se cierra la sesión del anterior.</p>
+
+<h2>Aviso de «autoalojado» en la app</h2>
+<p>La primera pantalla de la app explica que Agendario es <b>autoalojado</b>: tus datos se guardan en tu propio servidor y para usar la app hay que instalar uno. Tiene dos botones, <b>«Conoce Agendario»</b> y <b>«Cómo instalarlo»</b>, que abren dagarin.es/agendario. Si el móvil está en inglés, el aviso sale en inglés. En la pantalla de inicio de sesión va un aviso más corto con los mismos enlaces.</p>
+<img class="shot" src="app-autoalojado.png" style="width:44%; margin:6pt auto 0"><div class="cap">La primera pantalla de la app.</div>
+<div class="foot"><span>Agendario · Manual 1.3.2</span><span>53</span></div>
+</div>
+</body></html>

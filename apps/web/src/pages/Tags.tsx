@@ -109,7 +109,7 @@ export function TagsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Etiquetas</h1>
+      <h1 className="page-title text-lg font-semibold">Etiquetas</h1>
       <p className="text-sm text-slate-500">Las etiquetas son personales: puedes ponerlas también en contactos que te han compartido y nadie más las verá.</p>
 
       <form className="card space-y-3" onSubmit={(e) => { e.preventDefault(); if (name.trim()) create.mutate(); }}>
