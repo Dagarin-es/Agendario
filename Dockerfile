@@ -29,7 +29,7 @@ RUN npm ci --omit=dev --workspace @agendario/server --include-workspace-root=fal
 FROM node:22-alpine
 # rclone: copias de seguridad en SMB y Google Drive · tzdata: hora local de las copias
 RUN apk add --no-cache su-exec rclone tzdata ca-certificates
-ARG APP_VERSION=1.5.0
+ARG APP_VERSION=1.5.1
 # App de Google para conectar Google Drive (la imagen de Docker Hub la recibe de los secretos de GitHub)
 ARG GOOGLE_CLIENT_ID=""
 ARG GOOGLE_CLIENT_SECRET=""

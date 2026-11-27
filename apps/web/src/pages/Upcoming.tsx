@@ -138,20 +138,12 @@ export function UpcomingPage() {
     <div className="space-y-4">
       <h1 className="sr-only">Fechas</h1>
       {/* Siempre arriba al desplazar */}
-      <div className="list-sticky sticky z-[5] -mx-4 -mt-2 bg-slate-50 px-4 py-2" style={{ top: "var(--header-h, 0px)" }}>
-      <div className="flex gap-1 rounded-2xl bg-slate-100 p-1" role="tablist" aria-label="Fechas">
+      <div className="m3-subtabs" role="tablist" aria-label="Fechas">
         {([["eventos", "🎉", "Eventos"], ["efemerides", "📜", "Efemérides"]] as const).map(([k, icon, t]) => (
-          <button
-            key={k}
-            role="tab"
-            aria-selected={view === k}
-            onClick={() => go(k)}
-            className={`flex-1 whitespace-nowrap rounded-xl px-1.5 py-2 text-sm font-medium transition sm:px-3 ${view === k ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
-          >
+          <button key={k} role="tab" aria-selected={view === k} onClick={() => go(k)} className={`m3-subtab ${view === k ? "is-on" : ""}`}>
             <span aria-hidden="true">{icon} </span>{t}
           </button>
         ))}
-      </div>
       </div>
       {view === "eventos" ? <EventsView /> : <PersonalEventsView openId={sp.get("e")} onOpen={(id) => go("efemerides", id)} />}
     </div>

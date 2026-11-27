@@ -5,6 +5,7 @@
  * En los dos: se arrastra por el asa ⠿ (o con pulsación larga en el móvil) para ordenar, meter una
  * etiqueta dentro de otra (soltar encima) o sacarla al nivel principal (zona de abajo).
  */
+import { Chevron } from "../components/Chevron";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -269,9 +270,6 @@ const Grip = ({ className = "" }: { className?: string }) => (
     {[6, 12, 18].map((y) => [9, 15].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.7" />))}
   </svg>
 );
-const Chevron = ({ open }: { open: boolean }) => (
-  <svg viewBox="0 0 24 24" className={`h-4 w-4 transition-transform ${open ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
-);
 
 /** Filas visibles: sin las de etiquetas plegadas; con búsqueda, las que coinciden y sus madres. */
 function useVisibleTree(tree: TagNode[], collapsed: Set<string>, q: string) {
@@ -404,7 +402,7 @@ function PaneTags({ model, collapsed, toggleCollapsed, drag }: ViewProps) {
                   </span>
                   {n.childCount > 0 ? (
                     <button type="button" className="rounded p-0.5 text-slate-400 hover:bg-slate-200/60" onClick={(e) => { e.stopPropagation(); toggleCollapsed(t.id); }} aria-label={collapsed.has(t.id) ? "Desplegar" : "Plegar"} aria-expanded={!collapsed.has(t.id) || !!q}>
-                      <Chevron open={!collapsed.has(t.id) || !!q} />
+                      <Chevron dir="right" open={!collapsed.has(t.id) || !!q} />
                     </button>
                   ) : <span className="w-5" />}
                   <span className={`h-3 w-3 shrink-0 rounded-full ${tagColorClasses[t.color].dot}`} />
@@ -535,7 +533,7 @@ function GmailMultiSelect({ model, tag }: { model: Model; tag: Tag }) {
             {via && <span className="font-normal text-indigo-600/80">· por {via.name}</span>}
           </span>
         ))}
-        <span className="ml-auto text-slate-500" aria-hidden="true">{open ? "▴" : "▾"}</span>
+        <span className="ml-auto text-slate-500"><Chevron open={open} /></span>
       </button>
       {open && <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />}
       {open && (
@@ -591,7 +589,7 @@ function MobileTags({ model, collapsed, toggleCollapsed, drag }: ViewProps) {
               <span className="shrink-0 text-[15px] text-slate-500">{n.childCount > 0 && t.totalCount !== t.contactCount ? t.totalCount : t.contactCount}</span>
               {n.childCount > 0 ? (
                 <button type="button" className="grid h-10 w-8 place-items-center text-slate-400" onClick={(e) => { e.stopPropagation(); toggleCollapsed(t.id); }} aria-label={collapsed.has(t.id) ? "Desplegar" : "Plegar"}>
-                  <Chevron open={!collapsed.has(t.id)} />
+                  <Chevron dir="right" open={!collapsed.has(t.id)} />
                 </button>
               ) : <span className="w-8" />}
               <span className="grid h-11 w-9 place-items-center text-slate-300" {...drag.handleProps(t.id)} onClick={(e) => e.stopPropagation()} aria-label={`Mover ${t.name}`} role="button"><Grip /></span>

@@ -156,7 +156,7 @@ export function ReceivedGiftRow({ g, from, actions, onPhoto }: { g: GiftReceived
 /** Pestañas con emoji y contador (recuadro Regalos de la ficha). */
 export function MiniTabs<T extends string>({ tabs, value, onChange, label }: { tabs: { id: T; emoji: string; label: string; count?: number }[]; value: T; onChange: (v: T) => void; label: string }) {
   return (
-    <div className="flex gap-1 rounded-2xl bg-slate-100 p-1" role="tablist" aria-label={label}>
+    <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={label}>
       {tabs.map((t) => (
         <button
           key={t.id}
@@ -164,10 +164,10 @@ export function MiniTabs<T extends string>({ tabs, value, onChange, label }: { t
           role="tab"
           aria-selected={value === t.id}
           onClick={() => onChange(t.id)}
-          className={`flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl px-1 py-2 text-[13px] font-medium transition sm:text-sm ${value === t.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+          className={`m3-subtab is-compact inline-flex items-center justify-center gap-1 ${value === t.id ? "is-on" : ""}`}
         >
           <span aria-hidden="true">{t.emoji}</span>{t.label}
-          {!!t.count && <span className="ml-0.5 rounded-full bg-indigo-100 px-1.5 text-[11px] leading-[17px] text-indigo-700">{t.count}</span>}
+          {!!t.count && <span className="ml-0.5 opacity-75">{t.count}</span>}
         </button>
       ))}
     </div>

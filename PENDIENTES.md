@@ -4,7 +4,7 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Para la próxima versión
 
-(Nada todavía: lo de la 1.5.0 ya está hecho.)
+(Nada todavía: lo de la 1.5.1 ya está hecho.)
 
 ## Revisión en Google Play (cuando Daniel diga)
 

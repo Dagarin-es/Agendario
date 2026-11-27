@@ -1,4 +1,5 @@
 import { keepInView } from "../lib/keepInView";
+import { ReminderMark } from "../components/ReminderMark";
 import { LetterIndex } from "../components/LetterIndex";
 import { sortOptions, useSortPref, type SortId } from "../lib/sort";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -309,40 +310,7 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
   const to = pageSize ? Math.min(current * pageSize, total) : total;
 
   const filtered = !!(deferred || tag || favOnly);
-  // En el móvil, el buscador se recoge al bajar por la lista y vuelve al subir
-  const [compact, setCompact] = useState(false);
-  useEffect(() => {
-    // Al recoger/sacar el buscador la página cambia de altura y el navegador mueve el scroll:
-    // sin margen ni pausa eso se interpretaba como «subir» y la cabecera parpadeaba sin parar.
-    let last = window.scrollY;
-    let travel = 0;
-    let lockUntil = 0;
-    let cur = false;
-    const onScroll = () => {
-      const y = window.scrollY;
-      const d = y - last;
-      last = y;
-      if (performance.now() < lockUntil) return;
-      if (Math.sign(d) !== Math.sign(travel)) travel = 0;
-      travel += d;
-      let next = cur;
-      // Mientras se escribe (buscador con foco o teclado abierto) nunca se recoge: al abrirse el
-      // teclado la página se desplaza y antes el buscador —y con él el teclado— desaparecía.
-      const typing = document.activeElement instanceof HTMLInputElement || document.documentElement.classList.contains("kb-open");
-      if (typing) { travel = 0; return; }
-      if (q || y < 160) next = false;
-      else if (travel > 56) next = true;
-      else if (travel < -56) next = false;
-      if (next !== cur) {
-        cur = next;
-        travel = 0;
-        lockUntil = performance.now() + 450;
-        setCompact(next);
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [q]);
+  // El buscador queda siempre a la vista (fijo bajo la cabecera), también al desplazar
   const pageAllSelected = visible.length > 0 && visible.every((c) => selected.has(c.id));
   const addToSelection = (list: ContactSummary[]) =>
     setSelected((prev) => {
@@ -399,7 +367,7 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
     <div className="space-y-4" ref={topRef}>
       {/* Buscador, etiquetas y barra de la lista: siempre visibles al desplazar */}
       <div className="list-sticky sticky z-[5] -mx-4 -mt-4 space-y-2 bg-slate-50 px-4 pt-4" style={{ top: "var(--header-h, 68px)" }}>
-      <div className={`gap-2 ${compact ? "hidden sm:flex" : "flex"}`}>
+      <div className="flex gap-2">
         <input className="input" placeholder="Buscar por nombre, email, teléfono…" value={q} onChange={(e) => setQ(e.target.value)} type="search" />
         <button
           type="button"
@@ -589,6 +557,7 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-1.5">
                   <span className="truncate font-medium">{c.displayName}</span>
+                  <ReminderMark count={reminderState.has(c.id) ? 1 : 0} overdue={reminderState.get(c.id) === "overdue"} />
                 </div>
                 {(sort === "family" || sort === "given" || sort === "nickname") && sortText(c, sort) && sortText(c, sort) !== c.displayName && (
                   <div className="truncate text-xs text-indigo-700/80">{sort === "nickname" ? `«${c.nickname}»` : sort === "family" ? `${c.familyName}, ${c.givenName}`.replace(/, $/, "") : sortText(c, sort)}</div>
@@ -603,13 +572,6 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
                   </div>
                 )}
               </div>
-              {reminderState.has(c.id) && (
-                <span
-                  className={`shrink-0 text-base leading-none ${reminderState.get(c.id) === "overdue" ? "rounded-full bg-red-100 px-1 py-0.5" : ""}`}
-                  title={reminderState.get(c.id) === "overdue" ? "Tiene un recordatorio vencido" : "Tiene un recordatorio pendiente"}
-                  aria-label={reminderState.get(c.id) === "overdue" ? "Recordatorio vencido" : "Recordatorio pendiente"}
-                >⏰</span>
-              )}
               {c.visibility !== "private" && <VisibilityBadge v={c.visibility} />}
               {c.hasHistory && <span className="shrink-0 text-indigo-500"><HistoryIcon className="h-5 w-5" title="Tiene cambios en el historial" /></span>}
               <GeoIcon status={c.geo} />

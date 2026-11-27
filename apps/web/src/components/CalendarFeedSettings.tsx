@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Chevron } from "./Chevron";
 import { useState, type ReactNode } from "react";
 import type { CalendarFeed } from "@agendario/shared";
 import { api } from "../lib/api";
@@ -78,7 +79,7 @@ export function CalendarFeedSettings({ Section }: { Section: SectionT }) {
         <span className="text-xs text-slate-500">Una copia de hoy para importarla en otro calendario (no se actualiza).</span>
       </div>
 
-      <button className="text-left text-sm text-indigo-700 hover:underline" onClick={() => setHelp((h) => !h)}>{help ? "▾" : "▸"} Cómo suscribirse</button>
+      <button className="inline-flex items-center gap-1 text-left text-sm text-indigo-700 hover:underline" onClick={() => setHelp((h) => !h)}><Chevron dir="right" open={help} className="h-4 w-4" /> Cómo suscribirse</button>
       {help && (
         <ul className="list-disc space-y-1.5 pl-5 text-sm text-slate-600">
           <li><b>Google Calendar</b> (en el ordenador): Otros calendarios → <i>+</i> → <i>Desde URL</i> → pega el enlace.</li>

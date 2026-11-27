@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useGiftSort } from "../lib/giftSort";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import type { GiftIdea, GiftOverviewItem, GivenGift } from "@agendario/shared";
@@ -74,14 +75,15 @@ export function GiftsPage() {
     <div className="space-y-3">
       <h1 className="sr-only">Regalos</h1>
       {/* Siempre arriba al desplazar */}
-      <nav className="list-sticky sticky z-[5] -mx-4 -mt-2 flex gap-1.5 bg-slate-50 px-4 py-2" style={{ top: "var(--header-h, 0px)" }} role="tablist" aria-label="Regalos">
+      {/* Banda de pestañas pegada a la cabecera: siempre visible */}
+      <nav className="m3-subtabs" role="tablist" aria-label="Regalos">
         {tabs.map((t) => (
           <button
             key={t.id}
             role="tab"
             aria-selected={view === t.id}
             onClick={() => setParams(t.id === "regalar" ? {} : { vista: t.id }, { replace: true })}
-            className={`flex-1 whitespace-nowrap rounded-full px-2 py-2 text-sm font-medium transition sm:flex-none sm:px-3.5 ${view === t.id ? "bg-indigo-700 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={`m3-subtab ${view === t.id ? "is-on" : ""}`}
           >
             {t.label}
           </button>
@@ -94,7 +96,7 @@ export function GiftsPage() {
 
 /** «Para regalar»: quién tiene fechas de regalo, cuándo es la próxima y qué ideas hay. */
 function ToGive() {
-  const [sort, setSort] = useState<Sort>(() => (localStorage.getItem("gifts-sort") as Sort) || "next");
+  const [sort, setSort] = useGiftSort();
   const [adding, setAdding] = useState<GiftOverviewItem | null>(null);
   const [editing, setEditing] = useState<GiftIdea | null>(null);
   const qc = useQueryClient();
@@ -109,12 +111,12 @@ function ToGive() {
     for (const k of [["gifts-overview"], ["gifts-given"], ["contact", g.contactId], ["upcoming"], ["pending-gifts"]]) qc.invalidateQueries({ queryKey: k });
     void syncNativeReminders();
   };
-  const pick = (s: Sort) => { setSort(s); try { localStorage.setItem("gifts-sort", s); } catch { /* nada */ } };
+  const pick = (s: Sort) => setSort(s);
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-slate-500">{data ? `${data.length} ${data.length === 1 ? "persona" : "personas"} con fechas de regalo` : ""}</p>
-        <label className="flex shrink-0 items-center gap-2 text-sm text-slate-600">
+        <label className="hidden shrink-0 items-center gap-2 text-sm text-slate-600 sm:flex">
           <span className="hidden sm:inline">Ordenar por</span>
           <select className="input w-auto py-1.5" aria-label="Ordenar por" value={sort} onChange={(e) => pick(e.target.value as Sort)}>
             <option value="next">Próximas fechas</option>

@@ -183,7 +183,7 @@ export function ContactReminders({ contact, reminders, autoOpen = false, onAutoO
   return (
     <section className="card">
       <div className="mb-1 flex items-center justify-between gap-2">
-        <h2 className="font-semibold">⏰ Recordatorios</h2>
+        <h2 className="section-title mb-0">⏰ Recordatorios</h2>
         <button className="btn-ghost px-2 text-sm" onClick={() => setAdding(true)}>+ Añadir</button>
       </div>
       {reminders.length === 0 ? (

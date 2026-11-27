@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> **Tus contactos, tu servidor.** Versión estable 1.5.0 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
+> **Tus contactos, tu servidor.** Versión estable 1.5.1 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
 
 Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **efemérides**, **contactos compartidos** entre usuarios, **fotos y portadas**, servidor **CardDAV** (con grupos) para el móvil y calendario **.ics** suscribible.
 
-Esta es la **versión 1.5.0**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
+Esta es la **versión 1.5.1**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
 
 ---
 
@@ -62,7 +62,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-1.5.0.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.5.1.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -96,7 +96,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-1.5.0.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.5.1.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -104,7 +104,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-1.5.0.zip
+unzip agendario-1.5.1.zip
 cd agendario
 ```
 
@@ -148,7 +148,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-1.5.0.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-1.5.1.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -621,6 +621,7 @@ Desde la 1.0 `IS_BETA = false` (sin etiqueta «Beta»). La versión está en `AP
    - ✅ 1.4: favoritos (también en Gmail, Fastmail y el móvil), pantalla de Etiquetas nueva con arrastrar y soltar y 20 colores, y app con banda de navegación fija, títulos grandes y aviso de duplicados.
    - ✅ 1.4.1: marcar favoritos con la estrella de cada fila de la lista y capturas nuevas en la web.
    - ✅ 1.5: regalos en la ficha con tres pestañas (ideas, regalados y recibidos), valoración con estrellas, anotación y foto de cada regalo hecho y recibido, pestaña «Regalados» y selectores fijos en Fechas y Regalos.
+   - ✅ 1.5.1: título de cada sección siempre en la cabecera de la app, pestañas en una banda fija con bordes visibles, buscador siempre a la vista, ficha con la sección «Contacto» en pestañas, títulos y flechas más grandes y señal de recordatorio en la lista y la ficha.
    - ✅ 1.2.1: editar ideas de regalo, avisos con bola en el icono (vencidos y cumpleaños sin regalo) y correcciones de la app.
    - ✅ 1.2: adjuntos en las llamadas, «Últimas notas», recordatorios con pestaña propia y Todoist, selección por pulsación larga y avisos en Android Auto.
    - Más adelante: recordatorios con apps de tareas autoalojadas por CalDAV (Vikunja, Nextcloud Tasks).

@@ -140,3 +140,32 @@
 /* Páginas del menú de usuario: el título va en la barra («Agendario › Ajustes»); el grande se oculta (sigue para lectores de pantalla) */
 .app .page-title { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .app .list-sticky { background: var(--app-surface); }
+
+/* Banda de pestañas internas (Regalos, Fechas…) pegada a la cabecera; sigue su tono al desplazar */
+.m3-subtabs {
+  position: sticky; top: calc(var(--header-h, 0px) - 1px); z-index: 6;
+  display: flex; gap: 8px; margin: -5px -16px 12px; padding: 7px 16px 10px;
+  background: var(--app-surface); transition: background .2s;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-slate-300) 55%, transparent);
+}
+.hdr-scrolled .m3-subtabs { background: var(--app-surface-2); }
+.m3-subtab {
+  flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding: 8px 10px; border-radius: 999px; font-size: 14px; font-weight: 500; line-height: 1.2;
+  color: var(--color-slate-700); background: var(--color-white, #fff);
+  border: 1.5px solid var(--color-slate-300); transition: background .15s, border-color .15s, color .15s;
+}
+.dark .m3-subtab { background: color-mix(in oklab, var(--color-slate-100) 70%, transparent); border-color: var(--color-slate-400); }
+.m3-subtab:active { background: var(--color-indigo-50); }
+.m3-subtab.is-on { background: var(--color-indigo-700); border-color: var(--color-indigo-700); color: #fff; font-weight: 600; box-shadow: 0 2px 6px -2px rgb(67 56 202 / .5); }
+@media (min-width: 600px) { .m3-subtab { flex: 0 0 auto; padding: 8px 16px; } .m3-subtabs { border-bottom: 0; } }
+.dark .m3-subtab.is-on { background: var(--color-indigo-300); border-color: var(--color-indigo-300); color: #fff; }
+
+/* Señal de recordatorio (lista y ficha) */
+.reminder-mark { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-indigo-600); }
+.reminder-mark.is-due { color: var(--color-red-600); }
+.reminder-chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 3px 10px 3px 7px; font-size: 13px; font-weight: 600; color: var(--color-indigo-800); background: var(--color-indigo-50); border: 1px solid var(--color-indigo-200); }
+.reminder-chip.is-due { color: var(--color-red-800); background: var(--color-red-50); border-color: var(--color-red-200); }
+.reminder-chip .reminder-mark { color: inherit; }
+.m3-subtab.is-compact { flex: 1 1 auto; padding: 7px 8px; font-size: 13.5px; }
+@media (min-width: 600px) { .m3-subtab.is-compact { flex: 0 0 auto; padding: 7px 14px; } }

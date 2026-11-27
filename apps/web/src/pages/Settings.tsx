@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Chevron } from "../components/Chevron";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
   backupDestLabels,
@@ -195,7 +196,7 @@ function NfsFields({ d, set }: { d: BackupConfig["dest"]; set: (v: Partial<Backu
         </label>
       </div>
       <button type="button" className="text-xs text-indigo-700 hover:underline" onClick={() => setAdv(!adv)}>
-        {adv ? "▾" : "▸"} Usuario y grupo con los que escribir (avanzado)
+        <Chevron dir="right" open={adv} className="h-4 w-4 inline" /> Usuario y grupo con los que escribir (avanzado)
       </button>
       {adv && (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -425,7 +426,7 @@ function BackupJobs() {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Copias de seguridad">
         {jobs.map((j) => (
-          <button key={j.id} role="tab" aria-selected={cur.id === j.id} onClick={() => setSel(j.id)} className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium ${cur.id === j.id ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200" : "text-slate-600 hover:bg-white/60"}`}>
+          <button key={j.id} role="tab" aria-selected={cur.id === j.id} onClick={() => setSel(j.id)} className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium ${cur.id === j.id ? "bg-indigo-700 text-white shadow-sm ring-1 ring-indigo-700" : "bg-white text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"}`}>
             <span className={`h-2 w-2 rounded-full ${dot(j)}`} aria-hidden="true" /> {j.name}
           </button>
         ))}
@@ -670,7 +671,7 @@ export function SettingsPage() {
             role="tab"
             aria-selected={tab === t.id}
                         onClick={() => setParams(t.id === "cuentas" ? {} : { tab: t.id }, { replace: true })}
-            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${tab === t.id ? "bg-indigo-700 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${tab === t.id ? "border border-indigo-700 bg-indigo-700 text-white shadow-sm" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
           >
             <span aria-hidden="true">{t.icon}</span> {t.label}
           </button>

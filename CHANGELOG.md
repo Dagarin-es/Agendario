@@ -1,5 +1,17 @@
 # Historial de cambios
 
+## 1.5.1 — cabecera más limpia, ficha más clara y avisos de recordatorio
+- **App, cabecera**: el nombre de cada sección (Contactos, Regalos, Fechas, Recordatorios) va **siempre en la barra de arriba**, junto al icono de Agendario. Se acabó el título grande que se movía a la barra al desplazar.
+- **Pestañas en una banda fija**: en **Regalos** (Para regalar · Regalados · Recibidos) y en **Fechas** (Eventos · Efemérides) las pestañas van en una banda pegada a la cabecera que no se mueve al desplazar. La marcada sigue en color y las demás tienen ahora **un borde que se ve bien**, en claro y en oscuro (en oscuro, la marcada ya no queda lavanda y se lee mejor). Lo mismo en las pestañas de Regalos de la ficha y en las de Ajustes.
+- **Regalos, «Ordenar por» en la cabecera**: en la app, como en Contactos, para que no desaparezca al desplazar.
+- **Contactos, buscador siempre visible**: ya no se esconde al bajar por la lista.
+- **Ficha, sección «📇 Contacto»**: teléfonos, emails y otros datos (apodo y nombre en el móvil) en **pestañas** dentro de un solo recuadro, con cuántos hay en cada una; debajo, «Llamadas y apuntes». Direcciones, webs y notas siguen en su recuadro.
+- **Títulos de sección más grandes** en la ficha (Regalos, Relaciones, Recordatorios, Fechas importantes…) y **flechas de desplegar más grandes** en toda la app (Llamadas y apuntes, etiquetas, Ajustes…).
+- **Señal de recordatorio**: los contactos con recordatorios pendientes llevan un **despertador junto al nombre** en la lista (en rojo si alguno ya está en plazo) y en la ficha un aviso «⏰ 1 recordatorio» al lado del nombre que te lleva a ellos.
+- **Web dagarin.es/agendario**: galería de capturas renovada (en el ordenador, las opciones arriba y abajo de la pantalla en la web y a los lados del móvil en la app; en el móvil, tira deslizable con los bordes difuminados), nueva entrada **«Backups · Tus contactos siempre a salvo»**, capturas nuevas de la app, flecha para volver arriba en cada sección, menú ☰ solo cuando no caben las opciones y botón «Instalar» que vuelve a verse.
+- Manual: capítulo 16 con las novedades.
+- La APK anterior sigue funcionando con este servidor; los cambios de la app llegan con la APK nueva (en la web, al actualizar el servidor).
+
 ## 1.5.0 — regalos con estrellas, fotos y tres pestañas
 - **Recuadro «🎁 Regalos» en la ficha**, con tres pestañas: **💡 Ideas** (lo pendiente y lo comprado), **✅ Regalados** (lo que ya le has regalado, en grande: foto, ocasión, fecha, valoración y anotación) y **🎀 Recibidos** (lo que te ha regalado, con todos sus datos). El recuadro suelto de regalos recibidos desaparece de la ficha: ahora está en su pestaña.
 - **Al marcar un regalo como 🎁 Regalado**, además del día puedes ponerle una **valoración de 0 a 5 estrellas, con medias** (toca la mitad izquierda de una estrella para media), una **anotación** (¿le gustó?, ¿acertaste?) y una **foto**. Todo se puede cambiar después con el lápiz ✏️.

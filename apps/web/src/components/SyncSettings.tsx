@@ -1,4 +1,5 @@
 import { FastmailLogo } from "./BrandIcons";
+import { Chevron } from "./Chevron";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router";
@@ -323,7 +324,7 @@ function NameList({ title, names, tone }: { title: string; names: string[]; tone
       <button className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm" onClick={() => setOpen(!open)}>
         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${tone}`}>{names.length}</span>
         <span className="flex-1 font-medium">{title}</span>
-        <span className="text-slate-400">{open ? "▴" : "▾"}</span>
+        <span className="text-slate-500"><Chevron open={open} /></span>
       </button>
       {open && <ul className="max-h-48 overflow-auto border-t border-slate-100 px-3 py-1.5 text-sm text-slate-600">{names.map((n, i) => <li key={i} className="py-0.5">{n}</li>)}</ul>}
     </div>

@@ -1,4 +1,6 @@
 import { capLabel } from "../lib/text";
+import { Chevron } from "../components/Chevron";
+import { ReminderMark } from "../components/ReminderMark";
 import { keepInView } from "../lib/keepInView";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -68,7 +70,7 @@ function Employees({ c }: { c: ContactDetail }) {
   return (
     <section className="card">
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="flex items-center gap-1.5 text-[13px] font-semibold text-indigo-900"><span aria-hidden="true">👥</span> Trabajadores ({c.employees.length})</h2>
+        <h2 className="section-title mb-0"><span aria-hidden="true">👥</span> Trabajadores ({c.employees.length})</h2>
         {c.canEdit && <Link className="btn-ghost px-2 py-1 text-sm" to={`/contacts/new?org=${c.id}&orgName=${encodeURIComponent(c.displayName)}`}>+ Añadir trabajador</Link>}
       </div>
       <ul className="divide-y divide-slate-100">
@@ -103,7 +105,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 function Block({ icon, title, children }: { icon: string; title: string; children: ReactNode }) {
   return (
     <div className="border-t border-slate-100 pt-2.5 first:border-t-0 first:pt-0">
-      <h3 className="mb-0.5 flex items-center gap-1.5 text-[13px] font-semibold text-indigo-900">
+      <h3 className="mb-1 flex items-center gap-2 text-[16px] font-semibold text-indigo-950">
         <span aria-hidden="true">{icon}</span> {title}
       </h3>
       {children}
@@ -130,6 +132,7 @@ export function ContactDetailPage() {
   // Antes de llamar desde aquí: tus últimas notas y recordatorios con este contacto
   const [preCall, setPreCall] = useState<string | null>(null);
   const [showLog, setShowLog] = useState(!!openCall || false);
+  const [ctab, setCtab] = useState<"tel" | "mail" | "otros">("tel");
   useEffect(() => {
     if (!lastCall) return;
     const onVis = () => document.visibilityState === "visible" && Date.now() - lastCall.at > 3000 && setAskCall(true);
@@ -182,6 +185,8 @@ export function ContactDetailPage() {
   const tag = (itemId?: string) => <ItemTag contactId={c.id} itemId={itemId} current={itemId ? c.itemTags[itemId] : undefined} contactTags={c.tags} />;
   const mobileAlias = c.mobileName === "nickname" ? c.nickname.trim() : c.mobileName === "display" ? c.displayName : "";
   const hasOther = !!c.nickname || !!mobileAlias; // el cumpleaños se ve en Celebraciones → Fechas importantes
+  const contactTabs = [["tel", "📞 Teléfonos", c.phones.length], ["mail", "✉️ Emails", c.emails.length], ["otros", "🗂️ Otros", (c.nickname ? 1 : 0) + (mobileAlias ? 1 : 0)]] as const;
+  const dueNow = c.reminders.some((r) => new Date(r.dueAt).getTime() <= Date.now());
   // Notas y recordatorios que se enseñan antes de llamar
   const lastNotes = c.interactions.filter((x) => x.notes.trim()).slice(0, 3);
   const startCall = (phone: string, e?: React.MouseEvent) => {
@@ -258,6 +263,12 @@ export function ContactDetailPage() {
             <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold leading-tight">
               {c.displayName}
               <FavoriteButton id={c.id} favorite={!!c.favorite} />
+              {c.reminders.length > 0 && (
+                <a href="#recordatorios" className={`reminder-chip ${dueNow ? "is-due" : ""}`} onClick={(e) => { e.preventDefault(); document.getElementById("recordatorios")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
+                  <ReminderMark count={c.reminders.length} overdue={dueNow} className="h-4 w-4" />
+                  {c.reminders.length} {c.reminders.length === 1 ? "recordatorio" : "recordatorios"}
+                </a>
+              )}
               <span className="text-xs font-normal"><VisibilityBadge v={c.visibility} /></span>
             </h1>
             {(c.jobTitle || (c.organization && c.organization !== c.displayName)) && (
@@ -358,51 +369,66 @@ export function ContactDetailPage() {
         </div>
       </section>
 
-      {/* Teléfonos y emails: dos recuadros de la misma altura */}
-      <div className="grid items-stretch gap-4 md:grid-cols-2">
-        <section className="card flex flex-col" id="interactions">
-          <h2 className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-indigo-900"><span aria-hidden="true">📞</span> Teléfonos</h2>
-          <div className="flex-1">
-            {c.phones.length === 0 && <p className="py-1.5 text-sm text-slate-400">Sin teléfonos.</p>}
-            {c.phones.map((p, i) => (
-              <Row key={`p${i}`} label={p.label}>
-                <span className="inline-flex flex-wrap items-center gap-1.5">
-                  <a className="text-indigo-700" href={telLink(p.value)} onClick={(e) => startCall(p.value, e)}>{p.value}</a>
-                  {tag(p.id)}
-                </span>
-              </Row>
-            ))}
-          </div>
-          <div className="mt-2 border-t border-slate-100 pt-2">
-            <button className="btn-ghost w-full justify-between px-2 py-1.5 text-sm" onClick={() => setShowLog(!showLog)} aria-expanded={showLog}>
-              <span>📒 Llamadas y apuntes{c.interactions.length > 0 && <span className="text-slate-400"> ({c.interactions.length})</span>}</span>
-              <span className="text-slate-400">{showLog ? "▴" : "▾"}</span>
+      {/* Contacto: teléfonos, emails y otros datos en pestañas; debajo, llamadas y apuntes */}
+      <section className="card" id="interactions">
+        <h2 className="section-title">📇 Contacto</h2>
+        <div className="mb-2 flex flex-wrap gap-1.5" role="tablist" aria-label="Datos de contacto">
+          {contactTabs.map(([k, label, n]) => (
+            <button key={k} type="button" role="tab" aria-selected={ctab === k} className={`m3-subtab is-compact ${ctab === k ? "is-on" : ""}`} onClick={() => setCtab(k)}>
+              {label}{n > 0 && <span className="ml-1 opacity-70">{n}</span>}
             </button>
-            {showLog && (
-              <div className="mt-2">
-                <Interactions c={c} embedded prefill={prefill} onPrefillUsed={() => setPrefill(null)} openId={openCall} />
-              </div>
-            )}
-          </div>
-        </section>
-        <section className="card flex flex-col">
-          <h2 className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-indigo-900"><span aria-hidden="true">✉️</span> Emails</h2>
-          <div className="flex-1">
-            {c.emails.length === 0 && <p className="py-1.5 text-sm text-slate-400">Sin emails.</p>}
-            {c.emails.map((e, i) => (
-              <Row key={`e${i}`} label={e.label}>
-                <span className="inline-flex flex-wrap items-center gap-1.5">
-                  <a className="break-all text-indigo-700" href={mail(e.value)} target={mail(e.value).startsWith("http") ? "_blank" : undefined} rel="noreferrer">{e.value}</a>
-                  {tag(e.id)}
-                </span>
-              </Row>
-            ))}
-          </div>
-        </section>
-      </div>
+          ))}
+        </div>
+        <div role="tabpanel" className="min-h-[4.5rem]">
+          {ctab === "tel" && (
+            <>
+              {c.phones.length === 0 && <p className="py-1.5 text-sm text-slate-400">Sin teléfonos.</p>}
+              {c.phones.map((p, i) => (
+                <Row key={`p${i}`} label={p.label}>
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <a className="text-indigo-700" href={telLink(p.value)} onClick={(e) => startCall(p.value, e)}>{p.value}</a>
+                    {tag(p.id)}
+                  </span>
+                </Row>
+              ))}
+            </>
+          )}
+          {ctab === "mail" && (
+            <>
+              {c.emails.length === 0 && <p className="py-1.5 text-sm text-slate-400">Sin emails.</p>}
+              {c.emails.map((e, i) => (
+                <Row key={`e${i}`} label={e.label}>
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <a className="break-all text-indigo-700" href={mail(e.value)} target={mail(e.value).startsWith("http") ? "_blank" : undefined} rel="noreferrer">{e.value}</a>
+                    {tag(e.id)}
+                  </span>
+                </Row>
+              ))}
+            </>
+          )}
+          {ctab === "otros" && (
+            <>
+              {!hasOther && <p className="py-1.5 text-sm text-slate-400">Sin otros datos.</p>}
+              {c.nickname && <Row label="Apodo">{c.nickname}</Row>}
+              {mobileAlias && <Row label="En el móvil">{mobileAlias} <span className="text-xs text-slate-400">(nombre que ven la agenda del móvil y WhatsApp)</span></Row>}
+            </>
+          )}
+        </div>
+        <div className="mt-2 border-t border-slate-100 pt-2">
+          <button className="btn-ghost w-full justify-between px-2 py-2 text-[15px] font-medium" onClick={() => setShowLog(!showLog)} aria-expanded={showLog}>
+            <span>📒 Llamadas y apuntes{c.interactions.length > 0 && <span className="text-slate-400"> ({c.interactions.length})</span>}</span>
+            <span className="text-slate-500"><Chevron open={showLog} className="h-6 w-6" /></span>
+          </button>
+          {showLog && (
+            <div className="mt-2">
+              <Interactions c={c} embedded prefill={prefill} onPrefillUsed={() => setPrefill(null)} openId={openCall} />
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Resto de datos */}
-      {(c.addresses.length > 0 || c.urls.length > 0 || hasOther || c.notes) && (
+      {(c.addresses.length > 0 || c.urls.length > 0 || c.notes) && (
         <section className="card">
           <div className="space-y-2.5">
             {c.addresses.length > 0 && (
@@ -444,12 +470,6 @@ export function ContactDetailPage() {
                 {c.urls.map((u, i) => <Row key={`u${i}`} label={u.label}><a className="break-all text-indigo-700" href={u.value} target="_blank" rel="noreferrer">{u.value}</a></Row>)}
               </Block>
             )}
-            {hasOther && (
-              <Block icon="🗂️" title="Otros datos">
-                {c.nickname && <Row label="Apodo">{c.nickname}</Row>}
-                {mobileAlias && <Row label="En el móvil">{mobileAlias} <span className="text-xs text-slate-400">(nombre que ven la agenda del móvil y WhatsApp)</span></Row>}
-              </Block>
-            )}
             {c.notes && (
               <Block icon="📝" title="Notas">
                 <p className="whitespace-pre-wrap py-1.5 text-sm">{c.notes}</p>
@@ -470,12 +490,14 @@ export function ContactDetailPage() {
             <Relationships c={c} onChange={refresh} />
           </div>
           <div className="flex min-w-0 flex-col gap-4">
+            <div id="recordatorios" className="scroll-mt-28">
             <ContactReminders
               contact={{ id: c.id, displayName: c.displayName, hasPhoto: c.hasPhoto, updatedAt: c.updatedAt }}
               reminders={c.reminders ?? []}
               autoOpen={remindNow}
               onAutoOpened={() => { if (remindNow) { const n = new URLSearchParams(params); n.delete("remind"); setParams(n, { replace: true }); } }}
             />
+            </div>
             <ImportantDates c={c} onChange={refresh} />
             <LinkedPersonalEvents contactId={c.id} />
           </div>

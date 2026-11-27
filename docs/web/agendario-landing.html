@@ -43,24 +43,25 @@
 #agendario .nav .wrap{display:flex;align-items:center;gap:24px;height:64px}
 #agendario .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;color:var(--ink)}
 #agendario .brand svg{width:34px;height:34px}
-#agendario .nav-links{display:flex;gap:22px;margin-left:auto;font-size:15px;font-weight:600}
+#agendario .nav-links{display:flex;gap:22px;margin-left:auto;font-size:15px;font-weight:600;white-space:nowrap}
 #agendario .nav-links a{color:var(--mut)}#agendario .nav-links a.on,#agendario .nav-links a:hover{color:var(--ind)}
-#agendario .nav .btn{padding:9px 16px;font-size:14px}
-@media(max-width:860px){#agendario .nav-links{display:none}#agendario .nav .btn{margin-left:auto}}
+/* Botón Instalar: colores forzados para que el tema de WordPress no lo deje en blanco */
+#agendario .nav a.btn.btn-p,#agendario .nav a.btn.btn-p:visited{flex-shrink:0;padding:9px 16px;font-size:14px;background:var(--ind)!important;background-image:none!important;color:#fff!important;border:0!important;opacity:1!important;text-decoration:none!important;box-shadow:0 8px 22px -10px rgba(67,56,202,.7)!important}
+#agendario .nav a.btn.btn-p:hover,#agendario .nav a.btn.btn-p:focus{background:var(--ind-d)!important;color:#fff!important}
 
-
-/* Menú en el móvil */
-#agendario .nav-toggle{display:none;all:unset;cursor:pointer;width:42px;height:42px;border-radius:12px;align-items:center;justify-content:center;font-size:22px;color:var(--ink);border:1px solid var(--line);background:#fff}
-@media(max-width:860px){#agendario .nav-toggle{display:inline-flex}#agendario .nav .btn{margin-left:auto}
- #agendario .nav.open .nav-links{display:flex;position:absolute;top:64px;left:0;right:0;flex-direction:column;gap:0;margin:0;padding:8px 16px 16px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 20px 40px -24px rgba(30,27,58,.35)}
- #agendario .nav.open .nav-links a{padding:13px 8px;border-bottom:1px solid var(--line);font-size:17px}
- #agendario .nav.open .nav-links a:last-child{border-bottom:0}}
+/* Menú hamburguesa: solo cuando las opciones no caben (lo decide el script, clase .compact) */
+#agendario .nav-toggle{all:unset;box-sizing:border-box;display:none;flex-shrink:0;cursor:pointer;width:42px;height:42px;border-radius:12px;align-items:center;justify-content:center;font-size:22px;color:var(--ink);border:1px solid var(--line);background:#fff}
+#agendario .nav.compact .nav-links{display:none}
+#agendario .nav.compact .nav-toggle{display:inline-flex}
+#agendario .nav.compact .btn{margin-left:auto}
+#agendario .nav.compact.open .nav-links{display:flex;position:absolute;top:64px;left:0;right:0;flex-direction:column;gap:0;margin:0;padding:8px 16px 16px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 20px 40px -24px rgba(30,27,58,.35)}
+#agendario .nav.compact.open .nav-links a{padding:13px 8px;border-bottom:1px solid var(--line);font-size:17px}
+#agendario .nav.compact.open .nav-links a:last-child{border-bottom:0}
 
 /* Regalos */
 #agendario .gifts{background:linear-gradient(180deg,#fff,#fff8ee)}
-#agendario .gsteps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px;counter-reset:g}
+#agendario .gsteps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px}
 #agendario .gsteps .card{padding:24px;position:relative}
-#agendario .gsteps .card::after{counter-increment:g;content:counter(g);position:absolute;top:18px;right:20px;font-weight:800;font-size:34px;color:#eef0ff;line-height:1}
 #agendario .gsteps .card h3{font-size:18px;margin:12px 0 6px}
 #agendario .gsteps .card p{font-size:15px}
 @media(max-width:1000px){#agendario .gsteps{grid-template-columns:repeat(2,1fr)}}
@@ -72,7 +73,9 @@
 #agendario .gwin li .ico{flex-shrink:0;width:44px;height:44px;font-size:22px}
 #agendario .gphone{max-width:330px;margin:0 auto;border-radius:38px;padding:10px;background:#1e1b3a;box-shadow:0 40px 80px -40px rgba(67,56,202,.6)}
 #agendario .gphone .shot,#agendario .gphone .ph{border-radius:30px;height:600px;width:100%;object-fit:cover;object-position:top}
-#agendario .thanks{margin-top:40px;text-align:center;font-size:14px;color:var(--mut)}
+#agendario .thanks{margin-top:44px;text-align:center;font-size:16px;color:var(--mut)}
+#agendario .thanks a{color:var(--ind);font-weight:700;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-color:var(--ind-m)}
+#agendario .thanks a:hover{color:var(--ind-d);text-decoration-color:var(--ind)}
 
 /* Portada */
 #agendario .hero{padding:72px 0 40px;background:radial-gradient(1200px 500px at 85% -10%,#e0e4ff 0,transparent 60%),radial-gradient(700px 400px at -10% 30%,#fff3c4 0,transparent 60%)}
@@ -127,6 +130,11 @@
 #agendario .dark h2,#agendario .dark h3{color:#fff}
 #agendario .dark .lead,#agendario .dark p{color:#c7cbf5}
 #agendario .dark .eyebrow{background:rgba(255,255,255,.1);color:var(--yel)}
+/* Flecha para volver al principio, junto a la etiqueta de cada sección */
+#agendario .totop{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:33px;height:33px;margin:0 0 16px 8px;vertical-align:top;border-radius:50%;cursor:pointer;font-size:16px;font-weight:800;line-height:1;color:var(--ind);background:var(--ind-l);transition:background .15s,color .15s,transform .15s}
+#agendario .totop:hover,#agendario .totop:focus-visible{background:var(--ind);color:#fff;transform:translateY(-2px)}
+#agendario .dark .totop{background:rgba(255,255,255,.1);color:var(--yel)}
+#agendario .dark .totop:hover{background:var(--yel);color:var(--ink)}
 #agendario .dark .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
 #agendario .dark .card p{color:#c7cbf5}
 #agendario .lock{font-size:15px;display:flex;flex-direction:column;gap:12px;margin-top:22px}
@@ -147,18 +155,41 @@
 #agendario .tabs button{border:0;background:transparent;font:600 15px/1 inherit;font-family:inherit;padding:10px 18px;border-radius:10px;color:var(--mut);cursor:pointer}
 #agendario .tabs button.on{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(30,27,58,.1)}
 #agendario .gal-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:32px 0}
-#agendario .gal{display:grid;grid-template-columns:260px 1fr;gap:28px;align-items:start}
-#agendario .gal-list{display:flex;flex-direction:column;gap:6px}
-#agendario .gal-list button{all:unset;cursor:pointer;padding:14px 16px;border-radius:14px;border:1px solid transparent;font-size:15px}
+/* Galería, ordenador · web: la mitad de las opciones encima del portátil y la otra mitad debajo */
+#agendario .gal{display:flex;flex-direction:column;align-items:center;gap:22px}
+#agendario .gal-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;width:100%}
+#agendario .gal-list:empty{display:none}
+#agendario .gal-list button{all:unset;box-sizing:border-box;cursor:pointer;padding:12px 14px;border-radius:14px;border:1px solid transparent;font-size:15px;text-align:center;transition:background .2s,border-color .2s,box-shadow .2s}
+#agendario .gal-list button:hover{background:rgba(255,255,255,.6)}
 #agendario .gal-list button b{display:block;font-size:16px;color:var(--ink)}
-#agendario .gal-list button span{color:var(--mut);font-size:14px}
+#agendario .gal-list button span{display:block;color:var(--mut);font-size:13.5px;line-height:1.35;margin-top:2px}
 #agendario .gal-list button.on{background:#fff;border-color:var(--line);box-shadow:0 10px 30px -18px rgba(67,56,202,.4)}
-#agendario .stage{display:flex;justify-content:center;align-items:flex-start;min-height:520px}
+#agendario .gal-list button.on b{color:var(--ind)}
+#agendario .stage{display:flex;justify-content:center;align-items:center;width:100%}
+#agendario .gal.web .stage{max-width:960px}
 #agendario .stage .laptop{transform:none;width:100%}
 #agendario .stage .phone{position:relative;right:auto;bottom:auto;width:290px;transform:none}
 #agendario .stage .fade{animation:agl-in .35s ease}
-@keyframes agl-in{from{opacity:0;transform:translateY(8px)}}
-@media(max-width:900px){#agendario .gal{grid-template-columns:1fr}#agendario .gal-list{flex-direction:row;overflow-x:auto;padding-bottom:6px}#agendario .gal-list button{white-space:nowrap}#agendario .gal-list button span{display:none}#agendario .stage{min-height:0}}
+/* Galería, ordenador · app: el móvil en el centro y las opciones repartidas a izquierda y derecha, centradas en vertical */
+#agendario .gal.app{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:48px}
+#agendario .gal.app .stage{grid-column:2;grid-row:1}
+#agendario .gal.app .gal-top,#agendario .gal.app .gal-bot{grid-row:1;display:flex;flex-direction:column;gap:6px;width:auto;max-width:330px}
+#agendario .gal.app .gal-top{grid-column:1;justify-self:end}
+#agendario .gal.app .gal-bot{grid-column:3;justify-self:start}
+#agendario .gal.app .gal-list button{padding:12px 16px}
+#agendario .gal.app .gal-top button{text-align:right}
+#agendario .gal.app .gal-bot button{text-align:left}
+/* Galería, móvil: tira deslizable con los bordes difuminados cuando hay más opciones */
+@media(max-width:900px){
+ #agendario .gal,#agendario .gal.app{display:flex;flex-direction:column;gap:18px}
+ #agendario .gal .gal-bot{display:none}
+ #agendario .gal .gal-top,#agendario .gal.app .gal-top{display:flex;flex-direction:row;gap:6px;max-width:none;overflow-x:auto;padding-bottom:8px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+ #agendario .gal-list button,#agendario .gal.app .gal-list button{white-space:nowrap;flex-shrink:0;text-align:center;padding:10px 16px}
+ #agendario .gal-list button span{display:none}
+ #agendario .gal-top.fl{-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
+ #agendario .gal-top.fr{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
+ #agendario .gal-top.fl.fr{-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
+}
 
 /* Instalación */
 #agendario .install{background:#fff}
@@ -289,7 +320,7 @@
           Ver en GitHub
         </a>
       </div>
-      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.5.0</b> <span data-gh-date></span></div>
+      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.5.1</b> <span data-gh-date></span></div>
     </div>
     <div class="devices rv">
       <div class="laptop"><div class="screen"><span data-shot="hero_web"></span></div></div>
@@ -409,7 +440,6 @@
     </div>
     <div class="feat">
       <div class="card rv"><div class="ico">👤</div><h3>Fichas completas</h3><p>Foto y portada, varios teléfonos, emails, webs y direcciones geolocalizadas en el mapa.</p></div>
-      <div class="card rv"><div class="ico y">🎁</div><h3>Regalos</h3><p>Ideas con enlace y foto que pasan de pendiente a comprado y regalado. Al regalar, el día, una valoración con estrellas, una anotación y una foto. Y todo lo que te regalan, aunque sea de varias personas, también con foto y estrellas.</p></div>
       <div class="card rv"><div class="ico p">🎂</div><h3>Fechas y avisos</h3><p>Cumpleaños, aniversarios y un calendario que te avisa de los regalos pendientes.</p></div>
       <div class="card rv"><div class="ico g">📔</div><h3>Efemérides</h3><p>Tus propias fechas para recordar: el coche nuevo, un ascenso, un viaje… con foto y comentario.</p></div>
       <div class="card rv"><div class="ico">🔗</div><h3>Relaciones</h3><p>Padres, hijos, primos, cuñados… se crean en las dos fichas a la vez. Y la lista de trabajadores de cada empresa.</p></div>
@@ -455,7 +485,7 @@
       </div>
       <div class="rv"><div class="gphone"><div data-shot="app_regalos_ficha"></div></div></div>
     </div>
-    <p class="thanks">Gracias a <a href="https://emilcar.fm" target="_blank" rel="noopener">Emilcar.fm</a> y a <a href="https://danaus.app" target="_blank" rel="noopener">Danaus</a>, su app de regalos, de donde salió la idea.</p>
+    <p class="thanks">Mi reconocimiento a <a href="https://emilcar.fm" target="_blank" rel="noopener">Emilcar</a> y su <a href="https://danaus.app" target="_blank" rel="noopener">Danaus</a> por haber inspirado esta sección de regalos.</p>
   </div>
 </section>
 
@@ -477,9 +507,10 @@
         <button data-mode="oscuro" role="tab" aria-selected="false">🌙 Oscuro</button>
       </div>
     </div>
-    <div class="gal rv">
-      <div class="gal-list" data-gal-list></div>
+    <div class="gal web rv" data-gal>
+      <div class="gal-list gal-top" data-gal-top></div>
       <div class="stage" data-gal-stage></div>
+      <div class="gal-list gal-bot" data-gal-bot></div>
     </div>
   </div>
 </section>
@@ -632,13 +663,13 @@ EOF</div>
     <div class="road rv">
       <!-- Hoja de ruta: «Hecho» = lo de las últimas versiones; «En marcha» e «Ideas» son propuestas, edítalas a tu gusto -->
       <div class="col done"><h3>✅ Hecho · 1.5</h3>
-        <div class="item">Regalos en la ficha con tres pestañas: ideas, regalados y recibidos</div>
-        <div class="item">Valoración con estrellas, anotación y foto de cada regalo hecho y recibido</div>
+        <div class="item">Regalos en la ficha con tres pestañas: ideas, regalados y recibidos, con estrellas, anotación y foto</div>
         <div class="item">Nueva pestaña «Regalados» con todo lo que has regalado</div>
-        <div class="item">Favoritos con una estrella, que se marcan con un toque desde la lista, para filtrarlos junto al buscador (también en Gmail y en el móvil)</div>
-        <div class="item">Etiquetas renovadas: se ordenan arrastrando, 20 colores y las cuentas de Gmail en un desplegable</div>
-        <div class="item">App con banda de navegación fija, iconos más grandes y título grande en cada sección</div>
-        <div class="item">Aviso de duplicados encima del menú, estés donde estés</div>
+        <div class="item">App con el nombre de cada sección siempre en la cabecera y pestañas en una banda fija</div>
+        <div class="item">Ficha más clara: teléfonos, emails y otros datos en pestañas dentro de «Contacto»</div>
+        <div class="item">Señal de recordatorio junto al nombre, en la lista y en la ficha</div>
+        <div class="item">Buscador de contactos siempre a la vista</div>
+        <div class="item">Favoritos con una estrella, también en Gmail y en el móvil</div>
         <button type="button" class="btn btn-g road-all" data-changelog-open>📜 Ver todos los cambios</button>
       </div>
       <div class="col now"><h3>🚧 En marcha</h3>
@@ -701,8 +732,12 @@ window.AGENDARIO_CONFIG = {
   // Carpeta de la biblioteca de medios donde subiste las .webp y el manual (acaba en /)
   shotsBase: "https://dagarin.es/wp-content/uploads/2026/11/",
   ext: ".webp",
+  // Las capturas de la 1.5.1 llevan este sufijo en el nombre (web_lista-v151.webp…) para que WordPress no las
+  // renombre al subirlas junto a las antiguas. Las de «noSuffix» siguen siendo las de antes.
+  suffix: "-v151",
+  noSuffix: ["install_registro", "install_importar"],
   favicon: "",                // vacío = icono de Agendario incrustado; o URL de un PNG subido (p. ej. …/agendario-icono.png)
-  manual: "",                 // vacío = shotsBase + "Agendario-Manual.pdf"
+  manual: "https://dagarin.es/wp-content/uploads/2026/11/Agendario-Manual-1.5.1.pdf", // vacío = shotsBase + "Agendario-Manual.pdf"
   // URL sueltas, solo si WordPress renombró alguna imagen (tienen prioridad)
   shots: {
     // Portada
@@ -733,7 +768,8 @@ window.AGENDARIO_CONFIG = {
     // Sección Regalos
     app_regalos_ficha: "",
     app_etiquetas: "", app_etiquetas_oscuro: "",
-    app_llamadas: "", app_llamadas_oscuro: ""
+    app_llamadas: "", app_llamadas_oscuro: "",
+    app_copias: "", app_copias_oscuro: ""
   }
 };
 
@@ -757,7 +793,8 @@ window.AGENDARIO_CONFIG = {
 
   /* Capturas: imagen si hay URL; si no, un recuadro con el nombre que falta */
   function shot(key, alt) {
-    var url = C.shots[key] || (C.shotsBase && KEYS.indexOf(key) >= 0 ? C.shotsBase + key + (C.ext || ".webp") : "");
+    var suf = C.suffix && (C.noSuffix || []).indexOf(key) < 0 ? C.suffix : "";
+    var url = C.shots[key] || (C.shotsBase && KEYS.indexOf(key) >= 0 ? C.shotsBase + key + suf + (C.ext || ".webp") : "");
     if (url) return '<img class="shot" loading="lazy" src="' + url + '" alt="' + (alt || "") + '">';
     return '<div class="ph">' + key + '</div>';
   }
@@ -818,7 +855,7 @@ window.AGENDARIO_CONFIG = {
       ["regalos_recibidos", "Recibidos", "Lo que te han regalado"],
       ["etiquetas", "Etiquetas", "Arrastrar, colores y Gmail"],
       ["duplicados", "Duplicados", "Combinar con vista previa"],
-      ["copias", "Copias", "Varias copias cifradas"]
+      ["copias", "Backups", "Tus contactos siempre a salvo"]
     ],
     app: [
       ["lista", "Contactos", "Buscador, favoritos y aviso de duplicados"],
@@ -829,17 +866,41 @@ window.AGENDARIO_CONFIG = {
       ["regalados", "Regalados", "Lo regalado, con estrellas y foto"],
       ["regalos_recibidos", "Recibidos", "Lo que te han regalado, de uno o de varios"],
       ["etiquetas", "Etiquetas", "Mantén pulsado y arrastra"],
-      ["llamadas", "Llamadas", "Registro solo para ti"]
+      ["llamadas", "Llamadas", "Registro solo para ti"],
+      ["copias", "Backups", "Tus contactos siempre a salvo"]
     ]
   };
   var state = { dev: "web", mode: "claro", i: 0 };
-  var list = $("[data-gal-list]"), stage = $("[data-gal-stage]");
+  var gal = $("[data-gal]"), top = $("[data-gal-top]"), bot = $("[data-gal-bot]"), stage = $("[data-gal-stage]");
+  var narrow = window.matchMedia("(max-width:900px)"), built = "";
+  function btn(it, i) {
+    return '<button type="button" data-i="' + i + '"><b>' + it[1] + '</b><span>' + it[2] + "</span></button>";
+  }
+  /* Bordes difuminados en el móvil: solo por el lado donde quedan opciones ocultas */
+  function edges() {
+    var max = top.scrollWidth - top.clientWidth;
+    top.classList.toggle("fl", narrow.matches && top.scrollLeft > 4);
+    top.classList.toggle("fr", narrow.matches && top.scrollLeft < max - 4);
+  }
+  top.addEventListener("scroll", edges, { passive: true });
   function render() {
     var items = GAL[state.dev];
     if (state.i >= items.length) state.i = 0;
-    list.innerHTML = items.map(function (it, i) {
-      return '<button type="button" class="' + (i === state.i ? "on" : "") + '" data-i="' + i + '"><b>' + it[1] + '</b><span>' + it[2] + "</span></button>";
-    }).join("");
+    // Pantalla grande: mitad y mitad (web: arriba y abajo; app: izquierda y derecha). Móvil: todas en una tira
+    var split = !narrow.matches;
+    var sig = state.dev + (split ? "s" : "");
+    if (built !== sig) {
+      var h = split ? Math.ceil(items.length / 2) : items.length;
+      top.innerHTML = items.slice(0, h).map(function (it, i) { return btn(it, i); }).join("");
+      bot.innerHTML = items.slice(h).map(function (it, i) { return btn(it, i + h); }).join("");
+      gal.classList.toggle("web", state.dev === "web");
+      gal.classList.toggle("app", state.dev !== "web");
+      built = sig;
+    }
+    $$("button[data-i]", gal).forEach(function (b) { b.classList.toggle("on", +b.getAttribute("data-i") === state.i); });
+    var on = $("button.on", top);
+    if (narrow.matches && on) { var r = on.getBoundingClientRect(), t = top.getBoundingClientRect(); top.scrollLeft += (r.left + r.width / 2) - (t.left + t.width / 2); }
+    edges();
     var it = items[state.i];
     var key = state.dev + "_" + it[0] + (state.mode === "oscuro" ? "_oscuro" : "");
     var inner = shot(key, it[1] + " · " + it[2]);
@@ -847,7 +908,9 @@ window.AGENDARIO_CONFIG = {
       ? '<div class="laptop fade"><div class="screen">' + inner + "</div></div>"
       : '<div class="phone fade"><div class="screen">' + inner + "</div></div>";
   }
-  list.addEventListener("click", function (e) {
+  if (narrow.addEventListener) narrow.addEventListener("change", render); else if (narrow.addListener) narrow.addListener(render);
+  window.addEventListener("resize", edges);
+  gal.addEventListener("click", function (e) {
     var b = e.target.closest("button[data-i]"); if (!b) return;
     state.i = +b.getAttribute("data-i"); render();
   });
@@ -930,11 +993,38 @@ window.AGENDARIO_CONFIG = {
     }, { rootMargin: "-45% 0px -50% 0px" });
     ["porque", "funciones", "regalos", "capturas", "instalar", "android", "preguntas"].forEach(function (id) { var s = document.getElementById(id); if (s) spy.observe(s); });
   } else { $$(".rv").forEach(function (el) { el.classList.add("in"); }); }
+  /* Flecha «volver al principio» junto a la etiqueta de cada sección (menos la portada) */
+  $$("section .eyebrow").forEach(function (eb) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "totop"; b.textContent = "↑";
+    b.title = "Volver al principio"; b.setAttribute("aria-label", "Volver al principio de la página");
+    b.addEventListener("click", function () { window.scrollTo({ top: 0, behavior: "smooth" }); });
+    eb.insertAdjacentElement("afterend", b);
+  });
   var nav = $(".nav");
   window.addEventListener("scroll", function () { nav.classList.toggle("scrolled", window.scrollY > 10); }, { passive: true });
 })();
 </script>
-<script>(function(){var n=document.querySelector("#agendario .nav"),b=document.querySelector("[data-nav-toggle]");if(!n||!b)return;
-b.addEventListener("click",function(){var o=n.classList.toggle("open");b.setAttribute("aria-expanded",o);b.textContent=o?"✕":"☰"});
-n.querySelectorAll(".nav-links a").forEach(function(a){a.addEventListener("click",function(){n.classList.remove("open");b.setAttribute("aria-expanded","false");b.textContent="☰"})})})();</script>
+<script>
+/* Menú: todas las opciones si caben; si no, solo «Instalar» y la hamburguesa */
+(function () {
+  var n = document.querySelector("#agendario .nav"), b = document.querySelector("[data-nav-toggle]");
+  if (!n || !b) return;
+  var w = n.querySelector(".wrap"), links = n.querySelector(".nav-links");
+  function close() { n.classList.remove("open"); b.setAttribute("aria-expanded", "false"); b.textContent = "☰"; }
+  function fit() {
+    var wasOpen = n.classList.contains("open");
+    n.classList.remove("compact", "open");
+    var full = w.scrollWidth > w.clientWidth + 1 || links.scrollWidth > links.clientWidth + 1;
+    n.classList.toggle("compact", full);
+    if (full && wasOpen) n.classList.add("open"); else if (!full) close();
+  }
+  b.addEventListener("click", function () { var o = n.classList.toggle("open"); b.setAttribute("aria-expanded", o); b.textContent = o ? "✕" : "☰"; });
+  links.querySelectorAll("a").forEach(function (a) { a.addEventListener("click", close); });
+  if ("ResizeObserver" in window) new ResizeObserver(fit).observe(w); else window.addEventListener("resize", fit);
+  window.addEventListener("load", fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  fit();
+})();
+</script>
 </div>

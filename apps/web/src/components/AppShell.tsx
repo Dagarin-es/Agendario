@@ -22,6 +22,7 @@ import { ChangelogModal } from "./Changelog";
 import { ContactListPage } from "../pages/ContactList";
 import { OfflineBanner } from "./OfflineBanner";
 import { sortOptions, useSortPref } from "../lib/sort";
+import { giftSortOptions, useGiftSort } from "../lib/giftSort";
 
 // ---------- Iconos (24 px, trazo, estilo Material Symbols) ----------
 const I = ({ d, filled, className = "h-6 w-6" }: { d: ReactNode; filled?: boolean; className?: string }) => (
@@ -156,7 +157,7 @@ export function AppShell() {
   // La barra superior cambia de tono al desplazarse (como en Material 3)
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 40);
+    const on = () => { const v = window.scrollY > 40; setScrolled(v); document.documentElement.classList.toggle("hdr-scrolled", v); };
     window.addEventListener("scroll", on, { passive: true });
     return () => window.removeEventListener("scroll", on);
   }, []);
@@ -224,12 +225,13 @@ export function AppShell() {
             <span className="min-w-0 truncate"><span aria-hidden="true">{menuPage[1]}</span> {menuPage[2]}</span>
           </span>
         ) : isTab && !wide && tabTitle ? (
-          /* Pestañas: el título grande va bajo la barra; al desplazar, aparece pequeño aquí */
-          <span className={`min-w-0 flex-1 truncate text-[20px] font-medium tracking-tight text-indigo-950 transition-opacity duration-200 ${scrolled ? "opacity-100" : "opacity-0"}`} aria-hidden={!scrolled}>{tabTitle}</span>
+          /* Pestañas: el nombre de la sección, siempre en la cabecera junto al icono */
+          <span className="min-w-0 flex-1 truncate text-[20px] font-medium tracking-tight text-indigo-950">{tabTitle}</span>
         ) : (
           <span className="min-w-0 flex-1 truncate text-[20px] font-medium tracking-tight text-indigo-950">{APP_NAME}</span>
         )}
         {!wide && location.pathname === "/" && <SortMenu />}
+        {!wide && location.pathname === "/gifts" && !new URLSearchParams(location.search).get("vista") && <GiftSortMenu />}
         <h1 className="sr-only">{title}</h1>
       </header>
 
@@ -257,7 +259,6 @@ export function AppShell() {
         </main>
       ) : (
         <main className={`flex-1 px-4 pt-1 ${wide ? "pb-8" : showDupBand ? "pb-[calc(150px+var(--sab))]" : "pb-[calc(104px+var(--sab))]"}`}>
-          {isTab && !wide && tabTitle && <h2 className="m3-large-title" aria-hidden="true">{tabTitle}</h2>}
           <Outlet />
         </main>
       )}
@@ -305,18 +306,28 @@ export function AppShell() {
 /** «Ordenar por» en la cabecera (pestaña Contactos en el móvil). */
 function SortMenu() {
   const [sort, setSort] = useSortPref();
+  return <HeaderSortMenu options={sortOptions} value={sort} onChange={setSort} />;
+}
+
+/** «Ordenar por» en la cabecera (pestaña Regalos · Para regalar, en el móvil). */
+function GiftSortMenu() {
+  const [sort, setSort] = useGiftSort();
+  return <HeaderSortMenu options={giftSortOptions} value={sort} onChange={setSort} />;
+}
+
+function HeaderSortMenu<T extends string>({ options, value: sort, onChange: setSort }: { options: readonly { id: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   const [open, setOpen] = useState(false);
-  const label = sortOptions.find((o) => o.id === sort)?.label ?? "";
+  const label = options.find((o) => o.id === sort)?.label ?? "";
   return (
-    <div className="relative mr-1">
-      <button className="flex max-w-[14rem] items-center gap-1 rounded-full px-3 py-1.5 text-sm text-slate-600 active:bg-indigo-100" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open}>
+    <div className="relative mr-1 translate-y-[2px]">
+      <button className="flex max-w-[16.5rem] items-center gap-1 rounded-full px-3 py-1.5 text-sm text-slate-600 active:bg-indigo-100" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open}>
         <span className="truncate"><span className="text-slate-400">Ordenar por</span> <span className="font-medium text-slate-800">{label}</span></span>
         <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="currentColor" aria-hidden="true"><path d="M5.2 7.2a.75.75 0 0 1 1.06 0L10 10.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L5.2 8.26a.75.75 0 0 1 0-1.06Z" /></svg>
       </button>
       {open && <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />}
       {open && (
         <div ref={keepInView} role="menu" className="m3-sheet absolute right-0 top-full z-40 mt-1 w-56 overflow-hidden rounded-2xl py-1 shadow-lg ring-1 ring-black/5">
-          {sortOptions.map((o) => (
+          {options.map((o) => (
             <button key={o.id} role="menuitemradio" aria-checked={sort === o.id} className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm ${sort === o.id ? "font-semibold text-indigo-800" : "text-slate-700"} active:bg-indigo-100`} onClick={() => { setSort(o.id); setOpen(false); }}>
               {o.label} {sort === o.id && <span aria-hidden="true">✓</span>}
             </button>

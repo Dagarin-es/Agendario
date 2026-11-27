@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Chevron } from "./Chevron";
 import { useState, type FormEvent } from "react";
 import {
   occasionLabels,
@@ -460,7 +461,7 @@ export function GiftStatusButton({ idea, onChanged, className = "" }: { idea: Gi
         aria-haspopup="dialog"
         title="Cambiar el estado"
       >
-        {chip.label} <span aria-hidden="true" className="opacity-60">▾</span>
+        {chip.label} <Chevron className="h-3.5 w-3.5 opacity-70" />
       </button>
       {open && (
         <Modal title={idea.title} onClose={close}>
