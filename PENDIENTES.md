@@ -6,7 +6,7 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ### Fechas y Regalos (móvil)
 - **Fechas: selector «Eventos / Efemérides» siempre arriba en el móvil** (fijo al hacer scroll, con el fondo de la app, como `.list-sticky`). Está en `pages/Upcoming.tsx`.
-- **Emoji en cada opción también en el móvil**: ya existen 🎂 Eventos y 📔 Efemérides, pero en pantallas pequeñas se ocultan (`hidden sm:inline`); mostrarlos siempre.
+- **Emoji en cada opción también en el móvil**: cambiar los actuales (🎂/📔) por **🎉 Eventos** y **📜 Efemérides** (elegidos por Daniel) y mostrarlos siempre: ahora en pantallas pequeñas se ocultan (`hidden sm:inline`). Cambiar también el 📔 de la tarjeta de efeméride en Eventos (`{e.emoji} Efeméride` usa el emoji de cada una: dejarlo) y revisar si hay más sitios con 📔 como icono de la sección.
 - **Regalos: botones «🎁 Para regalar» y «🎀 Recibidos» siempre arriba** en el móvil (fijos al hacer scroll). Están en `pages/Gifts.tsx`.
 - **Nueva pestaña «Regalados»** en Regalos, junto a las otras dos: lo que Daniel ya ha regalado (ideas con estado `given`): a quién, qué, día del regalo (`givenAt`) y evento (`eventDate`/etiqueta), de lo más reciente a lo más antiguo, con buscador como en Recibidos. Los datos ya existen: no hace falta migración, como mucho una ruta para listarlos.
 
