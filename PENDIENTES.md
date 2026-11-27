@@ -4,7 +4,7 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Para la próxima versión
 
-(Nada todavía: lo de la 1.5.1 ya está hecho.)
+- **Landing (ya entregada a Daniel, 28-11-2026)**: en el móvil, debajo de la captura de la galería sale el texto corto de la opción elegida (`.gal-cap`, solo ≤900 px) y se define la animación `agl-in` que faltaba. La versión buena está en el proyecto de Claude (`web/agendario-landing.html`): al generar, copiarla a `docs/web/agendario-landing.html`.
 
 ## Revisión en Google Play (cuando Daniel diga)
 
