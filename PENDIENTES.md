@@ -23,6 +23,20 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
   - **🎀 Recibidos**: los regalos recibidos con todos sus datos (foto, fecha, de quién, valoración, notas). **Quitar de la ficha el recuadro actual de regalos recibidos** (`GiftsReceived` en `pages/ContactDetail.tsx`): pasa a esta pestaña.
 - La pestaña «Regalados» de la página Regalos (ver arriba) muestra los mismos datos (foto, valoración, anotación).
 
+- **Maquetas aprobadas** por Daniel (27-11-2026) en `design/maquetas/regalos/`: `ficha.png` (pestaña Regalados), `entregar.png` (marcar como regalado), `recibidos.png` (pestaña Recibidos + nueva idea con imagen). Hacerlo así.
+
+### Acerca de
+- En «Acerca de» (`AboutModal`), un **agradecimiento a Emilcar.fm** (enlace a https://emilcar.fm) por la idea de la gestión de regalos.
+
+### Web dagarin.es/agendario
+- **Nueva sección «🎁 Regalos»** (aprobada en `design/maquetas/regalos/landing-propuesta.html`, capturas `web_escritorio.png` y `web_movil_menu.png`): entre Funciones y Capturas, `id="regalos"`. Texto: «Se te ocurrió en mayo. En diciembre, ni rastro.», cuatro pasos (apúntala al momento · cómprala con tiempo · regálala y valórala · y lo que te regalan), «Todo en la ficha de cada persona» con la captura real de la ficha (pestaña Regalados; nueva imagen `app_regalos_ficha` + `_oscuro` en `AGENDARIO_CONFIG.shots`) y el agradecimiento a Emilcar.fm al pie.
+- **Opción «Regalos» en el menú** de la web.
+- **Menú en el móvil**: ahora por debajo de 860 px se oculta y no hay forma de verlo. Añadir botón ☰ que despliega la lista (fondo blanco sólido, se cierra al pulsar un enlace o ✕).
+- **Rehacer en la web** lo que cambia de regalos: textos de Funciones/Regalos, capturas de la galería (`web_regalos`, `app_regalos`, recibidos) con las tres pestañas, valoración y fotos.
+
+### Manual
+- **Rehacer en el manual** la parte de regalos (ficha con tres pestañas, valoración, anotación, fotos de recibidos, imagen al crear, pestaña Regalados) y los selectores fijos de Fechas y Regalos: capítulo nuevo de la versión con capturas.
+
 ## Revisión en Google Play (cuando Daniel diga)
 
 - **Organizar una revisión en Google Play (prueba interna)**, para instalar y actualizar la app desde Play Store sin el aviso de «app no fiable». Se intenta **una sola vez**: si Google la rechaza, no se insiste y se sigue con la APK (el registro de desarrollador ya cubre la instalación en 2027). Más adelante, cuando esté más terminada, se valorará una **versión Lite sin llamadas** para Play (de momento no).
