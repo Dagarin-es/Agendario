@@ -1,5 +1,17 @@
 # Historial de cambios
 
+## 1.5.0 — regalos con estrellas, fotos y tres pestañas
+- **Recuadro «🎁 Regalos» en la ficha**, con tres pestañas: **💡 Ideas** (lo pendiente y lo comprado), **✅ Regalados** (lo que ya le has regalado, en grande: foto, ocasión, fecha, valoración y anotación) y **🎀 Recibidos** (lo que te ha regalado, con todos sus datos). El recuadro suelto de regalos recibidos desaparece de la ficha: ahora está en su pestaña.
+- **Al marcar un regalo como 🎁 Regalado**, además del día puedes ponerle una **valoración de 0 a 5 estrellas, con medias** (toca la mitad izquierda de una estrella para media), una **anotación** (¿le gustó?, ¿acertaste?) y una **foto**. Todo se puede cambiar después con el lápiz ✏️.
+- **Regalos recibidos con foto y valoración**: también llevan estrellas y una foto del regalo, en la ficha y en la pestaña Recibidos.
+- **Imagen al crear**: al añadir una idea (o un regalo recibido) ya puedes elegir la imagen en el mismo formulario. Si pones enlace y no eliges imagen, se sigue sacando de la web.
+- **Regalos, nueva pestaña «✅ Regalados»**: todo lo que has regalado, de lo más reciente a lo más antiguo, con buscador.
+- **Selectores siempre arriba**: en **Fechas** (🎉 Eventos · 📜 Efemérides, ahora con su emoji también en el móvil) y en **Regalos** (Para regalar · Regalados · Recibidos), los botones se quedan fijos arriba al desplazarte.
+- **Acerca de**: agradecimiento a Emilcar.fm y a Danaus, su app de regalos, de donde salió la idea de la gestión de regalos.
+- **Web dagarin.es/agendario**: nueva sección **«Regalos»** (también en el menú), **menú ☰ en el móvil** (antes no se veía), capturas nuevas de regalos y la hoja de ruta al día con **Agendario Lite**.
+- Manual: capítulo 15 con las novedades.
+- La APK anterior sigue funcionando con este servidor; las tres pestañas, las estrellas y las fotos llegan a la app con la APK nueva (en la web, al actualizar el servidor).
+
 ## 1.4.1 — favoritos desde la lista y web al día
 - **Favoritos desde la lista**: cada contacto lleva al final de su fila una **estrella**, rellena si es favorito y vacía si no. Tócala para marcarlo o quitarlo **al momento, sin abrir la ficha** (en la web y en la app). Con el filtro ★ del buscador activado, al quitar un favorito desaparece de la lista. Sin conexión, el cambio se guarda y se envía al volver.
 - **Web dagarin.es/agendario**: capturas nuevas con datos de ejemplo (Regalos con sus pestañas y el estado de cada idea, Etiquetas, favoritos y el menú nuevo de la app), una entrada nueva **«Recibidos»** en la galería y textos al día.

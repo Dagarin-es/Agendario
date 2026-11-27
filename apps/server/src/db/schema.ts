@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import {
+import { smallint,
   type AnyPgColumn,
   boolean,
   check,
@@ -258,6 +258,10 @@ export const giftIdeas = pgTable(
     eventDate: date("event_date"),
     /** Miniatura (clave en photos/): de la web del enlace o subida a mano */
     imageKey: text("image_key"),
+    /** Valoración al regalarlo: 0–10 medias estrellas (5 estrellas con medias). Nulo = sin valorar */
+    rating: smallint("rating"),
+    /** Anotación al regalarlo (cómo fue, si gustó…) */
+    givenNote: text("given_note").notNull().default(""),
     ...timestamps,
   },
   (t) => [index("gift_ideas_contact_user_idx").on(t.contactId, t.userId)],
@@ -276,6 +280,10 @@ export const giftsReceived = pgTable(
     receivedAt: date("received_at"),
     occasion: occasionEnum("occasion"),
     notes: text("notes").notNull().default(""),
+    /** Valoración: 0–10 medias estrellas. Nulo = sin valorar */
+    rating: smallint("rating"),
+    /** Foto del regalo (clave en photos/) */
+    imageKey: text("image_key"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("gifts_received_contact_user_idx").on(t.contactId, t.userId)],

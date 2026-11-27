@@ -7,7 +7,7 @@ import { giftIdeaInputSchema, giftIdeaPatchSchema, giftReceivedInputSchema, gift
 import { db, schema } from "../db/index.js";
 import { getAccess } from "../lib/access.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
-import { giftOverview, occasionsFor } from "../lib/events.js";
+import { giftOverview, givenGifts, occasionsFor } from "../lib/events.js";
 import { imageForLink, linkPreview, saveImageFromUrl } from "../lib/linkpreview.js";
 import { checkContacts, getReceived, listReceived, setGiftContacts } from "../lib/giftsReceived.js";
 import { deletePhoto, photoType, readPhoto, storeUpload } from "../lib/photos.js";
@@ -21,11 +21,11 @@ const idParam = zValidator("param", z.object({ id: z.string().uuid() }));
  * para guardar tus ideas; nadie más (ni el propietario del contacto) las ve.
  */
 /** Mantiene coherentes estado, «regalado» y evento. */
-function normalizeGift<T extends { status?: string; given?: boolean; givenAt?: string | null; occasion?: unknown; eventKey?: string | null; eventLabel?: string; eventDate?: string | null }>(b: T): T {
+function normalizeGift<T extends { status?: string; given?: boolean; givenAt?: string | null; occasion?: unknown; eventKey?: string | null; eventLabel?: string; eventDate?: string | null; rating?: number | null; givenNote?: string }>(b: T): T {
   const out = { ...b };
   if (out.status === undefined && out.given !== undefined) out.status = out.given ? "given" : "idea"; // clientes antiguos
   if (out.status !== undefined) out.given = out.status === "given";
-  if (out.status === "idea") Object.assign(out, { givenAt: null, occasion: null, eventKey: null, eventLabel: "", eventDate: null });
+  if (out.status === "idea") Object.assign(out, { givenAt: null, occasion: null, eventKey: null, eventLabel: "", eventDate: null, rating: null, givenNote: "" });
   // Comprado (o cliente antiguo sin eventDate): el evento es el de la fecha elegida
   else if (out.status !== undefined && out.eventDate === undefined && out.givenAt !== undefined) out.eventDate = out.givenAt;
   return out;
@@ -47,6 +47,8 @@ export const giftRoutes = new Hono<AppEnv>()
 
   // Pestaña Regalos: contactos con fechas de regalo
   .get("/gifts/overview", async (c) => c.json(await giftOverview(c.get("user").id)))
+  // Pestaña Regalos → Regalados: todo lo ya regalado, de lo más reciente a lo más antiguo
+  .get("/gifts/given", async (c) => c.json(await givenGifts(c.get("user").id)))
   .use("/gift-ideas/*", requireAuth)
   .use("/gifts-received", requireAuth)
   .use("/gifts-received/*", requireAuth)
@@ -173,6 +175,37 @@ export const giftRoutes = new Hono<AppEnv>()
   .delete("/gifts-received/:id", idParam, async (c) => {
     const user = c.get("user");
     const { id } = c.req.valid("param");
-    await db.delete(gr).where(and(eq(gr.id, id), eq(gr.userId, user.id)));
+    const [row] = await db.delete(gr).where(and(eq(gr.id, id), eq(gr.userId, user.id))).returning({ imageKey: gr.imageKey });
+    if (row?.imageKey) await deletePhoto(row.imageKey);
+    return c.body(null, 204);
+  })
+
+  // ----- Foto del regalo recibido -----
+  .get("/gifts-received/:id/image", idParam, zValidator("query", z.object({ size: z.enum(["full", "thumb"]).default("thumb") })), async (c) => {
+    const user = c.get("user");
+    const [row] = await db.select({ imageKey: gr.imageKey }).from(gr).where(and(eq(gr.id, c.req.valid("param").id), eq(gr.userId, user.id)));
+    if (!row?.imageKey) throw new HTTPException(404, { message: "Sin foto" });
+    const data = await readPhoto(row.imageKey, c.req.valid("query").size);
+    return c.body(new Uint8Array(data), 200, { "Content-Type": photoType(row.imageKey), "Cache-Control": "private, max-age=604800", ETag: `"${row.imageKey}"` });
+  })
+  // Subir la foto (multipart «photo»)
+  .put("/gifts-received/:id/image", idParam, async (c) => {
+    const user = c.get("user");
+    const { id } = c.req.valid("param");
+    const [old] = await db.select({ imageKey: gr.imageKey }).from(gr).where(and(eq(gr.id, id), eq(gr.userId, user.id)));
+    if (!old) throw new HTTPException(404, { message: "Regalo no encontrado" });
+    if (!(c.req.header("content-type") ?? "").includes("multipart")) throw new HTTPException(400, { message: "Falta la foto" });
+    const key = await storeUpload(c);
+    await db.update(gr).set({ imageKey: key }).where(eq(gr.id, id));
+    if (old.imageKey) await deletePhoto(old.imageKey);
+    return c.json(await getReceived(user.id, id));
+  })
+  .delete("/gifts-received/:id/image", idParam, async (c) => {
+    const user = c.get("user");
+    const { id } = c.req.valid("param");
+    const [old] = await db.select({ imageKey: gr.imageKey }).from(gr).where(and(eq(gr.id, id), eq(gr.userId, user.id)));
+    if (!old) throw new HTTPException(404, { message: "Regalo no encontrado" });
+    await db.update(gr).set({ imageKey: null }).where(eq(gr.id, id));
+    if (old.imageKey) await deletePhoto(old.imageKey);
     return c.body(null, 204);
   });

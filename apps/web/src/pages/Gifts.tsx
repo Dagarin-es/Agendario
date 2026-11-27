@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import type { GiftIdea, GiftOverviewItem } from "@agendario/shared";
+import type { GiftIdea, GiftOverviewItem, GivenGift } from "@agendario/shared";
 import { Avatar } from "../components/Avatar";
 import { Modal } from "../components/Dialogs";
-import { GiftEditDialog, GiftStatusButton, GiftThumb, QuickIdeaForm } from "../components/Gifts";
+import { GiftEditDialog, GiftStatusButton, GiftThumb, GivenEditDialog, QuickIdeaForm } from "../components/Gifts";
+import { givenImage, GivenGiftRow } from "../components/GiftExtras";
 import { ReceivedGiftsList } from "../components/GiftsReceived";
 import { api } from "../lib/api";
 import { syncNativeReminders } from "../lib/native";
@@ -59,31 +60,34 @@ function Card({ it, onAdd, onEdit, onChanged }: { it: GiftOverviewItem; onAdd: (
   );
 }
 
-/** Regalos: «Para regalar» (fechas e ideas) y «Recibidos» (lo que te han regalado). */
+/** Regalos: «Para regalar» (fechas e ideas), «Regalados» (lo ya regalado) y «Recibidos» (lo que te han regalado). */
 export function GiftsPage() {
   const [params, setParams] = useSearchParams();
-  const view = params.get("vista") === "recibidos" ? "recibidos" : "regalar";
+  const v = params.get("vista");
+  const view = v === "recibidos" || v === "regalados" ? v : "regalar";
   const tabs = [
     { id: "regalar", label: "🎁 Para regalar" },
+    { id: "regalados", label: "✅ Regalados" },
     { id: "recibidos", label: "🎀 Recibidos" },
   ] as const;
   return (
     <div className="space-y-3">
       <h1 className="sr-only">Regalos</h1>
-      <nav className="flex gap-1.5" role="tablist" aria-label="Regalos">
+      {/* Siempre arriba al desplazar */}
+      <nav className="list-sticky sticky z-[5] -mx-4 -mt-2 flex gap-1.5 bg-slate-50 px-4 py-2" style={{ top: "var(--header-h, 0px)" }} role="tablist" aria-label="Regalos">
         {tabs.map((t) => (
           <button
             key={t.id}
             role="tab"
             aria-selected={view === t.id}
             onClick={() => setParams(t.id === "regalar" ? {} : { vista: t.id }, { replace: true })}
-            className={`flex-1 rounded-full px-3.5 py-2 text-sm font-medium transition sm:flex-none ${view === t.id ? "bg-indigo-700 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={`flex-1 whitespace-nowrap rounded-full px-2 py-2 text-sm font-medium transition sm:flex-none sm:px-3.5 ${view === t.id ? "bg-indigo-700 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
           >
             {t.label}
           </button>
         ))}
       </nav>
-      {view === "recibidos" ? <ReceivedGiftsList /> : <ToGive />}
+      {view === "recibidos" ? <ReceivedGiftsList /> : view === "regalados" ? <GivenList /> : <ToGive />}
     </div>
   );
 }
@@ -102,7 +106,7 @@ function ToGive() {
     return l;
   }, [data, sort]);
   const changed = (g: GiftIdea) => {
-    for (const k of [["gifts-overview"], ["contact", g.contactId], ["upcoming"], ["pending-gifts"]]) qc.invalidateQueries({ queryKey: k });
+    for (const k of [["gifts-overview"], ["gifts-given"], ["contact", g.contactId], ["upcoming"], ["pending-gifts"]]) qc.invalidateQueries({ queryKey: k });
     void syncNativeReminders();
   };
   const pick = (s: Sort) => { setSort(s); try { localStorage.setItem("gifts-sort", s); } catch { /* nada */ } };
@@ -134,6 +138,56 @@ function ToGive() {
       {adding && (
         <Modal title={`Nueva idea para ${adding.contactName}`} onClose={() => setAdding(null)}>
           <QuickIdeaForm contactId={adding.contactId} onDone={() => setAdding(null)} onCancel={() => setAdding(null)} />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/** «Regalados»: todo lo que ya has regalado, de lo más reciente a lo más antiguo, con buscador. */
+function GivenList() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({ queryKey: ["gifts-given"], queryFn: () => api.get<GivenGift[]>("/gifts/given") });
+  const [q, setQ] = useState("");
+  const [editing, setEditing] = useState<GivenGift | null>(null);
+  const [viewing, setViewing] = useState<GivenGift | null>(null);
+  const norm = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  const list = (data ?? []).filter((g) => {
+    if (!q.trim()) return true;
+    const hay = norm([g.title, g.contactName, g.eventLabel, g.givenNote, g.notes].join(" "));
+    return norm(q).split(/\s+/).every((w) => hay.includes(w));
+  });
+  const saved = (g: GiftIdea) => {
+    for (const k of [["gifts-given"], ["gifts-overview"], ["contact", g.contactId], ["upcoming"], ["pending-gifts"]]) qc.invalidateQueries({ queryKey: k });
+    void syncNativeReminders();
+  };
+  return (
+    <div className="space-y-3">
+      <input className="input" type="search" placeholder="Buscar regalo, persona u ocasión…" value={q} onChange={(e) => setQ(e.target.value)} />
+      {isLoading && <p className="text-slate-500">Cargando…</p>}
+      {data && data.length === 0 && <div className="card text-sm text-slate-500">Todavía no has marcado ningún regalo como 🎁 Regalado. Cuando lo hagas, aparecerá aquí con su fecha, foto y valoración.</div>}
+      {data && data.length > 0 && list.length === 0 && <p className="text-sm text-slate-500">Nada coincide con la búsqueda.</p>}
+      <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+        {list.map((g) => (
+          <li key={g.id} className="card !p-3">
+            <GivenGiftRow
+              g={g}
+              onPhoto={g.imageKey ? () => setViewing(g) : () => setEditing(g)}
+              extra={
+                <Link to={`/contacts/${g.contactId}`} className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-indigo-700 hover:underline">
+                  <Avatar id={g.contactId} name={g.contactName} hasPhoto={g.hasPhoto} version={g.photoVersion} size={20} />
+                  {g.contactName}
+                </Link>
+              }
+              actions={<button className="btn-ghost -mr-1 -mt-1 shrink-0 px-2 py-1 text-sm" onClick={() => setEditing(g)} aria-label={`Editar ${g.title}`} title="Editar">✏️</button>}
+            />
+          </li>
+        ))}
+      </ul>
+      {editing && <GivenEditDialog idea={editing} onClose={() => setEditing(null)} onSaved={() => saved(editing)} />}
+      {viewing && (
+        <Modal title={viewing.title} onClose={() => setViewing(null)}>
+          <div className="p-4"><img src={givenImage(viewing, "full") ?? ""} alt="" className="mx-auto max-h-[70vh] rounded-xl object-contain" /></div>
         </Modal>
       )}
     </div>

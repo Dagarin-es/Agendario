@@ -1,13 +1,14 @@
 /**
  * Eventos del calendario (cumpleaños, santos, fechas importantes) con el estado de los regalos.
  */
-import { and, eq, inArray, isNull, lt, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 import {
   dateTypeLabels,
   giftEventKinds,
   saintDateFor,
   type GiftOccasion,
   type GiftOverviewItem,
+  type GivenGift,
   type GiftStatus,
   type Occasion,
   type PendingGift,
@@ -183,8 +184,24 @@ export async function giftOverview(userId: string): Promise<GiftOverviewItem[]> 
         .filter((g) => g.contactId === id)
         .map((g) => ({
           id: g.id, contactId: g.contactId, title: g.title, url: g.url, notes: g.notes, priceCents: g.priceCents, given: g.given, givenAt: g.givenAt,
-          occasion: g.occasion, status: g.status as GiftStatus, eventKey: g.eventKey, eventLabel: g.eventLabel, eventDate: g.eventDate, imageKey: g.imageKey, createdAt: g.createdAt.toISOString(),
+          occasion: g.occasion, status: g.status as GiftStatus, eventKey: g.eventKey, eventLabel: g.eventLabel, eventDate: g.eventDate, imageKey: g.imageKey, rating: g.rating, givenNote: g.givenNote, createdAt: g.createdAt.toISOString(),
         })),
     };
   });
+}
+
+/** Pestaña Regalos → Regalados: ideas ya regaladas de los contactos que el usuario ve, de la más reciente a la más antigua. */
+export async function givenGifts(userId: string): Promise<GivenGift[]> {
+  const rows = await db
+    .select({ g: gi, contactName: ct.displayName, photoKey: ct.photoKey, updatedAt: ct.updatedAt })
+    .from(gi)
+    .innerJoin(ct, eq(ct.id, gi.contactId))
+    .where(and(eq(gi.userId, userId), eq(gi.status, "given"), visibleContacts(userId)))
+    .orderBy(sql`${gi.givenAt} DESC NULLS LAST`, desc(gi.updatedAt));
+  return rows.map(({ g, contactName, photoKey, updatedAt }) => ({
+    id: g.id, contactId: g.contactId, title: g.title, url: g.url, notes: g.notes, priceCents: g.priceCents, given: g.given, givenAt: g.givenAt,
+    occasion: g.occasion, status: g.status as GiftStatus, eventKey: g.eventKey, eventLabel: g.eventLabel, eventDate: g.eventDate, imageKey: g.imageKey,
+    rating: g.rating, givenNote: g.givenNote, createdAt: g.createdAt.toISOString(),
+    contactName, hasPhoto: !!photoKey, photoVersion: updatedAt.toISOString(),
+  }));
 }

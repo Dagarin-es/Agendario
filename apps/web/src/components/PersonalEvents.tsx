@@ -106,7 +106,7 @@ export function PersonalEventsView({ openId, onOpen }: { openId: string | null; 
       {isLoading && <p className="text-slate-500">Cargando…</p>}
       {!isLoading && list.length === 0 && (
         <div className="card space-y-2 py-8 text-center text-slate-500">
-          <div className="text-4xl" aria-hidden="true">📔</div>
+          <div className="text-4xl" aria-hidden="true">📜</div>
           <p>Aún no has guardado ninguna efeméride.</p>
           <button className="btn-primary" onClick={() => setEditing("new")}>+ Añadir la primera</button>
         </div>

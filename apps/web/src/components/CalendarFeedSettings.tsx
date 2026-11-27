@@ -35,11 +35,11 @@ export function CalendarFeedSettings({ Section }: { Section: SectionT }) {
         <span className="font-medium">Qué incluye</span>
         <label className="flex items-start gap-2">
           <input type="checkbox" className="mt-0.5 h-4 w-4" checked={feed.events} onChange={(e) => opts.mutate({ events: e.target.checked, personal: feed.personal })} />
-          <span>🎂 <b>Eventos</b> · cumpleaños, aniversarios y demás fechas de tus contactos</span>
+          <span>🎉 <b>Eventos</b> · cumpleaños, aniversarios y demás fechas de tus contactos</span>
         </label>
         <label className="flex items-start gap-2">
           <input type="checkbox" className="mt-0.5 h-4 w-4" checked={feed.personal} onChange={(e) => opts.mutate({ events: feed.events, personal: e.target.checked })} />
-          <span>📔 <b>Efemérides</b> · tus fechas personales (solo título y descripción: el comentario y la foto no salen de Agendario)</span>
+          <span>📜 <b>Efemérides</b> · tus fechas personales (solo título y descripción: el comentario y la foto no salen de Agendario)</span>
         </label>
       </div>
 

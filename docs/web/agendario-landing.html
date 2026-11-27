@@ -48,6 +48,32 @@
 #agendario .nav .btn{padding:9px 16px;font-size:14px}
 @media(max-width:860px){#agendario .nav-links{display:none}#agendario .nav .btn{margin-left:auto}}
 
+
+/* Menú en el móvil */
+#agendario .nav-toggle{display:none;all:unset;cursor:pointer;width:42px;height:42px;border-radius:12px;align-items:center;justify-content:center;font-size:22px;color:var(--ink);border:1px solid var(--line);background:#fff}
+@media(max-width:860px){#agendario .nav-toggle{display:inline-flex}#agendario .nav .btn{margin-left:auto}
+ #agendario .nav.open .nav-links{display:flex;position:absolute;top:64px;left:0;right:0;flex-direction:column;gap:0;margin:0;padding:8px 16px 16px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 20px 40px -24px rgba(30,27,58,.35)}
+ #agendario .nav.open .nav-links a{padding:13px 8px;border-bottom:1px solid var(--line);font-size:17px}
+ #agendario .nav.open .nav-links a:last-child{border-bottom:0}}
+
+/* Regalos */
+#agendario .gifts{background:linear-gradient(180deg,#fff,#fff8ee)}
+#agendario .gsteps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px;counter-reset:g}
+#agendario .gsteps .card{padding:24px;position:relative}
+#agendario .gsteps .card::after{counter-increment:g;content:counter(g);position:absolute;top:18px;right:20px;font-weight:800;font-size:34px;color:#eef0ff;line-height:1}
+#agendario .gsteps .card h3{font-size:18px;margin:12px 0 6px}
+#agendario .gsteps .card p{font-size:15px}
+@media(max-width:1000px){#agendario .gsteps{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){#agendario .gsteps{grid-template-columns:1fr}}
+#agendario .gwin{margin-top:64px}
+#agendario .gwin ul{list-style:none;margin:20px 0 0;padding:0}
+#agendario .gwin li{display:flex;gap:14px;padding:10px 0;font-size:16px;color:var(--mut)}
+#agendario .gwin li b{color:var(--ink);display:block}
+#agendario .gwin li .ico{flex-shrink:0;width:44px;height:44px;font-size:22px}
+#agendario .gphone{max-width:330px;margin:0 auto;border-radius:38px;padding:10px;background:#1e1b3a;box-shadow:0 40px 80px -40px rgba(67,56,202,.6)}
+#agendario .gphone .shot,#agendario .gphone .ph{border-radius:30px;height:600px;width:100%;object-fit:cover;object-position:top}
+#agendario .thanks{margin-top:40px;text-align:center;font-size:14px;color:var(--mut)}
+
 /* Portada */
 #agendario .hero{padding:72px 0 40px;background:radial-gradient(1200px 500px at 85% -10%,#e0e4ff 0,transparent 60%),radial-gradient(700px 400px at -10% 30%,#fff3c4 0,transparent 60%)}
 #agendario .hero .wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center}
@@ -237,12 +263,14 @@
       <a href="#concepto">Qué es</a>
       <a href="#porque">Por qué</a>
       <a href="#funciones">Funciones</a>
+      <a href="#regalos">Regalos</a>
       <a href="#capturas">Capturas</a>
       <a href="#instalar">Instalar</a>
       <a href="#android">Android</a>
       <a href="#preguntas">Preguntas</a>
     </div>
     <a class="btn btn-p" href="#instalar">Instalar</a>
+    <button type="button" class="nav-toggle" aria-label="Menú" aria-expanded="false" data-nav-toggle>☰</button>
   </div>
 </nav>
 
@@ -261,7 +289,7 @@
           Ver en GitHub
         </a>
       </div>
-      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.4.1</b> <span data-gh-date></span></div>
+      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.5.0</b> <span data-gh-date></span></div>
     </div>
     <div class="devices rv">
       <div class="laptop"><div class="screen"><span data-shot="hero_web"></span></div></div>
@@ -298,7 +326,7 @@
         <ul>
           <li>Llamadas y apuntes de lo que hablasteis, con fotos y documentos</li>
           <li>Cumpleaños, aniversarios y efemérides</li>
-          <li>Ideas de regalo, lo regalado y lo recibido</li>
+          <li>Ideas de regalo, lo regalado (con estrellas y foto) y lo recibido</li>
           <li>Historial de cada cambio en la ficha</li>
         </ul>
       </div>
@@ -381,7 +409,7 @@
     </div>
     <div class="feat">
       <div class="card rv"><div class="ico">👤</div><h3>Fichas completas</h3><p>Foto y portada, varios teléfonos, emails, webs y direcciones geolocalizadas en el mapa.</p></div>
-      <div class="card rv"><div class="ico y">🎁</div><h3>Regalos</h3><p>Ideas con enlace y miniatura que pasan de pendiente a comprado y regalado, con el día en que lo entregaste. Y una pestaña con todo lo que te regalan, aunque sea de varias personas, con buscador y filtro por persona.</p></div>
+      <div class="card rv"><div class="ico y">🎁</div><h3>Regalos</h3><p>Ideas con enlace y foto que pasan de pendiente a comprado y regalado. Al regalar, el día, una valoración con estrellas, una anotación y una foto. Y todo lo que te regalan, aunque sea de varias personas, también con foto y estrellas.</p></div>
       <div class="card rv"><div class="ico p">🎂</div><h3>Fechas y avisos</h3><p>Cumpleaños, aniversarios y un calendario que te avisa de los regalos pendientes.</p></div>
       <div class="card rv"><div class="ico g">📔</div><h3>Efemérides</h3><p>Tus propias fechas para recordar: el coche nuevo, un ascenso, un viaje… con foto y comentario.</p></div>
       <div class="card rv"><div class="ico">🔗</div><h3>Relaciones</h3><p>Padres, hijos, primos, cuñados… se crean en las dos fichas a la vez. Y la lista de trabajadores de cada empresa.</p></div>
@@ -398,6 +426,36 @@
       <div class="card rv"><div class="ico p">🕓</div><h3>Historial y papelera</h3><p>60 días para deshacer cualquier cambio o recuperar un contacto borrado.</p></div>
       <div class="card rv"><div class="ico g">👨‍👩‍👧</div><h3>Varios usuarios</h3><p>Cada uno con su agenda, contactos privados, compartidos o públicos para toda la casa.</p></div>
     </div>
+  </div>
+</section>
+
+<!-- ======================= REGALOS ======================= -->
+<section class="gifts" id="regalos">
+  <div class="wrap">
+    <div class="center rv">
+      <span class="eyebrow">🎁 Regalos</span>
+      <h2 class="h2">Se te ocurrió en mayo.<br>En diciembre, ni rastro.</h2>
+      <p class="lead">Pasa siempre. Tomando un café, tu hermana comenta que le encantaría tener algo; o ves en un escaparate el regalo perfecto para tu padre. «Ya me acordaré», piensas. Llega la fecha, la mente en blanco y otra carrera de última hora a por lo de siempre. Agendario guarda esa idea en la ficha de esa persona en el momento en que se te ocurre, y te la pone delante cuando hace falta.</p>
+    </div>
+    <div class="gsteps rv">
+      <div class="card"><div class="ico y">💡</div><h3>Apúntala al momento</h3><p>Desde la ficha o compartiendo un enlace desde cualquier tienda en el móvil. Agendario saca de la web el nombre y la foto.</p></div>
+      <div class="card"><div class="ico">📅</div><h3>Cómprala con tiempo</h3><p>En Fechas ves los cumpleaños que se acercan, quién tiene ya regalo comprado y quién sigue solo con ideas.</p></div>
+      <div class="card"><div class="ico g">✅</div><h3>Regálala y valórala</h3><p>Apunta qué día lo diste y en qué ocasión, ponle de 0 a 5 estrellas y una nota: ¿le gustó?, ¿acertaste?</p></div>
+      <div class="card"><div class="ico p">🎀</div><h3>Y lo que te regalan</h3><p>Guarda también lo que recibes, de quién y con su foto. Se acabó el «¿esto quién me lo regaló?».</p></div>
+    </div>
+    <div class="grid2 gwin">
+      <div class="rv">
+        <h3 style="font-size:28px">Todo en la ficha de cada persona</h3>
+        <ul>
+          <li><span class="ico y">🔁</span><span><b>Nunca repites regalo</b>Ves todo lo que le has regalado, año a año, con fotos y fechas.</span></li>
+          <li><span class="ico">⭐</span><span><b>Sabes qué funcionó</b>Las estrellas y tus notas te dicen qué acertaste y qué no, para la próxima vez.</span></li>
+          <li><span class="ico p">🔒</span><span><b>Solo para ti</b>Las ideas y los regalos son privados de cada usuario, aunque compartáis la agenda en casa.</span></li>
+          <li><span class="ico g">🔔</span><span><b>Avisos a tiempo</b>El calendario y el móvil te avisan de los cumpleaños que vienen sin regalo.</span></li>
+        </ul>
+      </div>
+      <div class="rv"><div class="gphone"><div data-shot="app_regalos_ficha"></div></div></div>
+    </div>
+    <p class="thanks">Gracias a <a href="https://emilcar.fm" target="_blank" rel="noopener">Emilcar.fm</a> y a <a href="https://danaus.app" target="_blank" rel="noopener">Danaus</a>, su app de regalos, de donde salió la idea.</p>
   </div>
 </section>
 
@@ -573,16 +631,18 @@ EOF</div>
     </div>
     <div class="road rv">
       <!-- Hoja de ruta: «Hecho» = lo de las últimas versiones; «En marcha» e «Ideas» son propuestas, edítalas a tu gusto -->
-      <div class="col done"><h3>✅ Hecho · 1.4</h3>
+      <div class="col done"><h3>✅ Hecho · 1.5</h3>
+        <div class="item">Regalos en la ficha con tres pestañas: ideas, regalados y recibidos</div>
+        <div class="item">Valoración con estrellas, anotación y foto de cada regalo hecho y recibido</div>
+        <div class="item">Nueva pestaña «Regalados» con todo lo que has regalado</div>
         <div class="item">Favoritos con una estrella, que se marcan con un toque desde la lista, para filtrarlos junto al buscador (también en Gmail y en el móvil)</div>
-        <div class="item">Regalos en dos pestañas: para regalar (pendiente, comprado y regalado) y recibidos</div>
         <div class="item">Etiquetas renovadas: se ordenan arrastrando, 20 colores y las cuentas de Gmail en un desplegable</div>
         <div class="item">App con banda de navegación fija, iconos más grandes y título grande en cada sección</div>
         <div class="item">Aviso de duplicados encima del menú, estés donde estés</div>
         <button type="button" class="btn btn-g road-all" data-changelog-open>📜 Ver todos los cambios</button>
       </div>
       <div class="col now"><h3>🚧 En marcha</h3>
-        <div class="item">Publicar la app en Google Play</div>
+        <div class="item"><b>Agendario Lite</b>: sin servidor, solo app Android, con copia cifrada en tu Google Drive</div>
       </div>
       <div class="col"><h3>💡 Ideas</h3>
         <div class="item">Sincronización directa con Outlook y Microsoft 365</div>
@@ -658,6 +718,7 @@ window.AGENDARIO_CONFIG = {
     web_efemerides: "", web_efemerides_oscuro: "",
     web_regalos: "", web_regalos_oscuro: "",
     web_regalos_recibidos: "", web_regalos_recibidos_oscuro: "",
+    web_regalados: "", web_regalados_oscuro: "",
     web_etiquetas: "", web_etiquetas_oscuro: "",
     web_duplicados: "", web_duplicados_oscuro: "",
     web_copias: "", web_copias_oscuro: "",
@@ -668,6 +729,9 @@ window.AGENDARIO_CONFIG = {
     app_efemerides: "", app_efemerides_oscuro: "",
     app_regalos: "", app_regalos_oscuro: "",
     app_regalos_recibidos: "", app_regalos_recibidos_oscuro: "",
+    app_regalados: "", app_regalados_oscuro: "",
+    // Sección Regalos
+    app_regalos_ficha: "",
     app_etiquetas: "", app_etiquetas_oscuro: "",
     app_llamadas: "", app_llamadas_oscuro: ""
   }
@@ -749,7 +813,8 @@ window.AGENDARIO_CONFIG = {
       ["ficha", "Ficha", "Portada, datos, mapa y celebraciones"],
       ["fechas", "Fechas", "Calendario con avisos de regalo"],
       ["efemerides", "Efemérides", "Tus fechas para recordar"],
-      ["regalos", "Regalos", "Pendiente, comprado y regalado"],
+      ["regalos", "Regalos", "Fechas e ideas: pendiente y comprado"],
+      ["regalados", "Regalados", "Lo regalado, con estrellas y foto"],
       ["regalos_recibidos", "Recibidos", "Lo que te han regalado"],
       ["etiquetas", "Etiquetas", "Arrastrar, colores y Gmail"],
       ["duplicados", "Duplicados", "Combinar con vista previa"],
@@ -760,7 +825,8 @@ window.AGENDARIO_CONFIG = {
       ["ficha", "Ficha", "Llamar, escribir, abrir en mapa"],
       ["fechas", "Fechas", "Calendario y próximos eventos"],
       ["efemerides", "Efemérides", "Foto y comentario personal"],
-      ["regalos", "Regalos", "Pendiente, comprado y regalado"],
+      ["regalos", "Regalos", "Fechas e ideas: pendiente y comprado"],
+      ["regalados", "Regalados", "Lo regalado, con estrellas y foto"],
       ["regalos_recibidos", "Recibidos", "Lo que te han regalado, de uno o de varios"],
       ["etiquetas", "Etiquetas", "Mantén pulsado y arrastra"],
       ["llamadas", "Llamadas", "Registro solo para ti"]
@@ -862,10 +928,13 @@ window.AGENDARIO_CONFIG = {
         if (en.isIntersecting) links.forEach(function (a) { a.classList.toggle("on", a.getAttribute("href") === "#" + en.target.id); });
       });
     }, { rootMargin: "-45% 0px -50% 0px" });
-    ["porque", "funciones", "capturas", "instalar", "android", "preguntas"].forEach(function (id) { var s = document.getElementById(id); if (s) spy.observe(s); });
+    ["porque", "funciones", "regalos", "capturas", "instalar", "android", "preguntas"].forEach(function (id) { var s = document.getElementById(id); if (s) spy.observe(s); });
   } else { $$(".rv").forEach(function (el) { el.classList.add("in"); }); }
   var nav = $(".nav");
   window.addEventListener("scroll", function () { nav.classList.toggle("scrolled", window.scrollY > 10); }, { passive: true });
 })();
 </script>
+<script>(function(){var n=document.querySelector("#agendario .nav"),b=document.querySelector("[data-nav-toggle]");if(!n||!b)return;
+b.addEventListener("click",function(){var o=n.classList.toggle("open");b.setAttribute("aria-expanded",o);b.textContent=o?"✕":"☰"});
+n.querySelectorAll(".nav-links a").forEach(function(a){a.addEventListener("click",function(){n.classList.remove("open");b.setAttribute("aria-expanded","false");b.textContent="☰"})})})();</script>
 </div>

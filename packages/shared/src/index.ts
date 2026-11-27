@@ -5,7 +5,7 @@ export { saintDateFor } from "./santoral";
 // IS_BETA = true muestra la etiqueta «Beta» (desde la 1.0, false).
 export * from "./themes";
 
-export const APP_VERSION = "1.4.1";
+export const APP_VERSION = "1.5.0";
 export const IS_BETA = false;
 
 // ---------- Enumeraciones ----------
@@ -471,6 +471,10 @@ export const giftIdeaInputSchema = z.object({
   eventLabel: z.string().max(120).default(""),
   /** Fecha del evento (si se regaló otro día, givenAt es ese día). Nulo = la de givenAt */
   eventDate: z.string().date().nullable().optional(),
+  /** Valoración al regalarlo: 0–10 medias estrellas (se muestra como 0–5 estrellas). Nulo = sin valorar */
+  rating: z.number().int().min(0).max(10).nullable().optional(),
+  /** Anotación al regalarlo */
+  givenNote: z.string().max(2000).optional(),
 });
 export type GiftIdeaInput = z.infer<typeof giftIdeaInputSchema>;
 export const giftIdeaPatchSchema = giftIdeaInputSchema.partial();
@@ -481,6 +485,13 @@ export interface GiftIdea extends GiftIdeaInput {
   createdAt: string;
   /** Versión de la miniatura (null = sin imagen) */
   imageKey?: string | null;
+}
+
+/** Pestaña Regalos → Regalados: lo ya regalado, con el contacto. */
+export interface GivenGift extends GiftIdea {
+  contactName: string;
+  hasPhoto: boolean;
+  photoVersion: string;
 }
 
 /** Pestaña Regalos: contactos con fechas de regalo, su próxima fecha y sus ideas. */
@@ -654,6 +665,8 @@ export const giftReceivedInputSchema = z.object({
   receivedAt: z.string().date().nullable().default(null),
   occasion: z.enum(occasions).nullable().default(null),
   notes: z.string().max(2000).default(""),
+  /** Valoración: 0–10 medias estrellas. Nulo = sin valorar */
+  rating: z.number().int().min(0).max(10).nullable().optional(),
   /** Quién lo regaló (uno o varios contactos). Desde la ficha, si falta, ese contacto. */
   contactIds: z.array(z.string().uuid()).max(50).optional(),
 });
@@ -668,6 +681,9 @@ export interface GiftReceived {
   receivedAt: string | null;
   occasion: Occasion | null;
   notes: string;
+  rating: number | null;
+  /** Versión de la foto (null = sin foto) */
+  imageKey: string | null;
   /** Primer contacto (compatibilidad) */
   contactId: string | null;
   /** Todos los que lo regalaron (solo los que puedes ver) */

@@ -39,6 +39,8 @@ export async function listReceived(userId: string, opts: { contactId?: string; i
     receivedAt: g.receivedAt,
     occasion: g.occasion as Occasion | null,
     notes: g.notes,
+    rating: g.rating,
+    imageKey: g.imageKey,
     contacts: byGift.get(g.id) ?? [],
     createdAt: g.createdAt.toISOString(),
   }));

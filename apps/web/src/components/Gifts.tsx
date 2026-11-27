@@ -11,6 +11,14 @@ import { api, apiUrl } from "../lib/api";
 import { Modal, useAlert, useConfirm } from "./Dialogs";
 import { euros, formatDate } from "../lib/format";
 import { syncNativeReminders } from "../lib/native";
+import { givenImage, GivenGiftRow, ImagePicker, StarRating } from "./GiftExtras";
+
+/** Sube la imagen elegida al crear o regalar (multipart «photo»). */
+async function uploadIdeaImage(id: string, f: File) {
+  const fd = new FormData();
+  fd.append("photo", f);
+  await api.put(`/gift-ideas/${id}/image`, fd);
+}
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -65,32 +73,42 @@ export function GiftThumb({ idea, size = 48, onChanged }: { idea: GiftIdea; size
   );
 }
 
-/** Ideas para regalos: privadas de cada usuario. Idea → comprada (para un evento) → regalada. */
-export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: GiftIdea[] }) {
+/** Tras cualquier cambio en las ideas de un contacto. */
+export function useGiftRefresh(contactId: string) {
   const qc = useQueryClient();
-  const refresh = () => {
+  return () => {
     qc.invalidateQueries({ queryKey: ["contact", contactId] });
     qc.invalidateQueries({ queryKey: ["upcoming"] });
     qc.invalidateQueries({ queryKey: ["pending-gifts"] });
     qc.invalidateQueries({ queryKey: ["gifts-overview"] });
+    qc.invalidateQueries({ queryKey: ["gifts-given"] });
     void syncNativeReminders(); // el aviso de cumpleaños sin regalo de la app se actualiza
   };
+}
+
+/** Pestaña «Ideas» del recuadro Regalos: privadas de cada usuario. Idea → comprada (para un evento) → regalada. */
+export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: GiftIdea[] }) {
+  const refresh = useGiftRefresh(contactId);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ title: "", url: "", price: "", notes: "" });
+  const [image, setImage] = useState<File | null>(null);
   const [editing, setEditing] = useState<GiftIdea | null>(null);
   const [error, setError] = useState("");
   const confirm = useConfirm();
 
   const add = useMutation({
-    mutationFn: () =>
-      api.post(`/contacts/${contactId}/gift-ideas`, {
+    mutationFn: async () => {
+      const row = await api.post<GiftIdea>(`/contacts/${contactId}/gift-ideas`, {
         title: draft.title.trim(),
         url: draft.url.trim() || null,
         notes: draft.notes,
         priceCents: draft.price ? Math.round(parseFloat(draft.price.replace(",", ".")) * 100) : null,
-      }),
+      });
+      if (image) await uploadIdeaImage(row.id, image);
+    },
     onSuccess: () => {
       setDraft({ title: "", url: "", price: "", notes: "" });
+      setImage(null);
       setAdding(false);
       refresh();
     },
@@ -100,7 +118,6 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
 
   const pending = ideas.filter((i) => i.status === "idea");
   const bought = ideas.filter((i) => i.status === "bought");
-  const given = ideas.filter((i) => i.status === "given");
   const todayIso = today();
 
   function submit(e: FormEvent) {
@@ -112,12 +129,11 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
   const title = (g: GiftIdea) => (g.url ? <a href={g.url} target="_blank" rel="noreferrer" className="text-indigo-700 hover:underline">{g.title} ↗</a> : g.title);
 
   return (
-    <section className="card">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="section-title mb-0">🎁 Ideas para regalos</h2>
-        {!adding && <button className="btn-ghost" onClick={() => setAdding(true)}>+ Añadir</button>}
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="text-xs text-slate-400">Solo tú ves tus ideas, aunque el contacto esté compartido.</p>
+        {!adding && <button className="btn-ghost shrink-0" onClick={() => setAdding(true)}>+ Añadir</button>}
       </div>
-      <p className="mb-3 text-xs text-slate-400">Solo tú ves tus ideas, aunque el contacto esté compartido.</p>
 
       {adding && (
         <form onSubmit={submit} className="mb-4 grid gap-2 rounded-lg bg-slate-50 p-3 sm:grid-cols-2">
@@ -125,9 +141,10 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
           <input className="input" type="url" placeholder="Enlace (opcional)" value={draft.url} onChange={(e) => setDraft({ ...draft, url: e.target.value })} />
           <input className="input" inputMode="decimal" placeholder="Precio € (opcional)" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
           <input className="input sm:col-span-2" placeholder="Notas (talla, color…)" value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} />
+          <div className="sm:col-span-2"><ImagePicker file={image} onChange={setImage} hint="Si pones enlace y no eliges imagen, se intenta sacar de la web." /></div>
           {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
           <div className="flex justify-end gap-2 sm:col-span-2">
-            <button type="button" className="btn-ghost" onClick={() => setAdding(false)}>Cancelar</button>
+            <button type="button" className="btn-ghost" onClick={() => { setAdding(false); setImage(null); }}>Cancelar</button>
             <button className="btn-primary" disabled={add.isPending}>Guardar</button>
           </div>
         </form>
@@ -178,26 +195,83 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
         ))}
       </ul>
 
-      {given.length > 0 && (
-        <details className="mt-4">
-          <summary className="cursor-pointer text-sm font-medium text-slate-600">Ya regalados ({given.length})</summary>
-          <ul className="mt-2 space-y-1">
-            {given.map((g) => (
-              <li key={g.id} className="flex items-center gap-2 text-sm">
-                <span className="flex-1">
-                  <span className="text-slate-400 line-through">{g.title}</span>{" "}
-                  <span className="text-slate-500">
-                    · {formatDate(g.givenAt)}{g.eventLabel ? ` · ${g.eventLabel}` : g.occasion ? ` · ${occasionLabels[g.occasion]}` : ""}
-                  </span>
-                </span>
-                <GiftStatusButton idea={g} onChanged={refresh} />
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
       {editing && <GiftEditDialog idea={editing} onClose={() => setEditing(null)} onSaved={refresh} />}
-    </section>
+    </div>
+  );
+}
+
+/** Pestaña «Regalados» del recuadro Regalos: lo ya regalado, en grande. */
+export function GivenGifts({ contactId, ideas }: { contactId: string; ideas: GiftIdea[] }) {
+  const refresh = useGiftRefresh(contactId);
+  const [editing, setEditing] = useState<GiftIdea | null>(null);
+  const [viewing, setViewing] = useState<GiftIdea | null>(null);
+  const given = ideas
+    .filter((i) => i.status === "given")
+    .sort((a, b) => (b.givenAt ?? "").localeCompare(a.givenAt ?? ""));
+  if (!given.length) return <p className="text-sm text-slate-500">Todavía no has regalado nada a esta persona. Cuando marques una idea como 🎁 Regalado, aparecerá aquí con su fecha, foto y valoración.</p>;
+  return (
+    <>
+      <ul className="divide-y divide-slate-100">
+        {given.map((g) => (
+          <li key={g.id} className="py-3 first:pt-0 last:pb-0">
+            <GivenGiftRow
+              g={g}
+              onPhoto={g.imageKey ? () => setViewing(g) : () => setEditing(g)}
+              actions={<button className="btn-ghost -mr-1 -mt-1 shrink-0 px-2 py-1" onClick={() => setEditing(g)} aria-label={`Editar ${g.title}`} title="Editar">✏️</button>}
+            />
+          </li>
+        ))}
+      </ul>
+      {editing && <GivenEditDialog idea={editing} onClose={() => setEditing(null)} onSaved={refresh} />}
+      {viewing && (
+        <Modal title={viewing.title} onClose={() => setViewing(null)}>
+          <div className="p-4"><img src={givenImage(viewing, "full") ?? ""} alt="" className="mx-auto max-h-[70vh] rounded-xl object-contain" /></div>
+        </Modal>
+      )}
+    </>
+  );
+}
+
+/** Editar un regalo ya hecho: día, valoración, anotación, foto (y cambiar su estado). */
+export function GivenEditDialog({ idea, onClose, onSaved }: { idea: GiftIdea; onClose: () => void; onSaved: () => void }) {
+  const todayIso = today();
+  const [d, setD] = useState({ givenAt: idea.givenAt ?? todayIso, rating: idea.rating ?? null, givenNote: idea.givenNote ?? "" });
+  const [image, setImage] = useState<File | null>(null);
+  const [dropImage, setDropImage] = useState(false);
+  const [error, setError] = useState("");
+  const current = dropImage ? null : givenImage(idea);
+  const save = useMutation({
+    mutationFn: async () => {
+      await api.patch(`/gift-ideas/${idea.id}`, { givenAt: d.givenAt, rating: d.rating, givenNote: d.givenNote });
+      if (image) await uploadIdeaImage(idea.id, image);
+      else if (dropImage && idea.imageKey) await api.del(`/gift-ideas/${idea.id}/image`);
+    },
+    onSuccess: () => { onSaved(); onClose(); },
+    onError: (e) => setError((e as Error).message),
+  });
+  return (
+    <Modal title={`🎁 ${idea.title}`} onClose={onClose}>
+      <form className="space-y-3 p-4" onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); if (d.givenAt) save.mutate(); }}>
+        <label className="block"><span className="label">¿Qué día lo regalaste?</span>
+          <input className="input" type="date" value={d.givenAt} max={todayIso} onChange={(e) => setD({ ...d, givenAt: e.target.value })} required />
+        </label>
+        <div><span className="label">Valoración</span><StarRating value={d.rating} onChange={(rating) => setD({ ...d, rating })} size={32} /></div>
+        <label className="block"><span className="label">Anotación</span>
+          <textarea className="input min-h-20" value={d.givenNote} onChange={(e) => setD({ ...d, givenNote: e.target.value })} placeholder="¿Le gustó? ¿Acertaste?" />
+        </label>
+        <div><span className="label">Foto</span>
+          <ImagePicker current={current} file={image} onChange={(f) => { setImage(f); if (f) setDropImage(false); }} onRemove={() => setDropImage(true)} label="📷 Añadir foto" />
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <GiftStatusButton idea={idea} onChanged={() => { onSaved(); onClose(); }} />
+          <div className="flex gap-2">
+            <button type="button" className="btn-ghost" onClick={onClose}>Cancelar</button>
+            <button className="btn-primary" disabled={save.isPending || !d.givenAt}>{save.isPending ? "Guardando…" : "Guardar"}</button>
+          </div>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -249,7 +323,7 @@ export function GiftEditDialog({ idea, onClose, onSaved }: { idea: GiftIdea; onC
  * - Comprado: la fecha es la del evento.
  * - Regalado: además pregunta la fecha en que se regaló (por defecto la del evento, si ya pasó, o hoy).
  */
-function EventForm({ idea, mode, onCancel, onSave, busy }: { idea: GiftIdea; mode: "bought" | "given"; onCancel: () => void; onSave: (b: Partial<GiftIdea>) => void; busy?: boolean }) {
+function EventForm({ idea, mode, onCancel, onSave, busy }: { idea: GiftIdea; mode: "bought" | "given"; onCancel: () => void; onSave: (b: Partial<GiftIdea>, image?: File | null) => void; busy?: boolean }) {
   const contactId = idea.contactId;
   const { data: occ } = useQuery({ queryKey: ["gift-occasions", contactId], queryFn: () => api.get<GiftOccasion[]>(`/contacts/${contactId}/gift-occasions`) });
   const todayIso = today();
@@ -258,6 +332,9 @@ function EventForm({ idea, mode, onCancel, onSave, busy }: { idea: GiftIdea; mod
   const [custom, setCustom] = useState<{ date: string; occasion: Occasion | null; label: string }>({ date: todayIso, occasion: null, label: "" });
   const evDate = idea.eventDate ?? idea.givenAt;
   const [givenOn, setGivenOn] = useState(idea.status === "given" && idea.givenAt ? idea.givenAt : evDate && evDate <= todayIso ? evDate : todayIso);
+  const [rating, setRating] = useState<number | null>(idea.rating ?? null);
+  const [note, setNote] = useState(idea.givenNote ?? "");
+  const [image, setImage] = useState<File | null>(null);
   const upcoming = (occ ?? []).filter((o) => o.date >= todayIso);
   const recent = (occ ?? []).filter((o) => o.date < todayIso);
   // Por defecto: el evento que ya tenía; si no, al comprar la próxima ocasión y al regalar la más reciente
@@ -286,8 +363,10 @@ function EventForm({ idea, mode, onCancel, onSave, busy }: { idea: GiftIdea; mod
     if (mode === "given") {
       if (!givenOn) return;
       ev.givenAt = givenOn;
+      ev.rating = rating;
+      ev.givenNote = note;
     }
-    onSave({ status: mode, ...ev });
+    onSave({ status: mode, ...ev }, mode === "given" ? image : null);
   }
 
   return (
@@ -318,6 +397,23 @@ function EventForm({ idea, mode, onCancel, onSave, busy }: { idea: GiftIdea; mod
           <input className="input" type="date" value={givenOn} max={todayIso} onChange={(e) => setGivenOn(e.target.value)} required />
         </label>
       )}
+      {mode === "given" && (
+        <>
+          <div>
+            <span className="label">Valoración</span>
+            <StarRating value={rating} onChange={setRating} size={32} />
+            <p className="mt-0.5 text-xs text-slate-500">Toca la mitad izquierda de una estrella para media.</p>
+          </div>
+          <label className="block">
+            <span className="label">Anotación</span>
+            <textarea className="input min-h-20" value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Le gustó? ¿Acertaste?" />
+          </label>
+          <div>
+            <span className="label">Foto</span>
+            <ImagePicker current={givenImage(idea)} file={image} onChange={setImage} label="📷 Añadir foto" hint="Del regalo envuelto, del momento de darlo…" />
+          </div>
+        </>
+      )}
       <div className="flex justify-end gap-2">
         <button type="button" className="btn-ghost" onClick={onCancel}>Cancelar</button>
         <button type="button" className="btn-primary" disabled={busy || (mode === "given" && !givenOn)} onClick={save}>{mode === "given" ? "🎁 Regalado" : "🛒 Comprado"}</button>
@@ -341,7 +437,10 @@ export function GiftStatusButton({ idea, onChanged, className = "" }: { idea: Gi
   const [step, setStep] = useState<"menu" | "bought" | "given">("menu");
   const showAlert = useAlert();
   const patch = useMutation({
-    mutationFn: (body: Partial<GiftIdea>) => api.patch(`/gift-ideas/${idea.id}`, body),
+    mutationFn: async ({ body, image }: { body: Partial<GiftIdea>; image?: File | null }) => {
+      await api.patch(`/gift-ideas/${idea.id}`, body);
+      if (image) await uploadIdeaImage(idea.id, image);
+    },
     onSuccess: () => { setOpen(false); onChanged(); },
     onError: (e) => showAlert("No se ha podido cambiar el estado", (e as Error).message),
   });
@@ -350,7 +449,7 @@ export function GiftStatusButton({ idea, onChanged, className = "" }: { idea: Gi
   const options: { id: GiftIdea["status"]; title: string; desc: string }[] = [
     { id: "idea", title: "⏳ Pendiente", desc: "Es solo una idea: todavía no lo has comprado." },
     { id: "bought", title: "🛒 Comprado", desc: "Ya lo tienes. Eliges para qué fecha es." },
-    { id: "given", title: "🎁 Regalado", desc: "Ya lo has entregado. Eliges el día en que lo regalaste." },
+    { id: "given", title: "🎁 Regalado", desc: "Ya lo has entregado: el día, una valoración, una anotación y una foto." },
   ];
   return (
     <>
@@ -375,7 +474,7 @@ export function GiftStatusButton({ idea, onChanged, className = "" }: { idea: Gi
                     type="button"
                     disabled={patch.isPending}
                     className={`flex w-full items-start gap-3 rounded-2xl border p-3 text-left ${idea.status === o.id ? "border-indigo-400 bg-indigo-50" : "border-slate-200 hover:bg-slate-50"}`}
-                    onClick={() => (o.id === "idea" ? idea.status !== "idea" && patch.mutate({ status: "idea" }) : setStep(o.id))}
+                    onClick={() => (o.id === "idea" ? idea.status !== "idea" && patch.mutate({ body: { status: "idea" } }) : setStep(o.id))}
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{o.title}</span>
@@ -386,7 +485,7 @@ export function GiftStatusButton({ idea, onChanged, className = "" }: { idea: Gi
                 ))}
               </>
             ) : (
-              <EventForm idea={idea} mode={step} busy={patch.isPending} onCancel={() => setStep("menu")} onSave={(b) => patch.mutate(b)} />
+              <EventForm idea={idea} mode={step} busy={patch.isPending} onCancel={() => setStep("menu")} onSave={(body, image) => patch.mutate({ body, image })} />
             )}
           </div>
         </Modal>
@@ -399,12 +498,16 @@ export function GiftStatusButton({ idea, onChanged, className = "" }: { idea: Gi
 export function QuickIdeaForm({ contactId, initial, onDone, onCancel }: { contactId: string; initial?: { title?: string; url?: string }; onDone: () => void; onCancel: () => void }) {
   const qc = useQueryClient();
   const [d, setD] = useState({ title: initial?.title ?? "", url: initial?.url ?? "", price: "" });
+  const [image, setImage] = useState<File | null>(null);
   const [error, setError] = useState("");
   const add = useMutation({
-    mutationFn: () => api.post(`/contacts/${contactId}/gift-ideas`, {
-      title: d.title.trim(), url: d.url.trim() || null, notes: "",
-      priceCents: d.price ? Math.round(parseFloat(d.price.replace(",", ".")) * 100) : null,
-    }),
+    mutationFn: async () => {
+      const row = await api.post<GiftIdea>(`/contacts/${contactId}/gift-ideas`, {
+        title: d.title.trim(), url: d.url.trim() || null, notes: "",
+        priceCents: d.price ? Math.round(parseFloat(d.price.replace(",", ".")) * 100) : null,
+      });
+      if (image) await uploadIdeaImage(row.id, image);
+    },
     onSuccess: () => {
       for (const k of [["contact", contactId], ["upcoming"], ["gifts-overview"]]) qc.invalidateQueries({ queryKey: k });
       onDone();
@@ -416,6 +519,7 @@ export function QuickIdeaForm({ contactId, initial, onDone, onCancel }: { contac
       <input className="input" placeholder="Idea (p. ej. Bufanda de lana)" value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} autoFocus required />
       <input className="input" type="url" placeholder="Enlace (opcional; trae la imagen sola)" value={d.url} onChange={(e) => setD({ ...d, url: e.target.value })} />
       <input className="input" inputMode="decimal" placeholder="Precio € (opcional)" value={d.price} onChange={(e) => setD({ ...d, price: e.target.value })} />
+      <ImagePicker file={image} onChange={setImage} hint="Si pones enlace y no eliges imagen, se intenta sacar de la web." />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex justify-end gap-2">
         <button type="button" className="btn-ghost" onClick={onCancel}>Cancelar</button>

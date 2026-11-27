@@ -4,39 +4,7 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Para la próxima versión
 
-### Fechas y Regalos (móvil)
-- **Fechas: selector «Eventos / Efemérides» siempre arriba en el móvil** (fijo al hacer scroll, con el fondo de la app, como `.list-sticky`). Está en `pages/Upcoming.tsx`.
-- **Emoji en cada opción también en el móvil**: cambiar los actuales (🎂/📔) por **🎉 Eventos** y **📜 Efemérides** (elegidos por Daniel) y mostrarlos siempre: ahora en pantallas pequeñas se ocultan (`hidden sm:inline`). Revisar si 📔 se usa en otros sitios como icono de la sección y cambiarlo también (el emoji propio de cada efeméride no se toca).
-- **Regalos: botones «🎁 Para regalar» y «🎀 Recibidos» siempre arriba** en el móvil (fijos al hacer scroll). Están en `pages/Gifts.tsx`.
-- **Nueva pestaña «Regalados»** en Regalos, junto a las otras dos: lo que Daniel ya ha regalado (ideas con estado `given`): a quién, qué, día del regalo (`givenAt`) y evento (`eventDate`/etiqueta), de lo más reciente a lo más antiguo, con buscador como en Recibidos. Los datos ya existen: no hace falta migración, como mucho una ruta para listarlos.
-
-### Valoración y notas de los regalos
-- **Al marcar un regalo como entregado** (diálogo «¿Qué día lo regalaste?» de `EventForm` en `components/Gifts.tsx`): añadir también una **valoración de 0 a 5 estrellas con medias** (2,5 · 3,5…; se guarda como entero de 0 a 10 medias estrellas) y una **anotación** (cómo fue, qué le pareció…). Editable después.
-- **Regalos recibidos**: añadir la misma **valoración** y una **foto/imagen** (subida desde el móvil o el ordenador; ahora no tienen imagen). Que se vean en la ficha.
-- **Imagen al crear**: ahora, en una idea, se puede subir una imagen pulsando su icono si no se pudo descargar del enlace. Que esa opción («📷 Añadir imagen») aparezca **ya en el diálogo de crear** la idea (y al editarla). Igual en el diálogo de crear/editar un regalo recibido.
-- Servidor: campos nuevos en `gift_ideas` (valoración + anotación de la entrega) y en `gifts_received` (valoración + `image_key`), con migración y en las copias de seguridad.
-
-### Ficha del contacto: recuadro «Regalos» con tres pestañas
-- El recuadro «🎁 Ideas para regalos» pasa a llamarse **«🎁 Regalos»** con tres pestañas con emoji (ahora lo regalado se ve demasiado pequeño):
-  - **💡 Ideas**: lo que hay ahora (ideas y compradas).
-  - **✅ Regalados**: los regalos ya hechos, en grande: foto, qué, fecha del regalo y del evento, valoración y anotación.
-  - **🎀 Recibidos**: los regalos recibidos con todos sus datos (foto, fecha, de quién, valoración, notas). **Quitar de la ficha el recuadro actual de regalos recibidos** (`GiftsReceived` en `pages/ContactDetail.tsx`): pasa a esta pestaña.
-- La pestaña «Regalados» de la página Regalos (ver arriba) muestra los mismos datos (foto, valoración, anotación).
-
-- **Maquetas aprobadas** por Daniel (27-11-2026) en `design/maquetas/regalos/`: `ficha.png` (pestaña Regalados), `entregar.png` (marcar como regalado), `recibidos.png` (pestaña Recibidos + nueva idea con imagen). Hacerlo así.
-
-### Acerca de
-- En «Acerca de» (`AboutModal`), un **agradecimiento a Emilcar.fm y a Danaus** (su app de regalos para iPhone, de Emilio Cano) por la idea de la gestión de regalos. Enlaces: https://emilcar.fm y https://danaus.app.
-
-### Web dagarin.es/agendario
-- **Nueva sección «🎁 Regalos»** (aprobada por Daniel el 27-11-2026: `design/maquetas/regalos/landing-propuesta.html`, capturas `web_escritorio.png` y `web_movil_menu.png`): entre Funciones y Capturas, `id="regalos"`. Texto: «Se te ocurrió en mayo. En diciembre, ni rastro.», cuatro pasos (apúntala al momento · cómprala con tiempo · regálala y valórala · y lo que te regalan), «Todo en la ficha de cada persona» con la captura real de la ficha (pestaña Regalados; nueva imagen `app_regalos_ficha` + `_oscuro` en `AGENDARIO_CONFIG.shots`) y al pie: «Gracias a Emilcar.fm y a Danaus, su app de regalos, de donde salió la idea» (enlaces a emilcar.fm y danaus.app). Sin frase final tipo cita (descartada).
-- **Opción «Regalos» en el menú** de la web.
-- **Menú en el móvil**: ahora por debajo de 860 px se oculta y no hay forma de verlo. Añadir botón ☰ que despliega la lista (fondo blanco sólido, se cierra al pulsar un enlace o ✕).
-- **Hoja de ruta de la web** (columna «🚧 En marcha»): quitar «Publicar la app en Google Play» y poner en su lugar **Agendario Lite**: «Agendario Lite: sin servidor, solo app Android, con copia cifrada en tu Google Drive. Será la versión de Google Play.» (texto a ajustar con Daniel si quiere).
-- **Rehacer en la web** lo que cambia de regalos: textos de Funciones/Regalos, capturas de la galería (`web_regalos`, `app_regalos`, recibidos) con las tres pestañas, valoración y fotos.
-
-### Manual
-- **Rehacer en el manual** la parte de regalos (ficha con tres pestañas, valoración, anotación, fotos de recibidos, imagen al crear, pestaña Regalados) y los selectores fijos de Fechas y Regalos: capítulo nuevo de la versión con capturas.
+(Nada todavía: lo de la 1.5.0 ya está hecho.)
 
 ## Revisión en Google Play (cuando Daniel diga)
 

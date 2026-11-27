@@ -231,6 +231,8 @@ async function buildDetail(id: string, userId: string): Promise<ContactDetail> {
         eventLabel: g.eventLabel,
         eventDate: g.eventDate,
         imageKey: g.imageKey,
+        rating: g.rating,
+        givenNote: g.givenNote,
         createdAt: g.createdAt.toISOString(),
       })),
       giftsReceived: received,

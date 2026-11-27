@@ -7,6 +7,7 @@ import { formatDate } from "../lib/format";
 import { Avatar } from "./Avatar";
 import { ContactPicker } from "./ContactPicker";
 import { Modal, useAlert, useConfirm } from "./Dialogs";
+import { ImagePicker, receivedImage, ReceivedGiftRow, StarRating } from "./GiftExtras";
 
 type Person = { id: string; displayName: string; hasPhoto?: boolean; updatedAt?: string };
 const today = () => new Date().toISOString().slice(0, 10);
@@ -34,15 +35,23 @@ export function ReceivedGiftDialog({ gift, initialPeople = [], onClose }: { gift
     receivedAt: gift ? gift.receivedAt ?? "" : today(),
     occasion: (gift?.occasion ?? null) as Occasion | null,
     notes: gift?.notes ?? "",
+    rating: (gift?.rating ?? null) as number | null,
   });
+  const [image, setImage] = useState<File | null>(null);
+  const [dropImage, setDropImage] = useState(false);
   const [people, setPeople] = useState<Person[]>(gift?.contacts ?? initialPeople);
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState("");
   const before = gift?.contacts.map((c) => c.id) ?? [];
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const body = { ...d, description: d.description.trim(), receivedAt: d.receivedAt || null, contactIds: people.map((p) => p.id) };
-      return gift ? api.patch(`/gifts-received/${gift.id}`, body) : api.post("/gifts-received", body);
+      const row = gift ? await api.patch<GiftReceived>(`/gifts-received/${gift.id}`, body) : await api.post<GiftReceived>("/gifts-received", body);
+      if (image) {
+        const fd = new FormData();
+        fd.append("photo", image);
+        await api.put(`/gifts-received/${row.id}/image`, fd);
+      } else if (dropImage && gift?.imageKey) await api.del(`/gifts-received/${gift.id}/image`);
     },
     onSuccess: () => { refresh([...before, ...people.map((p) => p.id)]); onClose(); },
     onError: (e) => setError((e as Error).message),
@@ -77,9 +86,15 @@ export function ReceivedGiftDialog({ gift, initialPeople = [], onClose }: { gift
             {occasions.map((o) => <option key={o} value={o}>{occasionLabels[o]}</option>)}
           </select>
         </label>
+        <div className="sm:col-span-2"><span className="label">Valoración</span>
+          <StarRating value={d.rating} onChange={(rating) => setD({ ...d, rating })} size={32} />
+        </div>
         <label className="sm:col-span-2"><span className="label">Notas</span>
-          <input className="input" value={d.notes} onChange={(e) => setD({ ...d, notes: e.target.value })} placeholder="Opcional" />
+          <textarea className="input min-h-16" value={d.notes} onChange={(e) => setD({ ...d, notes: e.target.value })} placeholder="Opcional" />
         </label>
+        <div className="sm:col-span-2"><span className="label">Foto</span>
+          <ImagePicker current={gift && !dropImage ? receivedImage(gift) : null} file={image} onChange={(f) => { setImage(f); if (f) setDropImage(false); }} onRemove={() => setDropImage(true)} label="📷 Añadir foto" />
+        </div>
         {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
         <div className="flex justify-end gap-2 sm:col-span-2">
           <button type="button" className="btn-ghost" onClick={onClose}>Cancelar</button>
@@ -113,36 +128,47 @@ function useDeleteReceived() {
   };
 }
 
-/** Ficha del contacto: los regalos que te ha hecho (solo o con otros). */
+/** Ver la foto de un regalo recibido en grande. */
+function ReceivedPhotoModal({ g, onClose }: { g: GiftReceived; onClose: () => void }) {
+  return (
+    <Modal title={g.description} onClose={onClose}>
+      <div className="p-4"><img src={receivedImage(g, "full") ?? ""} alt="" className="mx-auto max-h-[70vh] rounded-xl object-contain" /></div>
+    </Modal>
+  );
+}
+
+/** Pestaña «Recibidos» del recuadro Regalos de la ficha: los regalos que te ha hecho (solo o con otros). */
 export function GiftsReceived({ contactId, contactName, gifts }: { contactId: string; contactName: string; gifts: GiftReceived[] }) {
   const [editing, setEditing] = useState<GiftReceived | "new" | null>(null);
+  const [viewing, setViewing] = useState<GiftReceived | null>(null);
   const remove = useDeleteReceived();
   return (
-    <section className="card">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="section-title mb-0">🎀 Regalos recibidos</h2>
-        <button className="btn-ghost" onClick={() => setEditing("new")}>+ Añadir</button>
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="text-xs text-slate-400">Lo que te ha regalado, solo o con otros.</p>
+        <button className="btn-ghost shrink-0" onClick={() => setEditing("new")}>+ Añadir</button>
       </div>
       {gifts.length === 0 && <p className="text-sm text-slate-500">Nada anotado.</p>}
-      <ul className="space-y-1.5">
+      <ul className="divide-y divide-slate-100">
         {gifts.map((g) => {
           const others = g.contacts.filter((c) => c.id !== contactId);
           return (
-            <li key={g.id} className="flex items-start gap-2 text-sm">
-              <span className="min-w-0 flex-1">
-                <span className="font-medium">{g.description}</span>{" "}
-                {(g.receivedAt || g.occasion) && <span className="text-slate-500">· {[g.receivedAt ? formatDate(g.receivedAt) : "", g.occasion ? occasionLabels[g.occasion] : ""].filter(Boolean).join(" · ")}</span>}
-                {others.length > 0 && (
-                  <span className="block text-xs text-slate-500">
-                    con {others.map((o, i) => (
-                      <span key={o.id}>{i > 0 && (i === others.length - 1 ? " y " : ", ")}<Link to={`/contacts/${o.id}`} className="text-indigo-700 hover:underline">{o.displayName}</Link></span>
-                    ))}
-                  </span>
+            <li key={g.id} className="py-3 first:pt-0 last:pb-0">
+              <ReceivedGiftRow
+                g={g}
+                onPhoto={g.imageKey ? () => setViewing(g) : () => setEditing(g)}
+                from={others.length > 0 && (
+                  <>con {others.map((o, i) => (
+                    <span key={o.id}>{i > 0 && (i === others.length - 1 ? " y " : ", ")}<Link to={`/contacts/${o.id}`} className="text-indigo-700 hover:underline">{o.displayName}</Link></span>
+                  ))}</>
                 )}
-                {g.notes && <span className="block text-xs text-slate-500">{g.notes}</span>}
-              </span>
-              <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEditing(g)} aria-label="Editar" title="Editar">✏️</button>
-              <button className="btn-danger text-xs" onClick={() => void remove(g)} aria-label="Borrar">✕</button>
+                actions={
+                  <span className="-mr-1 -mt-1 flex shrink-0">
+                    <button className="btn-ghost px-2 py-1" onClick={() => setEditing(g)} aria-label="Editar" title="Editar">✏️</button>
+                    <button className="btn-danger text-xs" onClick={() => void remove(g)} aria-label="Borrar">✕</button>
+                  </span>
+                }
+              />
             </li>
           );
         })}
@@ -154,7 +180,8 @@ export function GiftsReceived({ contactId, contactName, gifts }: { contactId: st
           onClose={() => setEditing(null)}
         />
       )}
-    </section>
+      {viewing && <ReceivedPhotoModal g={viewing} onClose={() => setViewing(null)} />}
+    </div>
   );
 }
 
@@ -164,6 +191,7 @@ export function ReceivedGiftsList() {
   const [q, setQ] = useState("");
   const [person, setPerson] = useState("");
   const [editing, setEditing] = useState<GiftReceived | "new" | null>(null);
+  const [viewing, setViewing] = useState<GiftReceived | null>(null);
   const remove = useDeleteReceived();
   const people = useMemo(() => {
     const m = new Map<string, string>();
@@ -194,30 +222,34 @@ export function ReceivedGiftsList() {
       {data && data.length > 0 && list.length === 0 && <p className="text-sm text-slate-500">Nada coincide con la búsqueda.</p>}
       <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
         {list.map((g) => (
-          <li key={g.id} className="card flex items-start gap-3 !p-3">
-            <div className="flex shrink-0 -space-x-2">
-              {g.contacts.slice(0, 3).map((c) => (
-                <Link key={c.id} to={`/contacts/${c.id}`} className="rounded-full ring-2 ring-white"><Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} size={40} version={c.updatedAt} /></Link>
-              ))}
-              {g.contacts.length === 0 && <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-lg" aria-hidden="true">🎀</span>}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-slate-900">{g.description}</p>
-              <p className="text-sm text-slate-600">
-                {g.contacts.length ? (
-                  <>De {g.contacts.map((c, i) => (
+          <li key={g.id} className="card !p-3">
+            <ReceivedGiftRow
+              g={g}
+              onPhoto={g.imageKey ? () => setViewing(g) : () => setEditing(g)}
+              from={g.contacts.length ? (
+                <span className="inline-flex flex-wrap items-center gap-1">
+                  <span className="flex -space-x-1.5">
+                    {g.contacts.slice(0, 3).map((c) => (
+                      <Link key={c.id} to={`/contacts/${c.id}`} className="rounded-full ring-2 ring-white"><Avatar id={c.id} name={c.displayName} hasPhoto={c.hasPhoto} size={20} version={c.updatedAt} /></Link>
+                    ))}
+                  </span>
+                  De {g.contacts.map((c, i) => (
                     <span key={c.id}>{i > 0 && (i === g.contacts.length - 1 ? " y " : ", ")}<Link to={`/contacts/${c.id}`} className="text-indigo-700 hover:underline">{c.displayName}</Link></span>
-                  ))}</>
-                ) : "De alguien que ya no está en tu agenda"}
-              </p>
-              {(g.receivedAt || g.occasion || g.notes) && <p className="text-xs text-slate-500">{[g.receivedAt ? formatDate(g.receivedAt) : "", g.occasion ? occasionLabels[g.occasion] : "", g.notes].filter(Boolean).join(" · ")}</p>}
-            </div>
-            <button className="btn-ghost shrink-0 px-2 py-1 text-sm" onClick={() => setEditing(g)} aria-label={`Editar ${g.description}`} title="Editar">✏️</button>
-            <button className="btn-danger shrink-0 text-xs" onClick={() => void remove(g)} aria-label="Borrar">✕</button>
+                  ))}
+                </span>
+              ) : "De alguien que ya no está en tu agenda"}
+              actions={
+                <span className="-mr-1 -mt-1 flex shrink-0">
+                  <button className="btn-ghost px-2 py-1 text-sm" onClick={() => setEditing(g)} aria-label={`Editar ${g.description}`} title="Editar">✏️</button>
+                  <button className="btn-danger text-xs" onClick={() => void remove(g)} aria-label="Borrar">✕</button>
+                </span>
+              }
+            />
           </li>
         ))}
       </ul>
       {editing && <ReceivedGiftDialog gift={editing === "new" ? undefined : editing} onClose={() => setEditing(null)} />}
+      {viewing && <ReceivedPhotoModal g={viewing} onClose={() => setViewing(null)} />}
     </div>
   );
 }

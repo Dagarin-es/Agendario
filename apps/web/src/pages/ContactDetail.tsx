@@ -18,8 +18,7 @@ import {
   type RelationshipType,
 } from "@agendario/shared";
 import { Avatar } from "../components/Avatar";
-import { GiftIdeas } from "../components/Gifts";
-import { GiftsReceived } from "../components/GiftsReceived";
+import { GiftsBox } from "../components/GiftsBox";
 import { SharePanel } from "../components/SharePanel";
 import { ContactTags } from "../components/Tags";
 import { ItemTag } from "../components/ItemTag";
@@ -467,7 +466,7 @@ export function ContactDetailPage() {
         {/* Mosaico: dos columnas independientes, cada recuadro pegado al de encima (en el móvil, uno tras otro) */}
         <div className="grid items-start gap-4 md:grid-cols-2">
           <div className="flex min-w-0 flex-col gap-4">
-            <GiftIdeas contactId={c.id} ideas={c.giftIdeas} />
+            <GiftsBox contactId={c.id} contactName={c.displayName} ideas={c.giftIdeas} received={c.giftsReceived} />
             <Relationships c={c} onChange={refresh} />
           </div>
           <div className="flex min-w-0 flex-col gap-4">
@@ -478,7 +477,6 @@ export function ContactDetailPage() {
               onAutoOpened={() => { if (remindNow) { const n = new URLSearchParams(params); n.delete("remind"); setParams(n, { replace: true }); } }}
             />
             <ImportantDates c={c} onChange={refresh} />
-            <GiftsReceived contactId={c.id} contactName={c.displayName} gifts={c.giftsReceived} />
             <LinkedPersonalEvents contactId={c.id} />
           </div>
         </div>
@@ -718,7 +716,7 @@ function LinkedPersonalEvents({ contactId }: { contactId: string }) {
   if (!list.length) return null;
   return (
     <section className="card">
-      <h2 className="section-title">📔 Efemérides</h2>
+      <h2 className="section-title">📜 Efemérides</h2>
       <ul className="space-y-1.5">
         {list.map((e) => (
           <li key={e.id}>
