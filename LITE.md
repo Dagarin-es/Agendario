@@ -14,6 +14,10 @@ Plan de la edición **Lite** (decidida por Daniel el 27-11-2026). **No se genera
 - **Google Drive como copia, no como sincronización**: copia automática en la carpeta privada de la app en Drive (appDataFolder, permiso `drive.appdata`; comprobar su clasificación en Google al hacerlo). Si se cambia de móvil, se restaura desde Drive y el móvil antiguo deja de copiar (marca de «dispositivo dueño» en Drive; al restaurar en otro, se avisa y el anterior queda fuera). Nunca escriben dos dispositivos a la vez: sin conflictos.
 - **Copia siempre cifrada**, sin opción de no cifrar: contraseña obligatoria al activar la copia (age, como en la edición con servidor). Avisar con claridad de que, si se olvida, la copia no se puede recuperar; valorar un código de recuperación que se guarde aparte.
 
+## Icono
+
+- **Icono propio de la Lite**: el de Agendario (libreta índigo con lápiz) con algún cambio que la distinga (p. ej. una marca o etiqueta «Lite», otro tono). Proponer opciones a Daniel cuando nos pongamos con ella.
+
 ## Se mantiene (todo local)
 
 Contactos, etiquetas (con subetiquetas y colores), favoritos, fechas y calendario, efemérides, regalos (ideas, regalados con valoración y anotación, recibidos con foto; lo de la versión con las tres pestañas), apuntes (sin llamadas), recordatorios con aviso en el móvil (alarmas locales), duplicados y combinar, historial, papelera, temas e iconos, exportar/importar .vcf, miniaturas de los enlaces de regalos (descargadas desde la propia app).

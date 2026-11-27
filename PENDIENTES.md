@@ -32,6 +32,7 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 - **Nueva sección «🎁 Regalos»** (aprobada por Daniel el 27-11-2026: `design/maquetas/regalos/landing-propuesta.html`, capturas `web_escritorio.png` y `web_movil_menu.png`): entre Funciones y Capturas, `id="regalos"`. Texto: «Se te ocurrió en mayo. En diciembre, ni rastro.», cuatro pasos (apúntala al momento · cómprala con tiempo · regálala y valórala · y lo que te regalan), «Todo en la ficha de cada persona» con la captura real de la ficha (pestaña Regalados; nueva imagen `app_regalos_ficha` + `_oscuro` en `AGENDARIO_CONFIG.shots`) y al pie: «Gracias a Emilcar.fm y a Danaus, su app de regalos, de donde salió la idea» (enlaces a emilcar.fm y danaus.app). Sin frase final tipo cita (descartada).
 - **Opción «Regalos» en el menú** de la web.
 - **Menú en el móvil**: ahora por debajo de 860 px se oculta y no hay forma de verlo. Añadir botón ☰ que despliega la lista (fondo blanco sólido, se cierra al pulsar un enlace o ✕).
+- **Hoja de ruta de la web** (columna «🚧 En marcha»): quitar «Publicar la app en Google Play» y poner en su lugar **Agendario Lite**: «Agendario Lite: sin servidor, solo app Android, con copia cifrada en tu Google Drive. Será la versión de Google Play.» (texto a ajustar con Daniel si quiere).
 - **Rehacer en la web** lo que cambia de regalos: textos de Funciones/Regalos, capturas de la galería (`web_regalos`, `app_regalos`, recibidos) con las tres pestañas, valoración y fotos.
 
 ### Manual
