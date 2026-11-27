@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## 1.4.1 — favoritos desde la lista y web al día
+- **Favoritos desde la lista**: cada contacto lleva al final de su fila una **estrella**, rellena si es favorito y vacía si no. Tócala para marcarlo o quitarlo **al momento, sin abrir la ficha** (en la web y en la app). Con el filtro ★ del buscador activado, al quitar un favorito desaparece de la lista. Sin conexión, el cambio se guarda y se envía al volver.
+- **Web dagarin.es/agendario**: capturas nuevas con datos de ejemplo (Regalos con sus pestañas y el estado de cada idea, Etiquetas, favoritos y el menú nuevo de la app), una entrada nueva **«Recibidos»** en la galería y textos al día.
+- Manual: capítulo 14 con las novedades.
+- La APK anterior sigue funcionando con este servidor; la estrella en la lista de la app llega con la APK nueva (en la web, al actualizar el servidor).
+
 ## 1.4.0 — favoritos, etiquetas renovadas y nuevo menú de la app
 - **Favoritos**: estrella ☆ junto al nombre en la ficha de cada contacto. Son **personales**, como las etiquetas (en un contacto compartido, tu favorito es solo tuyo). En la lista salen con ★ y, con la **estrella a la derecha del buscador**, ves solo tus favoritos (se combina con lo que busques y con la etiqueta elegida); vuelve a tocarla para ver todos.
 - **Los favoritos viajan**: a **Gmail** como **Destacados** (y así también en Outlook a través de Google); a **Fastmail**, al **móvil** (servidor CardDAV, DAVx⁵) y en los **.vcf** como la categoría «Favoritos». En el móvil, meter o sacar un contacto del grupo «Favoritos» lo marca o desmarca en Agendario, y al importar un .vcf de Agendario se respetan. Al combinar duplicados, el favorito se conserva.

@@ -1,7 +1,8 @@
 import { keepInView } from "../lib/keepInView";
 import { LetterIndex } from "../components/LetterIndex";
 import { sortOptions, useSortPref, type SortId } from "../lib/sort";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAlert } from "../components/Dialogs";
 import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { geoStatusLabels, geoStatuses, type ContactSummary } from "@agendario/shared";
@@ -150,6 +151,40 @@ function SelectableAvatar({ selecting, checked, label, onToggle, children }: {
         </span>
       ) : children}
     </span>
+  );
+}
+
+/** ☆/★ al final de cada fila: marca o desmarca el favorito al momento, sin abrir la ficha. */
+function ListFavoriteButton({ contact }: { contact: ContactSummary }) {
+  const qc = useQueryClient();
+  const showAlert = useAlert();
+  const on = !!contact.favorite;
+  // Cambia el favorito en todas las listas guardadas (actualización optimista)
+  function setLocal(v: boolean) {
+    qc.setQueriesData<unknown>({ queryKey: ["contacts"] }, (old: unknown) =>
+      Array.isArray(old) ? (old as ContactSummary[]).map((x) => (x.id === contact.id ? { ...x, favorite: v } : x)) : old,
+    );
+  }
+  const save = useMutation({
+    mutationFn: (v: boolean) => api.put<{ favorite: boolean }>(`/contacts/${contact.id}/favorite`, { favorite: v }),
+    onMutate: (v) => setLocal(v),
+    onError: (e, v) => { setLocal(!v); showAlert("No se ha podido guardar", (e as Error).message); },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["contacts"] });
+      qc.invalidateQueries({ queryKey: ["contact", contact.id] });
+    },
+  });
+  return (
+    <button
+      type="button"
+      className={`list-fav shrink-0 self-stretch px-3 transition ${on ? "text-amber-500" : "text-slate-300 hover:text-amber-500"}`}
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); void haptic(); save.mutate(!on); }}
+      aria-pressed={on}
+      aria-label={on ? `Quitar a ${contact.displayName} de favoritos` : `Añadir a ${contact.displayName} a favoritos`}
+      title={on ? "Favorito (toca para quitarlo)" : "Añadir a favoritos"}
+    >
+      <StarIcon filled={on} className="h-5 w-5" />
+    </button>
   );
 }
 
@@ -538,7 +573,7 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
                 <input type="checkbox" className="h-4 w-4 cursor-pointer" checked={selected.has(c.id)} onChange={() => toggleOne(c)} />
               </label>
             )}
-            <Link to={`/contacts/${c.id}`} className={`flex min-w-0 flex-1 items-center gap-3 py-3 pr-4 hover:bg-slate-50/60 ${isApp ? "pl-4" : "pl-2"}`}>
+            <Link to={`/contacts/${c.id}`} className={`flex min-w-0 flex-1 items-center gap-3 py-3 pr-1 hover:bg-slate-50/60 ${isApp ? "pl-4" : "pl-2"}`}>
               {isApp ? (
                 <SelectableAvatar
                   selecting={selected.size > 0}
@@ -554,7 +589,6 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-1.5">
                   <span className="truncate font-medium">{c.displayName}</span>
-                  {c.favorite && <span className="shrink-0 text-amber-500" title="Favorito" aria-label="Favorito"><StarIcon filled className="h-4 w-4" /></span>}
                 </div>
                 {(sort === "family" || sort === "given" || sort === "nickname") && sortText(c, sort) && sortText(c, sort) !== c.displayName && (
                   <div className="truncate text-xs text-indigo-700/80">{sort === "nickname" ? `«${c.nickname}»` : sort === "family" ? `${c.familyName}, ${c.givenName}`.replace(/, $/, "") : sortText(c, sort)}</div>
@@ -580,6 +614,7 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
               {c.hasHistory && <span className="shrink-0 text-indigo-500"><HistoryIcon className="h-5 w-5" title="Tiene cambios en el historial" /></span>}
               <GeoIcon status={c.geo} />
             </Link>
+            <ListFavoriteButton contact={c} />
           </li>
           </Fragment>
           );

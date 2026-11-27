@@ -1,0 +1,47 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><style>
+@page { size: 595.92pt 842.88pt; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Inter Display", Inter, sans-serif; color: #1e293b; font-size: 10.6pt; line-height: 1.55; letter-spacing: .1pt; }
+.page { width: 595.92pt; height: 842.88pt; position: relative; padding: 52pt 48pt 60pt 48pt; page-break-after: always; overflow: hidden; }
+.page:last-child { page-break-after: auto; }
+h1 { font-size: 21pt; color: #3730a3; margin: 0 0 6pt; font-weight: 700; padding-bottom: 8pt; border-bottom: 1px solid #1e293b; }
+h1 .n { color: #a5b4fc; margin-right: 6pt; }
+h2 { font-size: 12.5pt; color: #1e1b4b; margin: 16pt 0 4pt; font-weight: 700; }
+h3 { font-size: 10.8pt; color: #3730a3; margin: 10pt 0 2pt; font-weight: 700; }
+p { margin: 4pt 0; }
+ul, ol { margin: 4pt 0; padding-left: 16pt; }
+li { margin: 2pt 0; }
+b { color: #1e1b4b; }
+.tip { background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.warn { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 6pt; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.8pt; }
+.foot { position: absolute; bottom: 14pt; left: 48pt; right: 48pt; display: flex; justify-content: space-between; font-size: 8.5pt; color: #5b5f77; }
+.row { display: flex; gap: 14pt; align-items: flex-start; }
+img.shot { border: 1px solid #e2e8f0; border-radius: 8pt; display: block; }
+.cap { font-size: 8.6pt; color: #64748b; text-align: center; margin-top: 3pt; }
+code { background: #eef2ff; color: #3730a3; padding: 0 3pt; border-radius: 3pt; font-size: 9pt; word-break: break-all; }
+</style></head><body>
+
+<div class="page">
+<h1><span class="n">14</span>Novedades de la versión 1.4.1</h1>
+<p>La 1.4.1 es una versión pequeña: permite marcar los <b>favoritos directamente desde la lista</b> de contactos, sin abrir la ficha.</p>
+
+<h2>Favoritos desde la lista</h2>
+<ul>
+<li>Al final de cada fila de la lista de contactos hay una <b>estrella</b>: <b>rellena</b> (amarilla) si el contacto es favorito y <b>vacía</b> (solo el contorno) si no lo es.</li>
+<li><b>Tócala</b> para marcarlo o desmarcarlo. Se guarda al momento y <b>no abre la ficha</b>; para abrirla, toca el nombre como siempre.</li>
+<li>Con la estrella del buscador activada (<b>solo favoritos</b>), al quitar la estrella de un contacto desaparece de la lista.</li>
+<li>En la app, la selección rápida sigue igual: mantener pulsada la foto marca varios contactos; la estrella es aparte.</li>
+<li>Sin conexión, el cambio se guarda en el móvil y se envía al servidor cuando vuelve la conexión.</li>
+<li>Como siempre, los favoritos son <b>personales</b> y viajan a Gmail (Destacados), a Fastmail, al móvil y a los .vcf (categoría «Favoritos»).</li>
+</ul>
+<img class="shot" src="m14-web-lista.png" style="width:88%; margin:8pt auto 0"><div class="cap">La lista en el ordenador: estrella al final de cada contacto.</div>
+<div class="row" style="justify-content:center; margin-top:10pt">
+<div style="width:30%"><img class="shot" src="m14-app-lista.png" style="width:100%"><div class="cap">En la app, la estrella queda a la derecha de cada fila.</div></div>
+<div style="width:52%">
+<div class="tip"><b>Cómo actualizar.</b> Instala el zip con <code>bash /opt/actualizar-agendario.sh</code>. En la web se ve al recargar; en el móvil hace falta la <b>APK 1.4.1</b> (la anterior sigue funcionando con este servidor, pero sin la estrella en la lista).</div>
+<div class="tip">La web de Agendario (dagarin.es/agendario) estrena capturas con las pestañas de Regalos y una entrada nueva en la galería, <b>«Recibidos»</b>.</div>
+</div>
+</div>
+<div class="foot"><span>Agendario · Manual 1.4.1</span><span>57</span></div>
+</div>
+</body></html>

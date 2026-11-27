@@ -104,6 +104,7 @@ async function applyLocally(c: QueuedChange) {
 const QUEUEABLE: [string, RegExp, string][] = [
   ["PATCH", /^\/contacts\/[0-9a-f-]{36}$/, "Cambios en un contacto"],
   ["PUT", /^\/contacts\/[0-9a-f-]{36}\/prefs$/, "Preferencias de un contacto"],
+  ["PUT", /^\/contacts\/[0-9a-f-]{36}\/favorite$/, "Favorito"],
   ["POST", /^\/contacts\/[0-9a-f-]{36}\/interactions$/, "Llamada o apunte"],
   ["PATCH", /^\/interactions\/[0-9a-f-]{36}$/, "Llamada o apunte"],
   ["DELETE", /^\/interactions\/[0-9a-f-]{36}$/, "Borrar una llamada o apunte"],

@@ -261,7 +261,7 @@
           Ver en GitHub
         </a>
       </div>
-      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.4.0</b> <span data-gh-date></span></div>
+      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.4.1</b> <span data-gh-date></span></div>
     </div>
     <div class="devices rv">
       <div class="laptop"><div class="screen"><span data-shot="hero_web"></span></div></div>
@@ -381,7 +381,7 @@
     </div>
     <div class="feat">
       <div class="card rv"><div class="ico">👤</div><h3>Fichas completas</h3><p>Foto y portada, varios teléfonos, emails, webs y direcciones geolocalizadas en el mapa.</p></div>
-      <div class="card rv"><div class="ico y">🎁</div><h3>Regalos</h3><p>Ideas con enlace y miniatura que pasan de pendiente a comprado y regalado. Y la lista de lo que te regalan, aunque sea de varias personas.</p></div>
+      <div class="card rv"><div class="ico y">🎁</div><h3>Regalos</h3><p>Ideas con enlace y miniatura que pasan de pendiente a comprado y regalado, con el día en que lo entregaste. Y una pestaña con todo lo que te regalan, aunque sea de varias personas, con buscador y filtro por persona.</p></div>
       <div class="card rv"><div class="ico p">🎂</div><h3>Fechas y avisos</h3><p>Cumpleaños, aniversarios y un calendario que te avisa de los regalos pendientes.</p></div>
       <div class="card rv"><div class="ico g">📔</div><h3>Efemérides</h3><p>Tus propias fechas para recordar: el coche nuevo, un ascenso, un viaje… con foto y comentario.</p></div>
       <div class="card rv"><div class="ico">🔗</div><h3>Relaciones</h3><p>Padres, hijos, primos, cuñados… se crean en las dos fichas a la vez. Y la lista de trabajadores de cada empresa.</p></div>
@@ -394,7 +394,7 @@
       <div class="card rv"><div class="ico g">🛟</div><h3>Copias automáticas</h3><p>Varias copias cifradas a la vez: carpeta local, NFS, SMB o Google Drive, con restauración en dos clics.</p></div>
       <div class="card rv"><div class="ico">🧹</div><h3>Duplicados</h3><p>Los detecta y te deja combinarlos de forma automática o campo a campo, con vista previa.</p></div>
       <div class="card rv"><div class="ico y">🏷️</div><h3>Etiquetas y subetiquetas</h3><p>Como carpetas, en 20 colores, también en cada teléfono o email. Ordénalas arrastrando, filtra y exporta por etiqueta.</p></div>
-      <div class="card rv"><div class="ico">⭐</div><h3>Favoritos</h3><p>Marca a los tuyos con una estrella y fíltralos al momento junto al buscador. Viajan a Gmail como destacados y al móvil como grupo.</p></div>
+      <div class="card rv"><div class="ico">⭐</div><h3>Favoritos</h3><p>Márcalos con un toque en la estrella, desde la lista o desde la ficha, y fíltralos al momento junto al buscador. Viajan a Gmail como destacados y al móvil como grupo.</p></div>
       <div class="card rv"><div class="ico p">🕓</div><h3>Historial y papelera</h3><p>60 días para deshacer cualquier cambio o recuperar un contacto borrado.</p></div>
       <div class="card rv"><div class="ico g">👨‍👩‍👧</div><h3>Varios usuarios</h3><p>Cada uno con su agenda, contactos privados, compartidos o públicos para toda la casa.</p></div>
     </div>
@@ -540,7 +540,7 @@ EOF</div>
       <div class="lock" style="margin:0 0 22px">
         <div><span>📝</span><span><b>Notas durante la llamada.</b> Una burbuja para escribir mientras hablas, hacer una foto o adjuntar un archivo; todo se guarda en esa llamada al colgar.</span></div>
         <div><span>⏰</span><span><b>Recordatorios.</b> Te avisan a su hora, también sin conexión, con «Hecho» y «+1 hora».</span></div>
-        <div><span>☑️</span><span><b>Selección rápida.</b> Mantén pulsada la foto de un contacto para marcar varios a la vez.</span></div>
+        <div><span>☑️</span><span><b>Selección rápida.</b> Mantén pulsada la foto de un contacto para marcar varios a la vez, y toca su estrella para tenerlo en favoritos.</span></div>
         <div><span>🚗</span><span><b>En el coche.</b> Con Android Auto, los avisos se leen en voz alta y se contestan dictando.</span></div>
       </div>
       <p>Por ahora la APK se reparte a quien la pide. Déjanos tus datos y te enviaremos el enlace de descarga.</p>
@@ -574,7 +574,8 @@ EOF</div>
     <div class="road rv">
       <!-- Hoja de ruta: «Hecho» = lo de las últimas versiones; «En marcha» e «Ideas» son propuestas, edítalas a tu gusto -->
       <div class="col done"><h3>✅ Hecho · 1.4</h3>
-        <div class="item">Favoritos con una estrella, para filtrarlos junto al buscador (también en Gmail y en el móvil)</div>
+        <div class="item">Favoritos con una estrella, que se marcan con un toque desde la lista, para filtrarlos junto al buscador (también en Gmail y en el móvil)</div>
+        <div class="item">Regalos en dos pestañas: para regalar (pendiente, comprado y regalado) y recibidos</div>
         <div class="item">Etiquetas renovadas: se ordenan arrastrando, 20 colores y las cuentas de Gmail en un desplegable</div>
         <div class="item">App con banda de navegación fija, iconos más grandes y título grande en cada sección</div>
         <div class="item">Aviso de duplicados encima del menú, estés donde estés</div>
@@ -656,6 +657,7 @@ window.AGENDARIO_CONFIG = {
     web_fechas: "", web_fechas_oscuro: "",
     web_efemerides: "", web_efemerides_oscuro: "",
     web_regalos: "", web_regalos_oscuro: "",
+    web_regalos_recibidos: "", web_regalos_recibidos_oscuro: "",
     web_etiquetas: "", web_etiquetas_oscuro: "",
     web_duplicados: "", web_duplicados_oscuro: "",
     web_copias: "", web_copias_oscuro: "",
@@ -665,6 +667,7 @@ window.AGENDARIO_CONFIG = {
     app_fechas: "", app_fechas_oscuro: "",
     app_efemerides: "", app_efemerides_oscuro: "",
     app_regalos: "", app_regalos_oscuro: "",
+    app_regalos_recibidos: "", app_regalos_recibidos_oscuro: "",
     app_etiquetas: "", app_etiquetas_oscuro: "",
     app_llamadas: "", app_llamadas_oscuro: ""
   }
@@ -742,11 +745,12 @@ window.AGENDARIO_CONFIG = {
   /* Galería: web/app × claro/oscuro */
   var GAL = {
     web: [
-      ["lista", "Contactos", "Buscador, etiquetas y orden"],
+      ["lista", "Contactos", "Buscador, favoritos y etiquetas"],
       ["ficha", "Ficha", "Portada, datos, mapa y celebraciones"],
       ["fechas", "Fechas", "Calendario con avisos de regalo"],
       ["efemerides", "Efemérides", "Tus fechas para recordar"],
-      ["regalos", "Regalos", "Ideas por persona y fecha"],
+      ["regalos", "Regalos", "Pendiente, comprado y regalado"],
+      ["regalos_recibidos", "Recibidos", "Lo que te han regalado"],
       ["etiquetas", "Etiquetas", "Arrastrar, colores y Gmail"],
       ["duplicados", "Duplicados", "Combinar con vista previa"],
       ["copias", "Copias", "Varias copias cifradas"]
@@ -756,7 +760,8 @@ window.AGENDARIO_CONFIG = {
       ["ficha", "Ficha", "Llamar, escribir, abrir en mapa"],
       ["fechas", "Fechas", "Calendario y próximos eventos"],
       ["efemerides", "Efemérides", "Foto y comentario personal"],
-      ["regalos", "Regalos", "Ideas, comprados y recibidos"],
+      ["regalos", "Regalos", "Pendiente, comprado y regalado"],
+      ["regalos_recibidos", "Recibidos", "Lo que te han regalado, de uno o de varios"],
       ["etiquetas", "Etiquetas", "Mantén pulsado y arrastra"],
       ["llamadas", "Llamadas", "Registro solo para ti"]
     ]
