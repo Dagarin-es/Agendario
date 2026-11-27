@@ -10,6 +10,18 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 - **Regalos: botones «🎁 Para regalar» y «🎀 Recibidos» siempre arriba** en el móvil (fijos al hacer scroll). Están en `pages/Gifts.tsx`.
 - **Nueva pestaña «Regalados»** en Regalos, junto a las otras dos: lo que Daniel ya ha regalado (ideas con estado `given`): a quién, qué, día del regalo (`givenAt`) y evento (`eventDate`/etiqueta), de lo más reciente a lo más antiguo, con buscador como en Recibidos. Los datos ya existen: no hace falta migración, como mucho una ruta para listarlos.
 
+### Valoración y notas de los regalos
+- **Al marcar un regalo como entregado** (diálogo «¿Qué día lo regalaste?» de `EventForm` en `components/Gifts.tsx`): añadir también una **valoración con estrellas, con medias estrellas** (escala: *pendiente de que Daniel la confirme*) y una **anotación** (cómo fue, qué le pareció…). Editable después.
+- **Regalos recibidos**: añadir la misma **valoración** y una **foto/imagen** (subida desde el móvil o el ordenador; ahora no tienen imagen). Que se vean en la ficha.
+- Servidor: campos nuevos en `gift_ideas` (valoración + anotación de la entrega) y en `gifts_received` (valoración + `image_key`), con migración y en las copias de seguridad. Guardar la valoración como número entero de medias estrellas (sin decimales).
+
+### Ficha del contacto: recuadro «Regalos» con tres pestañas
+- El recuadro «🎁 Ideas para regalos» pasa a llamarse **«🎁 Regalos»** con tres pestañas con emoji (ahora lo regalado se ve demasiado pequeño):
+  - **💡 Ideas**: lo que hay ahora (ideas y compradas).
+  - **✅ Regalados**: los regalos ya hechos, en grande: foto, qué, fecha del regalo y del evento, valoración y anotación.
+  - **🎀 Recibidos**: los regalos recibidos con todos sus datos (foto, fecha, de quién, valoración, notas). Sustituye al recuadro suelto de `GiftsReceived` en `pages/ContactDetail.tsx`.
+- La pestaña «Regalados» de la página Regalos (ver arriba) muestra los mismos datos (foto, valoración, anotación).
+
 ## Revisión en Google Play (cuando Daniel diga)
 
 - **Organizar una revisión en Google Play (prueba interna)**, para instalar y actualizar la app desde Play Store sin el aviso de «app no fiable». Se intenta **una sola vez**: si Google la rechaza, no se insiste y se sigue con la APK (el registro de desarrollador ya cubre la instalación en 2027). Más adelante, cuando esté más terminada, se valorará una **versión Lite sin llamadas** para Play (de momento no).
