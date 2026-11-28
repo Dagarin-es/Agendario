@@ -12,6 +12,19 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
   - **Web y app**: fuera `SharePanel`, la página `Groups` y sus entradas en el menú (`Layout`, `AppShell`), el selector de visibilidad y cualquier aviso de «compartido». Las APK antiguas que llamen a esas rutas deben recibir un error limpio, sin romperse.
   - **Landing**: cambiar la tarjeta «Varios usuarios» (cada uno con su agenda, separada), la pregunta «¿Puedo compartir la agenda con mi familia?» y el «aunque compartas un contacto con tu familia» de Privacidad y de Regalos. **Manual**: quitar o cambiar lo que hable de compartir y de grupos. README y CHANGELOG al día.
 
+## Idea: Mis deseos y listas para regalarme (sin fecha; maquetas en `design/maquetas/deseos/`)
+
+No se hace hasta que Daniel lo diga. Solo en la versión con servidor (en Lite no hay página pública).
+
+- **Mis deseos**: lista personal y permanente de lo que Daniel quiere (enlace, foto y nombre sacados de la web, precio, nota tipo «talla M»). Se rellena desde la app, la web y «Compartir → Añadir» desde una tienda. No hace falta mandarla a nadie. Vive en Regalos, como una pestaña más.
+- **Ocasiones** («Navidad 2026», «Cumpleaños 2027»): nombre, emoji y fecha; se eligen qué deseos entran; opción «revelar después de la fecha».
+- **Invitados con enlace personal**: se eligen de los contactos; Agendario genera un enlace secreto distinto por invitado (WhatsApp, email o copiar). Al abrirlo ya se sabe quién es, sin cuenta ni registro. Es una página web normal: funciona en iPhone, Android y ordenador sin instalar nada. Si alguien reenvía su enlace, el otro actuaría en su nombre (asumido).
+- **Lo que ven los invitados**: la lista entera y, en lo marcado, quién lo compra («Comprado por Luis»). Pueden marcar «Lo compro yo» o «Lo compramos entre varios»; en ese caso el que marca elige a los demás entre los invitados y puede añadir nombres a mano de gente sin enlace (p. ej. la pareja de Ana). Los apuntados lo ven al abrir su enlace («Ana te ha apuntado») y pueden borrarse. Se puede desmarcar.
+- **La sorpresa**: el dueño nunca ve quién ha marcado qué; el servidor no se lo devuelve (no basta con esconderlo en pantalla). Si el dueño abre un enlace de invitado, la página le reconoce (sesión) y le avisa antes de enseñar nada.
+- **Después de la fecha**: la ocasión se archiva y los enlaces dejan de funcionar. Si se activó la revelación, lo regalado pasa a «Recibidos» enlazado a quien lo compró (varios contactos si fue entre varios) y sale de Mis deseos; lo no comprado se queda en Mis deseos para la próxima. Los nombres sueltos se pueden enlazar con un contacto, crear contacto nuevo o dejar como nombre: **los recibidos tendrán que admitir personas que solo son un nombre** (ahora un recibido sin contactos se borra solo con el trigger `gift_received_contacts_orphan`).
+- Opcional: lista siempre abierta con enlace fijo para quien pregunte «¿qué te regalo?» en cualquier momento.
+- **Seguridad**: enlaces imposibles de adivinar, anulables y que caducan, `noindex`, límite de peticiones, solo lo imprescindible en la página pública (sin datos de contacto de nadie).
+
 ## Revisión en Google Play (cuando Daniel diga)
 
 > **Cambio (27-11-2026)**: Google Play se plantea con **Agendario Lite** (ver `LITE.md`), sin registro de llamadas. Lo de abajo sobre permisos de llamadas, vídeo y usuario de demostración en el servidor queda como referencia y se rehará para la Lite.
