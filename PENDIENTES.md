@@ -12,9 +12,9 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
   - **Web y app**: fuera `SharePanel`, la página `Groups` y sus entradas en el menú (`Layout`, `AppShell`), el selector de visibilidad y cualquier aviso de «compartido». Las APK antiguas que llamen a esas rutas deben recibir un error limpio, sin romperse.
   - **Landing**: cambiar la tarjeta «Varios usuarios» (cada uno con su agenda, separada), la pregunta «¿Puedo compartir la agenda con mi familia?» y el «aunque compartas un contacto con tu familia» de Privacidad y de Regalos. **Manual**: quitar o cambiar lo que hable de compartir y de grupos. README y CHANGELOG al día.
 
-## Idea: Mis deseos y listas para regalarme (sin fecha; maquetas en `design/maquetas/deseos/`)
+## Para la próxima versión: Mis deseos y listas para regalarme (maquetas en `design/maquetas/deseos/`)
 
-No se hace hasta que Daniel lo diga. Solo en la versión con servidor (en Lite no hay página pública).
+Decidido el 28-11-2026: entra en la próxima versión. Crear listas y mandar enlaces, solo en la versión con servidor (en Lite no hay página pública); ser invitado, cualquiera con un navegador.
 
 - **Mis deseos**: lista personal y permanente de lo que Daniel quiere (enlace, foto y nombre sacados de la web, precio, nota tipo «talla M»). Se rellena desde la app, la web y «Compartir → Añadir» desde una tienda. No hace falta mandarla a nadie. Vive en Regalos, como una pestaña más.
 - **Ocasiones** («Navidad 2026», «Cumpleaños 2027»): nombre, emoji y fecha; se eligen qué deseos entran; opción «revelar después de la fecha».
@@ -26,6 +26,24 @@ No se hace hasta que Daniel lo diga. Solo en la versión con servidor (en Lite n
 - **Aceptar o no**: los apuntados aparecen como «pendiente» hasta que aceptan («Ana, Luis y Pepe (pendiente)») y pueden decir «No participo». Sin notificaciones push (es una web): lo ven al abrir su enlace; al guardar, el que apunta tiene un botón «Avisar por WhatsApp» que abre WhatsApp con el mensaje y el enlace del otro para que elija el chat. **Nunca se enseñan a los invitados los teléfonos ni emails de los contactos.** Los nombres escritos a mano (sin enlace) no reciben nada: avisarles es cosa del que los apunta; si Daniel quiere, los invita él.
 - **Cambiar de idea**: cualquiera puede soltar lo suyo («Ya no lo regalo») y el regalo vuelve a estar libre. Si alguien acepta unirse a un regalo teniendo ya otro marcado, se le pregunta: «Ya regalas la chaqueta. ¿La dejas libre o haces los dos?». Si uno se borra de un regalo entre varios, los demás siguen.
 - **«¿Falta alguien?»**: en la página del invitado, un botón para sugerirle a Daniel que invite a otra persona (nombre y nota opcional: «Falta Marta, la pareja de Ana»). A Daniel le llega un aviso en la app con «Invitar» (elegir contacto o crear uno y mandarle su enlace) o «Descartar». La sugerencia no revela nada de lo marcado.
+- **«Añadir a mi Agendario»** (para invitados que usan Agendario, completo o Lite): un botón discreto en la página del invitado. Al usarlo, la app lee la ocasión con la API pública (CORS de esas rutas abierto también a los orígenes de Capacitor), pide con qué contacto de su agenda se corresponde el dueño de la lista (o lo crea) y, cuando el invitado marca «Lo regalo yo» desde la app, se apunta solo como «Regalado» en esa ficha (con la ocasión y la fecha). Un navegador no puede saber si una app está instalada, así que:
+  - **Android**: el botón abre un enlace `intent://` con el esquema `agendario://` (la app ya lo usa) y `S.browser_fallback_url` a dagarin.es/agendario#android: si la app está, se abre; si no, se le ofrece conseguirla.
+  - **iPhone y ordenador**: «¿Usas Agendario? Copia este enlace y pégalo en tu Agendario» + «¿Qué es Agendario?» (enlace a la landing).
+  - En la app, «Compartir → Agendario» o pegar el enlace también lo abre (los dominios de cada servidor son distintos: no se pueden asociar con Android App Links).
+- **Seguridad (requisitos)**:
+  - **Subdominio solo para las listas** (p. ej. `regalos.dagarin.es`): en Nginx Proxy Manager solo pasan las rutas públicas de las listas y el servidor, por ese host, no sirve nada más (ni la web, ni el login, ni la API normal). Documentarlo en el manual y en la landing.
+  - Código del enlace aleatorio de ≥128 bits, **detrás de `#`** (no llega a los registros del proxy ni a las vistas previas); en la base de datos solo su hash; por invitado, anulable y con caducidad al archivar la ocasión.
+  - `Referrer-Policy: no-referrer` y `rel="noopener noreferrer"` en los enlaces a tiendas; `noindex` (meta y `X-Robots-Tag`); vista previa genérica («Lista de deseos»), sin nombres ni regalos.
+  - Abrir la página nunca cambia nada (las vistas previas de WhatsApp la visitan): marcar exige pulsar.
+  - Rutas públicas mínimas y aparte, sin sesión ni cookies: solo leer esa ocasión y marcar/desmarcar lo propio; nunca contactos, ids internos, teléfonos ni emails. Validación con zod, límites de tamaño, límite de peticiones por IP y de sugerencias por invitado.
+  - Los invitados nunca hacen que el servidor descargue nada (sin SSRF): solo el dueño añade enlaces; las fotos se sirven desde las copias guardadas, no desde las tiendas.
+  - Texto de los invitados (nombres a mano, «¿Falta alguien?») siempre como texto, con longitud máxima.
+  - Sin recursos de terceros en la página (ni fuentes de Google ni analíticas).
+  - Cada invitado solo puede quitar lo suyo; anular un enlace libera lo que marcó sin revelar qué era.
+  - El servidor nunca devuelve a la sesión del dueño lo marcado (antes de la revelación).
+  - **Nombre que verán los demás** por invitado (por defecto el nombre de pila), no el nombre de la agenda.
+  - Al archivar, borrar a los pocos días quién marcó qué y los nombres escritos a mano, salvo lo que pase a Recibidos.
+  - Antes de dar la versión por buena: revisión a fondo de la parte pública y pruebas de ataque (adivinar códigos, inyección de texto, acceso a otras ocasiones, peticiones masivas).
 - Opcional: lista siempre abierta con enlace fijo para quien pregunte «¿qué te regalo?» en cualquier momento.
 - **Seguridad**: enlaces imposibles de adivinar, anulables y que caducan, `noindex`, límite de peticiones, solo lo imprescindible en la página pública (sin datos de contacto de nadie).
 
