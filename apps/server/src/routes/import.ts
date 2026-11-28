@@ -129,7 +129,6 @@ export const importRoutes = new Hono<AppEnv>()
             .values({
               ...contactValues(p),
               ownerId: user.id,
-              visibility: req.visibility,
               photoKey,
               coverKey,
               vcardUid: p.uid,

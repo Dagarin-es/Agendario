@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { Link } from "react-router";
-import type { DuplicateMode, ImportResult, Tag, Visibility } from "@agendario/shared";
+import type { DuplicateMode, ImportResult, Tag } from "@agendario/shared";
 import { useTags } from "../components/Tags";
 import { api } from "../lib/api";
 
@@ -55,7 +55,6 @@ export function ImportPage() {
   const [existingTag, setExistingTag] = useState("");
   const [categoriesAsTags, setCategoriesAsTags] = useState(true);
   const [onDuplicate, setOnDuplicate] = useState<DuplicateMode>("skip");
-  const [visibility, setVisibility] = useState<Visibility>("private");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [result, setResult] = useState<(ImportResult & { tagId: string | null }) | null>(null);
   const [error, setError] = useState("");
@@ -102,7 +101,6 @@ export function ImportPage() {
           tagIds: tagId ? [tagId] : [],
           categoriesAsTags,
           onDuplicate,
-          visibility,
         });
         total.created += r.created;
         total.updated += r.updated;
@@ -199,13 +197,6 @@ export function ImportPage() {
                 <option value="duplicate">Importarlo igualmente (duplicado)</option>
               </select>
               <p className="mt-1 text-[11px] text-slate-400">Se considera el mismo si coincide el UID del vCard o, si no lo tiene, el nombre y un email o teléfono.</p>
-            </div>
-            <div>
-              <label className="label">Visibilidad de los nuevos contactos</label>
-              <select className="input" value={visibility} onChange={(e) => setVisibility(e.target.value as Visibility)}>
-                <option value="private">Privados</option>
-                <option value="public">Públicos (todos los usuarios)</option>
-              </select>
             </div>
           </div>
 

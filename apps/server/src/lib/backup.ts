@@ -61,10 +61,7 @@ export async function jobExists(id: string) {
 const TABLES = [
   "users",
   "app_passwords",
-  "groups",
-  "group_members",
   "contacts",
-  "contact_shares",
   "important_dates",
   "personal_events",
   "relationships",
@@ -89,6 +86,13 @@ const TABLES = [
   "dav_resources",
   "sync_group_links",
   "gmail_links",
+  "wishes",
+  "wish_lists",
+  "wish_list_items",
+  "wish_guests",
+  "wish_claims",
+  "wish_claim_people",
+  "wish_suggestions",
   "settings",
 ] as const;
 

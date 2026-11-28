@@ -13,7 +13,6 @@ import { Avatar } from "../components/Avatar";
 import { useBulkActions } from "../components/BulkBar";
 import { useDuplicateCount } from "../components/Layout";
 import { TagChip, tagTree, useTagPath, useTags } from "../components/Tags";
-import { VisibilityBadge } from "../components/VisibilityBadge";
 import { api } from "../lib/api";
 import { isApp } from "../lib/platform";
 import { haptic } from "../lib/native";
@@ -564,7 +563,6 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
                 )}
                 <div className="truncate text-sm text-slate-500">
                   {(tag ? [c.phone, c.email] : [c.organization]).filter(Boolean).join(" · ")}
-                  {!c.isMine && <span>{(tag ? c.phone || c.email : c.organization) ? " · " : ""}de {c.ownerName}</span>}
                 </div>
                 {c.tags.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1">
@@ -572,7 +570,6 @@ export function ContactListPage({ pane = false }: { pane?: boolean } = {}) {
                   </div>
                 )}
               </div>
-              {c.visibility !== "private" && <VisibilityBadge v={c.visibility} />}
               {c.hasHistory && <span className="shrink-0 text-indigo-500"><HistoryIcon className="h-5 w-5" title="Tiene cambios en el historial" /></span>}
               <GeoIcon status={c.geo} />
             </Link>

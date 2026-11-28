@@ -5,9 +5,6 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import {
   exportSelectionSchema,
-  groupInputSchema,
-  groupMemberSchema,
-  type Group,
 } from "@agendario/shared";
 import { db, schema } from "../db/index.js";
 import { requireAuth, type AppEnv } from "../lib/auth.js";
@@ -15,66 +12,7 @@ import { eventsBetween, pendingGifts } from "../lib/events.js";
 import { expandTagIds } from "../lib/tags.js";
 import { buildVcf, vcfHeaders } from "../lib/export.js";
 
-const g = schema.groups;
-const gm = schema.groupMembers;
 const idParam = zValidator("param", z.object({ id: z.string().uuid() }));
-
-// ---------- Grupos ----------
-
-async function myGroups(userId: string): Promise<Group[]> {
-  const visible = await db
-    .selectDistinct({ id: g.id, name: g.name, ownerId: g.ownerId })
-    .from(g)
-    .leftJoin(gm, eq(gm.groupId, g.id))
-    .where(or(eq(g.ownerId, userId), eq(gm.userId, userId)))
-    .orderBy(g.name);
-  if (!visible.length) return [];
-  const members = await db
-    .select({ groupId: gm.groupId, id: schema.users.id, name: schema.users.name })
-    .from(gm)
-    .innerJoin(schema.users, eq(schema.users.id, gm.userId))
-    .where(inArray(gm.groupId, visible.map((v) => v.id)));
-  return visible.map((v) => ({
-    ...v,
-    members: members.filter((m) => m.groupId === v.id).map(({ id, name }) => ({ id, name })),
-  }));
-}
-
-async function requireGroupOwner(groupId: string, userId: string) {
-  const [row] = await db.select().from(g).where(and(eq(g.id, groupId), eq(g.ownerId, userId)));
-  if (!row) throw new HTTPException(404, { message: "Grupo no encontrado" });
-}
-
-export const groupRoutes = new Hono<AppEnv>()
-  .use(requireAuth)
-  .get("/", async (c) => c.json(await myGroups(c.get("user").id)))
-  .post("/", zValidator("json", groupInputSchema), async (c) => {
-    const user = c.get("user");
-    const [row] = await db.insert(g).values({ name: c.req.valid("json").name, ownerId: user.id }).returning();
-    await db.insert(gm).values({ groupId: row.id, userId: user.id });
-    return c.json(row, 201);
-  })
-  .delete("/:id", idParam, async (c) => {
-    const user = c.get("user");
-    const { id } = c.req.valid("param");
-    await requireGroupOwner(id, user.id);
-    await db.delete(g).where(eq(g.id, id));
-    return c.body(null, 204);
-  })
-  .post("/:id/members", idParam, zValidator("json", groupMemberSchema), async (c) => {
-    const user = c.get("user");
-    const { id } = c.req.valid("param");
-    await requireGroupOwner(id, user.id);
-    await db.insert(gm).values({ groupId: id, userId: c.req.valid("json").userId }).onConflictDoNothing();
-    return c.json(await myGroups(user.id));
-  })
-  .delete("/:id/members/:userId", zValidator("param", z.object({ id: z.string().uuid(), userId: z.string().uuid() })), async (c) => {
-    const user = c.get("user");
-    const { id, userId } = c.req.valid("param");
-    await requireGroupOwner(id, user.id);
-    await db.delete(gm).where(and(eq(gm.groupId, id), eq(gm.userId, userId)));
-    return c.body(null, 204);
-  });
 
 // ---------- Próximas fechas (cumpleaños + fechas importantes) ----------
 

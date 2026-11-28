@@ -28,6 +28,7 @@ Contactos, etiquetas (con subetiquetas y colores), favoritos, fechas y calendari
 - Gmail, Fastmail y Todoist (escriben en servicios de fuera; el permiso de contactos de Google exige verificación pesada).
 - Servidor CardDAV, enlace de calendario .ics y contraseñas de aplicación.
 - Copias a NAS (NFS/SMB) y a Drive con rclone: las sustituye la copia cifrada en Drive.
+- Crear listas de deseos para mandar a invitados (necesitan la página pública de un servidor). Sí se mantiene **Mis deseos** como lista personal y **ser invitado**: abrir la lista de otra persona («Añadir a mi Agendario») y que lo regalado se apunte en su ficha.
 - Registro de llamadas y todo lo que cuelga de él: burbuja durante la llamada, aviso al colgar, números desconocidos, notas por Android Auto, adjuntos de llamada. Sin permisos `READ_CALL_LOG`, `PROCESS_OUTGOING_CALLS`, `SYSTEM_ALERT_WINDOW` ni servicio en primer plano `specialUse`.
 
 ## Se añade

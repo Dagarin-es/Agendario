@@ -13,14 +13,12 @@ import {
   contactPatchSchema,
   importantDateInputSchema,
   relationshipInputSchema,
-  sharesInputSchema,
   type BulkResult,
   type Contact,
   type ContactDetail,
   type ContactSummary,
   type GiftStatus,
   relationshipInverse,
-  type Share,
   type TagLite,
 } from "@agendario/shared";
 import { listReceived } from "../lib/giftsReceived.js";
@@ -72,7 +70,7 @@ function toSummary(r: Row, userId: string, tags: TagLite[] = [], shown?: { phone
     nickname: r.contact.nickname,
     organization: r.contact.organization,
     hasPhoto: !!r.contact.photoKey,
-    visibility: r.contact.visibility,
+    visibility: "private", // APK anteriores a la 1.6
     ownerId: r.contact.ownerId,
     ownerName: r.ownerName,
     isMine: r.contact.ownerId === userId,
@@ -138,35 +136,12 @@ async function loadContact(id: string, userId: string) {
   return row;
 }
 
-async function loadShares(contactId: string): Promise<Share[]> {
-  const s = schema.contactShares;
-  const rows = await db
-    .select({
-      userId: s.userId,
-      groupId: s.groupId,
-      permission: s.permission,
-      userName: schema.users.name,
-      groupName: schema.groups.name,
-    })
-    .from(s)
-    .leftJoin(schema.users, eq(schema.users.id, s.userId))
-    .leftJoin(schema.groups, eq(schema.groups.id, s.groupId))
-    .where(eq(s.contactId, contactId));
-  return rows.map((r) => ({
-    userId: r.userId,
-    groupId: r.groupId,
-    permission: r.permission,
-    name: r.userName ?? r.groupName ?? "?",
-  }));
-}
-
 /** Ficha completa de un contacto (con lo personal del usuario: ideas, llamadas, preferencias…). */
 async function buildDetail(id: string, userId: string): Promise<ContactDetail> {
     const row = await loadContact(id, userId);
-    const isMine = row.contact.ownerId === userId;
 
     const related = schema.contacts;
-    const [dates, rels, ideas, received, shares, tagMap] = await Promise.all([
+    const [dates, rels, ideas, received, tagMap] = await Promise.all([
       db.select().from(schema.importantDates).where(eq(schema.importantDates.contactId, id)),
       db
         .select({
@@ -185,7 +160,6 @@ async function buildDetail(id: string, userId: string): Promise<ContactDetail> {
         .where(and(eq(schema.giftIdeas.contactId, id), eq(schema.giftIdeas.userId, userId)))
         .orderBy(schema.giftIdeas.given, schema.giftIdeas.createdAt),
       listReceived(userId, { contactId: id }),
-      isMine ? loadShares(id) : Promise.resolve(null),
       tagsForContacts([id], userId),
     ]);
     const itemTags = (await itemTagsFor([id], userId)).get(id) ?? {};
@@ -236,7 +210,6 @@ async function buildDetail(id: string, userId: string): Promise<ContactDetail> {
         createdAt: g.createdAt.toISOString(),
       })),
       giftsReceived: received,
-      shares,
       itemTags,
     };
     return detail;
@@ -375,10 +348,8 @@ export const contactRoutes = new Hono<AppEnv>()
   .patch("/:id", idParam, zValidator("json", contactPatchSchema), async (ctx) => {
     const user = ctx.get("user");
     const { id } = ctx.req.valid("param");
-    const access = await requireEdit(id, user.id);
+    await requireEdit(id, user.id);
     const body = ctx.req.valid("json");
-    // Solo el propietario decide quién ve el contacto.
-    if (body.visibility && !access.isMine) delete body.visibility;
     await checkOrgLink(body.organizationContactId, id, user.id);
     const before = await rawContact(id);
     const [after] = await db
@@ -535,47 +506,6 @@ export const contactRoutes = new Hono<AppEnv>()
         .onConflictDoUpdate({ target: [it.userId, it.contactId, it.itemId], set: { tagId } });
     }
     return ctx.json((await itemTagsFor([id], user.id)).get(id) ?? {});
-  })
-
-  // ---------- Compartir (solo propietario) ----------
-  .put("/:id/shares", idParam, zValidator("json", sharesInputSchema), async (ctx) => {
-    const user = ctx.get("user");
-    const { id } = ctx.req.valid("param");
-    await requireOwner(id, user.id);
-    const { shares } = ctx.req.valid("json");
-    const clean = shares.filter((s) => s.userId !== user.id);
-
-    // Solo se puede compartir con grupos propios o de los que eres miembro.
-    const groupIds = clean.map((s) => s.groupId).filter((g): g is string => !!g);
-    if (groupIds.length) {
-      const allowed = await db
-        .select({ id: schema.groups.id })
-        .from(schema.groups)
-        .leftJoin(schema.groupMembers, eq(schema.groupMembers.groupId, schema.groups.id))
-        .where(
-          and(
-            inArray(schema.groups.id, groupIds),
-            or(eq(schema.groups.ownerId, user.id), eq(schema.groupMembers.userId, user.id)),
-          ),
-        );
-      const ok = new Set(allowed.map((g) => g.id));
-      if (groupIds.some((g) => !ok.has(g))) throw new HTTPException(403, { message: "Grupo no permitido" });
-    }
-
-    await db.transaction(async (tx) => {
-      await tx.delete(schema.contactShares).where(eq(schema.contactShares.contactId, id));
-      if (clean.length) {
-        await tx.insert(schema.contactShares).values(
-          clean.map((s) => ({
-            contactId: id,
-            userId: s.userId ?? null,
-            groupId: s.groupId ?? null,
-            permission: s.permission,
-          })),
-        );
-      }
-    });
-    return ctx.json(await loadShares(id));
   })
 
   // ---------- Fechas importantes ----------

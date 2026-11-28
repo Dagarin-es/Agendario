@@ -24,7 +24,6 @@ function useBoth(aId: string, bId: string) {
   return { a: qa?.data, b: qb?.data, error: qa?.error || qb?.error };
 }
 
-const visLabel = { private: "Privado", shared: "Compartido", public: "Público" } as const;
 
 // ---------- Fichas completas, una junto a otra ----------
 
@@ -139,7 +138,6 @@ export function FullCardsModal({
               : null,
           )}
           {row("Regalos recibidos", (c) => (c.giftsReceived.length ? c.giftsReceived.map((g) => <div key={g.id}>{g.description}{g.occasion ? ` · ${occasionLabels[g.occasion]}` : ""}</div>) : null))}
-          {row("Visibilidad", (c) => visLabel[c.visibility])}
           {row("Creado", (c) => formatDate(c.createdAt))}
           {row("Modificado", (c) => formatDate(c.updatedAt))}
         </div>

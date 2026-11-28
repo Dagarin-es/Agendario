@@ -146,11 +146,14 @@
   position: sticky; top: calc(var(--header-h, 0px) - 1px); z-index: 6;
   display: flex; gap: 8px; margin: -5px -16px 12px; padding: 7px 16px 10px;
   background: var(--app-surface); transition: background .2s;
+  /* Si no caben, se desplazan de lado (sin cortar los nombres) */
+  overflow-x: auto; scrollbar-width: none; scroll-padding-inline: 16px;
   border-bottom: 1px solid color-mix(in oklab, var(--color-slate-300) 55%, transparent);
 }
 .hdr-scrolled .m3-subtabs { background: var(--app-surface-2); }
+.m3-subtabs::-webkit-scrollbar { display: none; }
 .m3-subtab {
-  flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1 0 auto; white-space: nowrap;
   padding: 8px 10px; border-radius: 999px; font-size: 14px; font-weight: 500; line-height: 1.2;
   color: var(--color-slate-700); background: var(--color-white, #fff);
   border: 1.5px solid var(--color-slate-300); transition: background .15s, border-color .15s, color .15s;

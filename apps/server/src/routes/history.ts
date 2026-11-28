@@ -28,7 +28,6 @@ async function valuesFrom(snapshot: Record<string, unknown>, fields: HistoryFiel
   const v: Record<string, unknown> = {};
   for (const f of fields) {
     if (nonRestorableFields.includes(f) || !(f in snapshot)) continue;
-    if (f === "visibility" && !isMine) continue;
     v[f] = snapshot[f];
   }
   // La empresa enlazada solo si sigue existiendo y la puedes ver

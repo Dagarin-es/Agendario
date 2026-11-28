@@ -21,12 +21,10 @@ import {
 } from "@agendario/shared";
 import { Avatar } from "../components/Avatar";
 import { GiftsBox } from "../components/GiftsBox";
-import { SharePanel } from "../components/SharePanel";
 import { ContactTags } from "../components/Tags";
 import { ItemTag } from "../components/ItemTag";
 import { addressLine, MapLinks, MiniMap } from "../components/MapLinks";
 import { MapPickerButton } from "../components/AddressSearch";
-import { VisibilityBadge } from "../components/VisibilityBadge";
 import { ContactPicker } from "../components/ContactPicker";
 import { byNextAnniversary, usePersonalEvents } from "../components/PersonalEvents";
 import { PhotoCropper } from "../components/PhotoCropper";
@@ -269,7 +267,6 @@ export function ContactDetailPage() {
                   {c.reminders.length} {c.reminders.length === 1 ? "recordatorio" : "recordatorios"}
                 </a>
               )}
-              <span className="text-xs font-normal"><VisibilityBadge v={c.visibility} /></span>
             </h1>
             {(c.jobTitle || (c.organization && c.organization !== c.displayName)) && (
               <p className="mt-0.5 text-slate-500">
@@ -284,7 +281,6 @@ export function ContactDetailPage() {
                 )}
               </p>
             )}
-            {!c.isMine && <p className="text-xs text-slate-500">de {c.ownerName}{c.canEdit ? " · puedes editar" : " · solo lectura"}</p>}
         </div>
         {/* En el móvil, de las etiquetas para abajo va debajo de la foto, a todo el ancho */}
         <div className="detail-rest col-span-2 min-w-0 space-y-2.5 sm:col-span-1 sm:col-start-2">
@@ -504,10 +500,6 @@ export function ContactDetailPage() {
         </div>
       </div>
 
-      {c.isMine && c.visibility === "shared" && c.shares && <SharePanel contactId={c.id} shares={c.shares} />}
-      {c.isMine && c.visibility === "private" && (
-        <p className="text-center text-xs text-slate-400">Para compartirlo, edítalo y cambia la visibilidad a «Compartido».</p>
-      )}
     </div>
   );
 }

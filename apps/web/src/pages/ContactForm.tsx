@@ -3,7 +3,7 @@ import { PhotoCropper } from "../components/PhotoCropper";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { mobileNameLabels, type Address, type Contact, type ContactDetail, type ContactInput, type LabeledValue, type TagLite, type Visibility } from "@agendario/shared";
+import { mobileNameLabels, type Address, type Contact, type ContactDetail, type ContactInput, type LabeledValue, type TagLite } from "@agendario/shared";
 import { api } from "../lib/api";
 import { ContactPicker } from "../components/ContactPicker";
 import { AddressSearch, MapPickerButton, useGeocoder } from "../components/AddressSearch";
@@ -12,7 +12,7 @@ import { Avatar } from "../components/Avatar";
 
 const empty: ContactInput = {
   givenName: "", familyName: "", displayName: "", nickname: "", organization: "", organizationContactId: null, jobTitle: "",
-  birthday: null, emails: [], phones: [], urls: [], addresses: [], notes: "", visibility: "private", mobileName: "full",
+  birthday: null, emails: [], phones: [], urls: [], addresses: [], notes: "", mobileName: "full",
 };
 
 const monthNames = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -122,8 +122,8 @@ export function ContactFormPage() {
 
   useEffect(() => {
     if (!existing) return;
-    const { givenName, familyName, displayName, nickname, organization, organizationContactId, jobTitle, birthday, emails, phones, urls, addresses, notes, visibility } = existing;
-    setForm({ givenName, familyName, displayName, nickname, organization, organizationContactId, jobTitle, birthday, emails, phones, urls, addresses, notes, visibility, mobileName: existing.mobileName ?? "full" });
+    const { givenName, familyName, displayName, nickname, organization, organizationContactId, jobTitle, birthday, emails, phones, urls, addresses, notes } = existing;
+    setForm({ givenName, familyName, displayName, nickname, organization, organizationContactId, jobTitle, birthday, emails, phones, urls, addresses, notes, mobileName: existing.mobileName ?? "full" });
     setOrgName(existing.organizationContact?.displayName ?? "");
     setTags(existing.tags);
     setBday(splitBirthday(birthday));
@@ -322,16 +322,6 @@ export function ContactFormPage() {
           </select>
           {form.mobileName === "nickname" && !form.nickname.trim() && <p className="mt-1 text-xs text-amber-700">Sin apodo: el móvil seguirá mostrando el nombre y apellidos.</p>}
         </div>
-        {isOwner && (
-          <div>
-            <label className="label">Visibilidad</label>
-            <select className="input" value={form.visibility} onChange={(e) => set("visibility", e.target.value as Visibility)}>
-              <option value="private">Privado: solo yo</option>
-              <option value="shared">Compartido: con las personas o grupos que elija</option>
-              <option value="public">Público: todos los usuarios del servidor</option>
-            </select>
-          </div>
-        )}
       </div>
 
       {picking && (

@@ -5,16 +5,12 @@ export { saintDateFor } from "./santoral";
 // IS_BETA = true muestra la etiqueta «Beta» (desde la 1.0, false).
 export * from "./themes";
 
-export const APP_VERSION = "1.5.1";
+export const APP_VERSION = "1.6.0";
 export const IS_BETA = false;
 
 // ---------- Enumeraciones ----------
 
-export const visibilities = ["private", "shared", "public"] as const;
-export type Visibility = (typeof visibilities)[number];
 
-export const permissions = ["read", "write"] as const;
-export type Permission = (typeof permissions)[number];
 
 /** Motivos de un regalo (hecho o recibido). */
 export const occasions = [
@@ -250,7 +246,6 @@ export const contactInputSchema = z.object({
   urls: z.array(labeledValue).max(20).default([]),
   addresses: z.array(address).max(10).default([]),
   notes: z.string().max(10000).default(""),
-  visibility: z.enum(visibilities).default("private"),
   /** Nombre que ve el móvil por CardDAV (y por tanto WhatsApp): nombre y apellidos, apodo o nombre a mostrar */
   mobileName: z.enum(["full", "nickname", "display"]).default("full"),
 });
@@ -270,7 +265,8 @@ export interface ContactSummary {
   nickname: string;
   organization: string;
   hasPhoto: boolean;
-  visibility: Visibility;
+  /** Compatibilidad con las APK anteriores a la 1.6 (que la pintan): siempre «private» */
+  visibility?: "private";
   ownerId: string;
   ownerName: string;
   isMine: boolean;
@@ -350,7 +346,6 @@ export const importRequestSchema = z.object({
   /** Crea etiquetas a partir del campo CATEGORIES de cada vCard. */
   categoriesAsTags: z.boolean().default(true),
   onDuplicate: z.enum(duplicateModes).default("skip"),
-  visibility: z.enum(visibilities).default("private"),
 });
 export type ImportRequest = z.infer<typeof importRequestSchema>;
 
@@ -402,7 +397,7 @@ export const mergeRequestSchema = z.object({
   keepId: z.string().uuid(),
   removeId: z.string().uuid(),
   /** Valores finales del contacto que se conserva (los elige el usuario en el panel). */
-  values: contactInputSchema.omit({ visibility: true }),
+  values: contactInputSchema,
   photoFrom: z.enum(photoSources).default("keep"),
 });
 export type MergeRequest = z.infer<typeof mergeRequestSchema>;
@@ -427,25 +422,6 @@ export interface BulkResult {
   affected: number;
   /** Contactos que no se han podido tocar (p. ej. borrar contactos que te han compartido). */
   skipped: number;
-}
-
-// ---------- Compartir ----------
-
-export const shareSchema = z
-  .object({
-    userId: z.string().uuid().optional(),
-    groupId: z.string().uuid().optional(),
-    permission: z.enum(permissions).default("read"),
-  })
-  .refine((s) => !!s.userId !== !!s.groupId, "Indica userId o groupId, no ambos");
-export const sharesInputSchema = z.object({ shares: z.array(shareSchema).max(100) });
-export type ShareInput = z.infer<typeof shareSchema>;
-
-export interface Share {
-  userId: string | null;
-  groupId: string | null;
-  name: string;
-  permission: Permission;
 }
 
 // ---------- Regalos (siempre personales de cada usuario) ----------
@@ -672,7 +648,9 @@ export const giftReceivedInputSchema = z.object({
 });
 export type GiftReceivedInput = z.infer<typeof giftReceivedInputSchema>;
 export const giftReceivedPatchSchema = giftReceivedInputSchema.partial().extend({
-  contactIds: z.array(z.string().uuid()).min(1).max(50).optional(),
+  contactIds: z.array(z.string().uuid()).max(50).optional(),
+  /** Personas que solo son un nombre (sin contacto), p. ej. desde una lista de deseos */
+  fromNames: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
 });
 
 export interface GiftReceived {
@@ -688,6 +666,8 @@ export interface GiftReceived {
   contactId: string | null;
   /** Todos los que lo regalaron (solo los que puedes ver) */
   contacts: { id: string; displayName: string; hasPhoto: boolean; updatedAt: string }[];
+  /** Personas que solo son un nombre (sin contacto en la agenda) */
+  fromNames?: string[];
   createdAt: string;
 }
 
@@ -721,18 +701,6 @@ export interface Relationship {
   relatedName: string;
 }
 
-// ---------- Grupos ----------
-
-export const groupInputSchema = z.object({ name: z.string().min(1).max(100) });
-export const groupMemberSchema = z.object({ userId: z.string().uuid() });
-
-export interface Group {
-  id: string;
-  name: string;
-  ownerId: string;
-  members: { id: string; name: string }[];
-}
-
 // ---------- Ficha completa ----------
 
 export interface ContactDetail extends Contact {
@@ -740,7 +708,6 @@ export interface ContactDetail extends Contact {
   relationships: Relationship[];
   giftIdeas: GiftIdea[];
   giftsReceived: GiftReceived[];
-  shares: Share[] | null; // solo para el propietario
   /** Tus etiquetas en cada dato (teléfono, email, dirección): id del dato → etiqueta. */
   itemTags: Record<string, TagLite>;
   /** Tus llamadas y apuntes con este contacto (privados). */
@@ -878,7 +845,6 @@ export const historyFields = [
   "addresses",
   "notes",
   "photoKey",
-  "visibility",
 ] as const;
 export type HistoryField = (typeof historyFields)[number];
 
@@ -897,7 +863,6 @@ export const historyFieldLabels: Record<HistoryField, string> = {
   addresses: "Direcciones",
   notes: "Notas",
   photoKey: "Foto",
-  visibility: "Visibilidad",
 };
 
 /** Campos que no se restauran uno a uno (la foto no se guarda en el historial). */
@@ -1239,3 +1204,170 @@ export interface SyncLogEntry {
   detail: string;
   at: string;
 }
+
+
+// ---------- Mis deseos y listas para regalarme (1.6.0) ----------
+
+/** Un deseo de la lista personal (lo que me gustaría que me regalaran). */
+export const wishInputSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  url: z.string().url().max(2000).nullable().default(null),
+  notes: z.string().max(1000).default(""),
+  priceCents: z.number().int().nonnegative().max(100_000_000).nullable().default(null),
+});
+export const wishPatchSchema = wishInputSchema.partial();
+export type WishInput = z.infer<typeof wishInputSchema>;
+
+export interface Wish {
+  id: string;
+  title: string;
+  url: string | null;
+  notes: string;
+  priceCents: number | null;
+  imageKey: string | null;
+  createdAt: string;
+  /** Listas activas en las que está */
+  lists: { id: string; title: string; emoji: string }[];
+}
+
+export const wishListKinds = ["occasion", "open"] as const;
+export type WishListKind = (typeof wishListKinds)[number];
+
+export const wishListInputSchema = z.object({
+  kind: z.enum(wishListKinds).default("occasion"),
+  title: z.string().trim().min(1).max(80),
+  emoji: z.string().max(16).default("🎁"),
+  /** Fecha de la ocasión (obligatoria en las ocasiones; la lista abierta no tiene) */
+  eventDate: z.string().date().nullable().default(null),
+  /** Revelar después de la fecha quién regaló cada cosa (pasa a Recibidos) */
+  reveal: z.boolean().default(true),
+  /** Lista con todos mis deseos (también los que añada después) */
+  includeAll: z.boolean().default(false),
+  wishIds: z.array(z.string().uuid()).max(300).default([]),
+});
+export const wishListPatchSchema = wishListInputSchema.omit({ kind: true }).partial();
+export type WishListInput = z.infer<typeof wishListInputSchema>;
+
+export type WishListStatus = "active" | "revealed" | "archived";
+
+export interface WishListSummary {
+  id: string;
+  kind: WishListKind;
+  title: string;
+  emoji: string;
+  eventDate: string | null;
+  reveal: boolean;
+  includeAll: boolean;
+  status: WishListStatus;
+  wishCount: number;
+  guestCount: number;
+  /** Sugerencias de invitados pendientes («¿Falta alguien?») */
+  suggestionCount: number;
+  /** Regalos revelados pendientes de ver */
+  revealedCount: number;
+}
+
+export interface WishGuest {
+  id: string;
+  name: string;
+  contact: { id: string; displayName: string; hasPhoto: boolean; updatedAt: string } | null;
+  sentAt: string | null;
+  openedAt: string | null;
+}
+
+export interface WishSuggestion {
+  id: string;
+  fromName: string;
+  name: string;
+  note: string;
+  createdAt: string;
+}
+
+/** Un regalo revelado (después de la fecha, o al revelar una lista abierta). */
+export interface WishRevealed {
+  claimId: string;
+  title: string;
+  giftId: string | null;
+  imageKey: string | null;
+  people: { name: string; contactId: string | null }[];
+  /** Nombres sin contacto que aún no has resuelto (enlazar, crear contacto o dejar así) */
+  looseNames: string[];
+}
+
+export interface WishListDetail extends WishListSummary {
+  wishIds: string[];
+  guests: WishGuest[];
+  suggestions: WishSuggestion[];
+  revealed: WishRevealed[];
+  /** Dirección pública para los enlaces (vacía = sin configurar: no se pueden mandar enlaces) */
+  publicUrl: string;
+}
+
+export const wishGuestInputSchema = z.object({
+  contactId: z.string().uuid().nullable().default(null),
+  /** Nombre que verán los demás invitados (por defecto, el nombre de pila del contacto) */
+  name: z.string().trim().min(1).max(60).optional(),
+});
+export const wishGuestPatchSchema = z.object({ name: z.string().trim().min(1).max(60) });
+
+/** Dirección pública de las listas (Ajustes, solo admin) */
+export const wishPublicUrlSchema = z.object({
+  url: z.string().trim().max(200).refine((v) => v === "" || /^https:\/\/[a-z0-9.-]+(:\d+)?\/?$/i.test(v), "Pon solo la dirección, con https:// (p. ej. https://regalos.midominio.es)"),
+});
+
+// --- Página pública del invitado (sin cuenta) ---
+
+export const wishClaimKinds = ["solo", "group"] as const;
+export const wishClaimInputSchema = z.object({
+  wishId: z.string().uuid(),
+  kind: z.enum(wishClaimKinds).default("solo"),
+  guestIds: z.array(z.string().uuid()).max(30).default([]),
+  freeNames: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
+});
+export const wishClaimPatchSchema = z.object({
+  guestIds: z.array(z.string().uuid()).max(30),
+  freeNames: z.array(z.string().trim().min(1).max(40)).max(10),
+});
+export const wishSuggestionInputSchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  note: z.string().trim().max(300).default(""),
+});
+
+export interface PublicWishPerson {
+  guestId: string | null;
+  name: string;
+  status: "accepted" | "pending";
+  me: boolean;
+}
+
+export interface PublicWishItem {
+  id: string;
+  title: string;
+  url: string | null;
+  notes: string;
+  priceCents: number | null;
+  hasImage: boolean;
+  /** Elegido en otra lista del mismo dueño (sin nombres) */
+  takenElsewhere: boolean;
+  claim: null | {
+    id: string;
+    kind: "solo" | "group";
+    createdByMe: boolean;
+    people: PublicWishPerson[];
+  };
+}
+
+export interface PublicWishState {
+  list: { title: string; emoji: string; eventDate: string | null; kind: WishListKind; ownerName: string };
+  me: { id: string; name: string };
+  guests: { id: string; name: string; busy: string[] }[];
+  items: PublicWishItem[];
+}
+
+/** Listas de otros abiertas desde la app («Añadir a mi Agendario») */
+export const remoteWishListSchema = z.object({
+  url: z.string().url().max(400),
+  contactId: z.string().uuid().nullable(),
+  title: z.string().max(120).default(""),
+});
+export type RemoteWishList = z.infer<typeof remoteWishListSchema>;

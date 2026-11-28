@@ -18,16 +18,12 @@ import { smallint,
 import {
   dateTypes,
   occasions,
-  permissions,
   relationshipTypes,
-  visibilities,
   tagColors,
   type Address,
   type LabeledValue,
 } from "@agendario/shared";
 
-export const visibilityEnum = pgEnum("visibility", visibilities);
-export const permissionEnum = pgEnum("permission", permissions);
 export const occasionEnum = pgEnum("occasion", occasions);
 export const dateTypeEnum = pgEnum("date_type", dateTypes);
 export const tagColorEnum = pgEnum("tag_color", tagColors);
@@ -92,31 +88,7 @@ export const appPasswords = pgTable(
   (t) => [index("app_passwords_user_idx").on(t.userId)],
 );
 
-// ---------- Grupos (para compartir con varias personas a la vez) ----------
-
-export const groups = pgTable("groups", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  ownerId: uuid("owner_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const groupMembers = pgTable(
-  "group_members",
-  {
-    groupId: uuid("group_id")
-      .notNull()
-      .references(() => groups.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-  },
-  (t) => [primaryKey({ columns: [t.groupId, t.userId] })],
-);
-
-// ---------- Contactos (datos compartibles) ----------
+// ---------- Contactos (cada uno es de su dueño) ----------
 
 export const contacts = pgTable(
   "contacts",
@@ -125,7 +97,6 @@ export const contacts = pgTable(
     ownerId: uuid("owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    visibility: visibilityEnum("visibility").notNull().default("private"),
     givenName: text("given_name").notNull().default(""),
     familyName: text("family_name").notNull().default(""),
     displayName: text("display_name").notNull(),
@@ -158,23 +129,6 @@ export const contacts = pgTable(
     index("contacts_owner_idx").on(t.ownerId),
     index("contacts_name_idx").on(sql`lower(${t.displayName})`),
     index("contacts_owner_uid_idx").on(t.ownerId, t.vcardUid),
-  ],
-);
-
-export const contactShares = pgTable(
-  "contact_shares",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    contactId: uuid("contact_id")
-      .notNull()
-      .references(() => contacts.id, { onDelete: "cascade" }),
-    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
-    groupId: uuid("group_id").references(() => groups.id, { onDelete: "cascade" }),
-    permission: permissionEnum("permission").notNull().default("read"),
-  },
-  (t) => [
-    index("contact_shares_contact_idx").on(t.contactId),
-    check("share_target", sql`(${t.userId} IS NULL) <> (${t.groupId} IS NULL)`),
   ],
 );
 
@@ -284,6 +238,8 @@ export const giftsReceived = pgTable(
     rating: smallint("rating"),
     /** Foto del regalo (clave en photos/) */
     imageKey: text("image_key"),
+    /** Personas que solo son un nombre (sin contacto), p. ej. desde una lista de deseos */
+    fromNames: jsonb("from_names").$type<string[]>().notNull().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("gifts_received_contact_user_idx").on(t.contactId, t.userId)],
@@ -693,4 +649,138 @@ export const syncGroupLinks = pgTable(
     members: jsonb("members").$type<string[]>().notNull().default([]),
   },
   (t) => [uniqueIndex("sync_group_links_href_idx").on(t.accountId, t.href)],
+);
+
+
+// ---------- Mis deseos y listas para regalarme (1.6.0) ----------
+
+/** Lo que el usuario quiere que le regalen (lista personal y permanente). */
+export const wishes = pgTable(
+  "wishes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    url: text("url"),
+    notes: text("notes").notNull().default(""),
+    priceCents: integer("price_cents"),
+    imageKey: text("image_key"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("wishes_user_idx").on(t.userId)],
+);
+
+/** Ocasiones («Navidad 2026») y la lista siempre abierta. */
+export const wishLists = pgTable(
+  "wish_lists",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull().default("occasion"),
+    title: text("title").notNull(),
+    emoji: text("emoji").notNull().default("🎁"),
+    eventDate: date("event_date"),
+    reveal: boolean("reveal").notNull().default(true),
+    includeAll: boolean("include_all").notNull().default(false),
+    /** active · revealed · archived */
+    status: text("status").notNull().default("active"),
+    revealedAt: timestamp("revealed_at", { withTimezone: true }),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("wish_lists_user_idx").on(t.userId)],
+);
+
+export const wishListItems = pgTable(
+  "wish_list_items",
+  {
+    listId: uuid("list_id")
+      .notNull()
+      .references(() => wishLists.id, { onDelete: "cascade" }),
+    wishId: uuid("wish_id")
+      .notNull()
+      .references(() => wishes.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.listId, t.wishId] })],
+);
+
+/** Invitados: cada uno con su enlace personal (en la base de datos solo la huella del código). */
+export const wishGuests = pgTable(
+  "wish_guests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    listId: uuid("list_id")
+      .notNull()
+      .references(() => wishLists.id, { onDelete: "cascade" }),
+    contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
+    /** Nombre que ven los demás invitados */
+    name: text("name").notNull(),
+    tokenHash: text("token_hash"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    openedAt: timestamp("opened_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("wish_guests_token_idx").on(t.tokenHash), index("wish_guests_list_idx").on(t.listId)],
+);
+
+/** Quién regala cada deseo. Un deseo solo se puede elegir una vez (en cualquier lista). */
+export const wishClaims = pgTable(
+  "wish_claims",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    listId: uuid("list_id")
+      .notNull()
+      .references(() => wishLists.id, { onDelete: "cascade" }),
+    wishId: uuid("wish_id").references(() => wishes.id, { onDelete: "set null" }),
+    /** Título guardado (el deseo se borra al revelarlo y pasa a Recibidos) */
+    title: text("title").notNull(),
+    createdBy: uuid("created_by").references(() => wishGuests.id, { onDelete: "set null" }),
+    /** solo · group */
+    kind: text("kind").notNull().default("solo"),
+    revealedAt: timestamp("revealed_at", { withTimezone: true }),
+    receivedGiftId: uuid("received_gift_id").references(() => giftsReceived.id, { onDelete: "set null" }),
+    imageKey: text("image_key"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("wish_claims_wish_idx").on(t.wishId), index("wish_claims_list_idx").on(t.listId)],
+);
+
+export const wishClaimPeople = pgTable(
+  "wish_claim_people",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    claimId: uuid("claim_id")
+      .notNull()
+      .references(() => wishClaims.id, { onDelete: "cascade" }),
+    guestId: uuid("guest_id").references(() => wishGuests.id, { onDelete: "cascade" }),
+    /** Persona sin enlace, escrita a mano por un invitado */
+    freeName: text("free_name"),
+    /** accepted · pending */
+    status: text("status").notNull().default("pending"),
+  },
+  (t) => [index("wish_claim_people_claim_idx").on(t.claimId), index("wish_claim_people_guest_idx").on(t.guestId)],
+);
+
+/** «¿Falta alguien?»: un invitado sugiere invitar a otra persona. */
+export const wishSuggestions = pgTable(
+  "wish_suggestions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    listId: uuid("list_id")
+      .notNull()
+      .references(() => wishLists.id, { onDelete: "cascade" }),
+    guestId: uuid("guest_id").references(() => wishGuests.id, { onDelete: "set null" }),
+    fromName: text("from_name").notNull().default(""),
+    name: text("name").notNull(),
+    note: text("note").notNull().default(""),
+    /** new · done */
+    status: text("status").notNull().default("new"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("wish_suggestions_list_idx").on(t.listId)],
 );

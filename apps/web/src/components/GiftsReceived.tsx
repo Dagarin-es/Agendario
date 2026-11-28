@@ -40,12 +40,14 @@ export function ReceivedGiftDialog({ gift, initialPeople = [], onClose }: { gift
   const [image, setImage] = useState<File | null>(null);
   const [dropImage, setDropImage] = useState(false);
   const [people, setPeople] = useState<Person[]>(gift?.contacts ?? initialPeople);
+  // Personas que solo son un nombre (p. ej. desde una lista de deseos)
+  const [loose, setLoose] = useState<string[]>(gift?.fromNames ?? []);
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState("");
   const before = gift?.contacts.map((c) => c.id) ?? [];
   const save = useMutation({
     mutationFn: async () => {
-      const body = { ...d, description: d.description.trim(), receivedAt: d.receivedAt || null, contactIds: people.map((p) => p.id) };
+      const body = { ...d, description: d.description.trim(), receivedAt: d.receivedAt || null, contactIds: people.map((p) => p.id), ...(gift ? { fromNames: loose } : {}) };
       const row = gift ? await api.patch<GiftReceived>(`/gifts-received/${gift.id}`, body) : await api.post<GiftReceived>("/gifts-received", body);
       if (image) {
         const fd = new FormData();
@@ -56,7 +58,7 @@ export function ReceivedGiftDialog({ gift, initialPeople = [], onClose }: { gift
     onSuccess: () => { refresh([...before, ...people.map((p) => p.id)]); onClose(); },
     onError: (e) => setError((e as Error).message),
   });
-  const ok = d.description.trim() && people.length > 0;
+  const ok = d.description.trim() && (people.length > 0 || loose.length > 0);
   return (
     <Modal title={gift ? "Editar regalo recibido" : "Nuevo regalo recibido"} onClose={onClose}>
       <form className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); if (ok) save.mutate(); }}>
@@ -71,6 +73,12 @@ export function ReceivedGiftDialog({ gift, initialPeople = [], onClose }: { gift
                 <Avatar id={p.id} name={p.displayName} hasPhoto={!!p.hasPhoto} size={24} version={p.updatedAt} />
                 <span className="max-w-[12rem] truncate">{p.displayName}</span>
                 <button type="button" className="rounded-full px-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-700" onClick={() => setPeople(people.filter((x) => x.id !== p.id))} aria-label={`Quitar a ${p.displayName}`}>✕</button>
+              </span>
+            ))}
+            {loose.map((n) => (
+              <span key={n} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white py-0.5 pl-2.5 pr-1 text-sm">
+                <span className="max-w-[12rem] truncate">{n}</span>
+                <button type="button" className="rounded-full px-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-700" onClick={() => setLoose(loose.filter((x) => x !== n))} aria-label={`Quitar a ${n}`}>✕</button>
               </span>
             ))}
             <button type="button" className="btn-ghost border border-dashed border-slate-300 px-3 py-1 text-sm" onClick={() => setPicking(true)}>+ {people.length ? "Añadir a otra persona" : "Elegir contacto"}</button>
@@ -226,7 +234,7 @@ export function ReceivedGiftsList() {
             <ReceivedGiftRow
               g={g}
               onPhoto={g.imageKey ? () => setViewing(g) : () => setEditing(g)}
-              from={g.contacts.length ? (
+              from={g.contacts.length || g.fromNames?.length ? (
                 <span className="inline-flex flex-wrap items-center gap-1">
                   <span className="flex -space-x-1.5">
                     {g.contacts.slice(0, 3).map((c) => (
@@ -234,8 +242,12 @@ export function ReceivedGiftsList() {
                     ))}
                   </span>
                   De {g.contacts.map((c, i) => (
-                    <span key={c.id}>{i > 0 && (i === g.contacts.length - 1 ? " y " : ", ")}<Link to={`/contacts/${c.id}`} className="text-indigo-700 hover:underline">{c.displayName}</Link></span>
+                    <span key={c.id}>{i > 0 && (i === g.contacts.length + (g.fromNames?.length ?? 0) - 1 ? " y " : ", ")}<Link to={`/contacts/${c.id}`} className="text-indigo-700 hover:underline">{c.displayName}</Link></span>
                   ))}
+                  {(g.fromNames ?? []).map((n, i) => {
+                    const k = g.contacts.length + i;
+                    return <span key={n}>{k > 0 && (k === g.contacts.length + (g.fromNames?.length ?? 0) - 1 ? " y " : ", ")}{n}</span>;
+                  })}
                 </span>
               ) : "De alguien que ya no está en tu agenda"}
               actions={

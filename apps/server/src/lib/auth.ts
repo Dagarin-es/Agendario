@@ -51,6 +51,7 @@ const MEDIA_PATHS = [
   /^\/api\/personal-events\/[\w-]+\/photo$/,
   /^\/api\/gift-ideas\/[\w-]+\/image$/,
   /^\/api\/gifts-received\/[\w-]+\/image$/,
+  /^\/api\/wishes\/[\w-]+\/image$/,
   /^\/api\/attachments\/[\w-]+(\/thumb)?$/,
   /^\/api\/export\/contacts\.vcf$/,
   /^\/api\/calendar\/export\.ics$/,

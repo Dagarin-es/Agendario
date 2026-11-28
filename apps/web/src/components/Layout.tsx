@@ -80,7 +80,6 @@ function MoreMenu() {
           <div className="px-3 pb-2"><ModeSelector compact /></div>
           <div className="my-1 border-t border-slate-100" />
           <Link to="/notes" className={item}>📝 Últimas notas</Link>
-          <Link to="/groups" className={item}>👪 Grupos</Link>
           <Link to="/tags" className={item}>🏷️ Etiquetas</Link>
           <Link to="/trash" className={item}>🗑️ Papelera</Link>
           <Link to="/settings" className={item}>⚙️ Ajustes</Link>

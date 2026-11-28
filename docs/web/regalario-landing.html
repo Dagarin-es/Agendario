@@ -1,0 +1,285 @@
+<!--
+  ============================================================================
+  REGALARIO · Landing para dagarin.es/regalario (WordPress + Elementor)
+  ----------------------------------------------------------------------------
+  Para quien llega desde una lista de deseos de Agendario (el botón «Añadir a
+  mi Agendario» de la página de la lista y su enlace «¿Qué es Agendario?").
+  Cómo usarla (igual que la de Agendario):
+   1. Página «Regalario» con la plantilla «Elementor Canvas».
+   2. Widget «HTML» y pega TODO este fichero dentro.
+   3. Sube las imágenes regalario_*-v160.webp a la biblioteca de medios (el
+      mismo mes) y pon la carpeta en REGALARIO_CONFIG.shotsBase (al final).
+      Mientras falte una imagen se ve un recuadro con su nombre.
+   Todo el CSS va dentro de #regalario: no toca el resto del blog.
+  ============================================================================
+-->
+<div id="regalario">
+<style>
+#regalario{--ind:#4338ca;--ind-d:#312e81;--ind-l:#eef0ff;--ind-m:#a5b4fc;--yel:#fcd34d;--ink:#1e1b3a;--mut:#5b5f77;--line:#e4e6f0;--bg:#fafbff;--r:20px;
+  font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;font-size:17px;overflow:hidden;-webkit-font-smoothing:antialiased}
+#regalario *,#regalario *::before,#regalario *::after{box-sizing:border-box}
+#regalario h1,#regalario h2,#regalario h3{font-family:inherit;color:var(--ink);line-height:1.15;margin:0;letter-spacing:-.02em;font-weight:800;text-transform:none}
+#regalario p{margin:0 0 1em}
+#regalario a{color:var(--ind);text-decoration:none}
+#regalario img{max-width:100%;display:block}
+#regalario .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+#regalario section{padding:88px 0;position:relative}
+#regalario .eyebrow{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ind);background:var(--ind-l);padding:6px 12px;border-radius:999px;margin-bottom:16px}
+#regalario .h2{font-size:clamp(30px,4vw,44px);margin-bottom:16px}
+#regalario .lead{font-size:clamp(17px,1.6vw,20px);color:var(--mut);max-width:720px}
+#regalario .center{text-align:center}#regalario .center .lead{margin-left:auto;margin-right:auto}
+#regalario .btn{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:16px;padding:14px 24px;border-radius:14px;border:0;cursor:pointer;transition:transform .15s,background .15s;font-family:inherit;line-height:1.2}
+#regalario .btn:hover{transform:translateY(-2px)}
+#regalario a.btn-p,#regalario button.btn-p{background:var(--ind)!important;color:#fff!important;box-shadow:0 10px 30px -10px rgba(67,56,202,.6)}
+#regalario a.btn-p:hover,#regalario button.btn-p:hover{background:var(--ind-d)!important}
+#regalario a.btn-g{background:#fff;color:var(--ink);border:1px solid var(--line)}
+#regalario a.btn-w{background:#fff!important;color:var(--ind)!important}
+/* Navegación */
+#regalario .nav{position:sticky;top:0;z-index:50;background:rgba(250,251,255,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+#regalario .nav .wrap{display:flex;align-items:center;gap:20px;height:62px}
+#regalario .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;color:var(--ink)}
+#regalario .brand svg{width:32px;height:32px}
+#regalario .brand small{font-weight:600;color:var(--mut);font-size:14px}
+#regalario .nav .btn{margin-left:auto;padding:9px 16px;font-size:14px}
+/* Portada */
+#regalario .hero{padding:64px 0 40px;background:radial-gradient(1100px 500px at 85% -10%,#e0e4ff 0,transparent 60%),radial-gradient(700px 400px at -10% 30%,#fff3c4 0,transparent 60%)}
+#regalario .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+#regalario .hero h1{font-size:clamp(38px,5.6vw,66px);margin:12px 0 20px}
+#regalario .hero h1 span{background:linear-gradient(90deg,var(--ind),#7c3aed 60%,#db2777);-webkit-background-clip:text;background-clip:text;color:transparent}
+#regalario .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px}
+#regalario .phone{border-radius:34px;background:#1e1b3a;padding:9px;box-shadow:0 40px 80px -36px rgba(67,56,202,.6);max-width:300px;margin:0 auto}
+#regalario .phone .shot,#regalario .phone .ph{border-radius:26px;width:100%;aspect-ratio:9/19.3;object-fit:cover;object-position:top}
+#regalario .tilt{transform:rotate(3deg)}
+@media(max-width:900px){#regalario .hero .wrap{grid-template-columns:1fr}#regalario .tilt{transform:none}}
+/* Pasos */
+#regalario .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px}
+#regalario .card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:24px}
+#regalario .card h3{font-size:18px;margin:12px 0 6px}
+#regalario .card p{color:var(--mut);margin:0;font-size:15.5px}
+#regalario .ico{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:25px;background:var(--ind-l)}
+#regalario .ico.y{background:#fff7d6}#regalario .ico.p{background:#fde7f3}#regalario .ico.g{background:#e7f8ef}
+#regalario .num{font-size:13px;font-weight:800;color:var(--ind-m)}
+@media(max-width:1000px){#regalario .steps{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){#regalario .steps{grid-template-columns:1fr}}
+/* Galería de móviles */
+#regalario .phones{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:44px}
+#regalario .phones figure{margin:0}
+#regalario .phones figcaption{text-align:center;color:var(--mut);font-size:14.5px;margin-top:12px;padding:0 6px}
+#regalario .phones figcaption b{display:block;color:var(--ink);font-size:16px}
+@media(max-width:1000px){#regalario .phones{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){#regalario .phones{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:16px;padding-bottom:8px;margin-left:-24px;margin-right:-24px;padding-left:24px;padding-right:24px}#regalario .phones figure{flex:0 0 72%;scroll-snap-align:center}}
+/* Dos columnas */
+#regalario .grid2{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+@media(max-width:900px){#regalario .grid2{grid-template-columns:1fr;gap:32px}}
+#regalario ul.ticks{list-style:none;margin:20px 0 0;padding:0}
+#regalario ul.ticks li{display:flex;gap:14px;padding:9px 0;font-size:16px;color:var(--mut)}
+#regalario ul.ticks li b{color:var(--ink);display:block}
+#regalario ul.ticks .ico{flex-shrink:0;width:44px;height:44px;font-size:21px}
+/* Banda oscura */
+#regalario .dark{background:linear-gradient(160deg,#1e1b3a,#312e81);color:#e7e9ff}
+#regalario .dark h2,#regalario .dark h3{color:#fff}
+#regalario .dark .lead,#regalario .dark p{color:#c7cbf5}
+#regalario .dark .eyebrow{background:rgba(255,255,255,.1);color:var(--yel)}
+#regalario .dark .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
+#regalario .dark .card p{color:#c7cbf5}
+#regalario .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+@media(max-width:900px){#regalario .grid3{grid-template-columns:1fr}}
+/* Lite */
+#regalario .lite{background:#fff}
+#regalario .soon{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:#92400e;background:#fff4d6;border-radius:999px;padding:6px 12px;margin-bottom:14px}
+#regalario .form{display:grid;gap:12px;margin-top:18px;max-width:520px}
+#regalario .form input{width:100%;font:inherit;font-size:16px;padding:13px 15px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+#regalario .form small{color:var(--mut);font-size:13px}
+#regalario .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){#regalario .row{grid-template-columns:1fr}}
+/* CTA final */
+#regalario .final{background:linear-gradient(150deg,var(--ind),#6d28d9 60%,#db2777);color:#fff;text-align:center}
+#regalario .final h2{color:#fff;font-size:clamp(28px,4vw,44px);max-width:820px;margin:0 auto 16px}
+#regalario .final p{color:#eef0ff;max-width:640px;margin:0 auto 26px;font-size:18px}
+/* Pie */
+#regalario .foot{background:#1e1b3a;color:#b9bde6;padding:44px 0;font-size:15px}
+#regalario .foot .wrap{display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:center}
+#regalario .foot a{color:#fff}
+/* Huecos de captura */
+#regalario .ph{display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;background:repeating-linear-gradient(45deg,#f1f2fb 0 12px,#e9ebf8 12px 24px);color:#6366f1;font:600 13px/1.3 ui-monospace,Menlo,monospace}
+/* Aparición al desplazar */
+#regalario .rv{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+#regalario .rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){#regalario .rv{opacity:1;transform:none;transition:none}}
+</style>
+
+<nav class="nav" aria-label="Regalario">
+  <div class="wrap">
+    <a class="brand" href="#inicio"><svg viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="22" fill="#4338CA"/><rect x="22" y="16" width="44" height="64" rx="6" fill="#fff"/><rect x="66" y="20" width="12" height="14" rx="3" fill="#FCD34D"/><rect x="66" y="38" width="12" height="14" rx="3" fill="#A5B4FC"/><rect x="66" y="56" width="12" height="14" rx="3" fill="#F9A8D4"/><circle cx="44" cy="36" r="8" fill="#4338CA"/><path d="M30 60 Q44 44 58 60 Z" fill="#4338CA"/></svg>Agendario <small>· listas de deseos</small></a>
+    <a class="btn btn-p" href="https://dagarin.es/agendario">Conoce Agendario</a>
+  </div>
+</nav>
+
+<!-- ======================= PORTADA ======================= -->
+<header class="hero" id="inicio">
+  <div class="wrap">
+    <div class="rv">
+      <span class="eyebrow">🎁 Te han mandado una lista de deseos</span>
+      <h1>Regala lo que de verdad quiere.<br><span>Sin repetir. Sin chivatazos.</span></h1>
+      <p class="lead">Alguien ha hecho su lista de deseos con Agendario y te ha mandado tu enlace personal. Ábrelo en el navegador, sin instalar nada ni crear cuenta, marca lo que vas a regalar y coordínate con el resto. Quien hizo la lista no se entera de nada hasta después.</p>
+      <div class="cta">
+        <a class="btn btn-p" href="#como">Así funciona ↓</a>
+        <a class="btn btn-g" href="#agendario">¿Y si quiero mi propia lista?</a>
+      </div>
+    </div>
+    <div class="rv"><div class="phone tilt"><span data-shot="regalario_lista"></span></div></div>
+  </div>
+</header>
+
+<!-- ======================= CÓMO FUNCIONA ======================= -->
+<section id="como">
+  <div class="wrap">
+    <div class="center rv">
+      <span class="eyebrow">Cómo funciona</span>
+      <h2 class="h2">Cuatro pasos y ni un regalo repetido</h2>
+      <p class="lead">Funciona en cualquier móvil (iPhone o Android) y en el ordenador. Solo necesitas el enlace que te mandaron.</p>
+    </div>
+    <div class="steps">
+      <div class="card rv"><div class="ico">🔗</div><span class="num">PASO 1</span><h3>Abre tu enlace</h3><p>Es personal: la lista ya sabe quién eres y te saluda por tu nombre. No hace falta app, ni cuenta, ni contraseña.</p></div>
+      <div class="card rv"><div class="ico y">🎁</div><span class="num">PASO 2</span><h3>Elige qué regalas</h3><p>Cada deseo trae su foto, su precio y el enlace a la tienda. Pulsa «Lo regalo yo» y nadie más podrá elegirlo.</p></div>
+      <div class="card rv"><div class="ico g">👥</div><span class="num">PASO 3</span><h3>O entre varios</h3><p>Marca con quién lo regaláis, entre los invitados o escribiendo un nombre. Los apuntados lo ven en su enlace y aceptan o dicen «No participo».</p></div>
+      <div class="card rv"><div class="ico p">🤫</div><span class="num">PASO 4</span><h3>Y él, sin saber nada</h3><p>Todos los invitados ven quién regala qué. Quien hizo la lista no, hasta el día después: entonces se revela y se apunta solo en su Agendario.</p></div>
+    </div>
+    <div class="phones">
+      <figure class="rv"><div class="phone"><span data-shot="regalario_lista"></span></div><figcaption><b>Tu lista</b>Lo que ya está elegido y por quién.</figcaption></figure>
+      <figure class="rv"><div class="phone"><span data-shot="regalario_varios"></span></div><figcaption><b>Entre varios</b>Elige con quién, o añade un nombre.</figcaption></figure>
+      <figure class="rv"><div class="phone"><span data-shot="regalario_apuntado"></span></div><figcaption><b>Te han apuntado</b>Acepta o di que no participas.</figcaption></figure>
+      <figure class="rv"><div class="phone"><span data-shot="regalario_falta"></span></div><figcaption><b>¿Falta alguien?</b>Sugiere a quién más invitar.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= TRANQUILIDAD ======================= -->
+<section class="dark" id="tranquilidad">
+  <div class="wrap">
+    <div class="center rv">
+      <span class="eyebrow">Tranquilo</span>
+      <h2 class="h2">Un enlace que no pide nada</h2>
+      <p class="lead">Agendario es software libre que cada persona instala en su propio servidor. La lista que has abierto vive en el servidor de quien te la mandó, no en una gran plataforma.</p>
+    </div>
+    <div class="grid3">
+      <div class="card rv"><div class="ico">🙅</div><h3>Sin registro ni datos</h3><p>No te pedimos email, ni teléfono, ni contraseña. Solo verás tu nombre, tal como te ha invitado.</p></div>
+      <div class="card rv"><div class="ico">🕵️</div><h3>Sin rastreadores</h3><p>Ni publicidad, ni analíticas, ni nada de terceros. La página no carga nada de fuera.</p></div>
+      <div class="card rv"><div class="ico">⏳</div><h3>Caduca sola</h3><p>Tu enlace solo sirve para esa lista y deja de funcionar al pasar la fecha. Es tuyo: no lo reenvíes.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= AGENDARIO ======================= -->
+<section id="agendario">
+  <div class="wrap grid2">
+    <div class="rv">
+      <span class="eyebrow">¿Y tu lista?</span>
+      <h2 class="h2">Las listas son solo el principio</h2>
+      <p class="lead">Agendario es una agenda de contactos con memoria: además de teléfonos y direcciones, recuerda todo lo que tiene que ver con los regalos de tu gente.</p>
+      <ul class="ticks">
+        <li><span class="ico y">💡</span><span><b>Ideas de regalo en la ficha de cada persona</b>Se te ocurre en mayo, la tienes delante en diciembre. Con foto y enlace, compartiendo desde cualquier tienda.</span></li>
+        <li><span class="ico">✅</span><span><b>Lo que regalaste, con estrellas</b>Año a año, con foto y una nota: nunca repites y sabes qué acertaste.</span></li>
+        <li><span class="ico p">🎀</span><span><b>Lo que te regalan</b>De quién, cuándo y con su foto. Las listas de deseos lo apuntan solas al revelarse.</span></li>
+        <li><span class="ico g">🌟</span><span><b>Mis deseos y tus listas</b>Tu propia lista para Navidad, tu cumpleaños o siempre abierta, con un enlace para cada invitado.</span></li>
+      </ul>
+    </div>
+    <div class="rv" style="display:flex;justify-content:center;gap:18px">
+      <div class="phone" style="width:48%;transform:rotate(-3deg)"><span data-shot="regalario_app_ocasion"></span></div>
+      <div class="phone" style="width:48%;transform:rotate(3deg) translateY(28px)"><span data-shot="regalario_app_revelado"></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= YA USAS AGENDARIO ======================= -->
+<section id="ya-lo-uso" style="background:linear-gradient(180deg,var(--bg),#f1f3ff);padding-top:40px">
+  <div class="wrap">
+    <div class="card rv" style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center">
+      <div class="ico" style="width:64px;height:64px;font-size:32px">📲</div>
+      <div>
+        <h3 style="font-size:22px;margin:0 0 6px">¿Ya usas Agendario?</h3>
+        <p style="margin:0">Pulsa <b>«Añadir a mi Agendario»</b> en la página de la lista (en Android se abre la app) o pega el enlace en <b>Regalos › Mis deseos › Listas de otras personas</b>. Lo que regales se apuntará solo en la ficha de quien te la mandó.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= LITE ======================= -->
+<section class="lite" id="lite">
+  <div class="wrap grid2">
+    <div class="rv">
+      <span class="soon">⏳ Próximamente en Google Play</span>
+      <h2 class="h2">Agendario Lite: sin servidor, en tu móvil</h2>
+      <p class="lead">Todo lo de los regalos y tu agenda, en una app para Android que no necesita servidor: tus datos se quedan en el móvil, con copia cifrada en tu Google Drive. Ideal si no tienes un homelab.</p>
+      <p>¿Te avisamos cuando salga? Déjanos tu email y te escribimos (solo para eso).</p>
+      <form class="form" data-lite-form>
+        <div class="row">
+          <input name="nombre" placeholder="Tu nombre" autocomplete="name">
+          <input name="email" type="email" placeholder="Tu email" required autocomplete="email">
+        </div>
+        <button class="btn btn-p" type="submit">Avisadme cuando salga</button>
+        <small>Se abrirá tu programa de correo con el mensaje preparado para <span data-email></span>.</small>
+      </form>
+    </div>
+    <div class="rv"><div class="phone tilt"><span data-shot="regalario_app_enviar"></span></div></div>
+  </div>
+</section>
+
+<!-- ======================= CTA FINAL ======================= -->
+<section class="final" id="todo">
+  <div class="wrap rv">
+    <h2>¿Quieres conocer y desplegar todo el poder de Agendario?</h2>
+    <p>Tu agenda en tu propio servidor: contactos, fechas, ideas de regalo, llamadas y apuntes, sincronización con tu móvil y copias cifradas. Software libre y gratuito.</p>
+    <a class="btn btn-w" href="https://dagarin.es/agendario">Descubre Agendario →</a>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap">
+    <div>Agendario · Agenda + diario. Tus contactos, tu servidor.<br>Software libre bajo licencia <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">GNU AGPL v3</a>.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:20px">
+      <a href="https://dagarin.es/agendario">Agendario</a>
+      <a href="https://dagarin.es/politica-de-privacidad-de-agendario/">Política de privacidad</a>
+      <a data-mail href="#">Contacto: <span data-email></span></a>
+    </div>
+  </div>
+</footer>
+
+<script>
+window.REGALARIO_CONFIG = {
+  email: "agendario@dagarin.com",
+  // Carpeta de la biblioteca de medios donde subiste las regalario_*-v160.webp (acaba en /)
+  shotsBase: "https://dagarin.es/wp-content/uploads/2026/12/",
+  suffix: "-v160",
+  ext: ".webp",
+  // URL sueltas, solo si WordPress renombró alguna imagen (tienen prioridad)
+  shots: {
+    regalario_lista: "", regalario_varios: "", regalario_apuntado: "", regalario_falta: "",
+    regalario_app_ocasion: "", regalario_app_revelado: "", regalario_app_enviar: ""
+  }
+};
+(function () {
+  var root = document.getElementById("regalario"); if (!root) return;
+  var C = window.REGALARIO_CONFIG;
+  var $$ = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+  $$("[data-shot]").forEach(function (el) {
+    var key = el.getAttribute("data-shot");
+    var url = C.shots[key] || (C.shotsBase ? C.shotsBase + key + (C.suffix || "") + (C.ext || ".webp") : "");
+    el.outerHTML = url ? '<img class="shot" loading="lazy" alt="" src="' + url + '">' : '<div class="ph">' + key + "</div>";
+  });
+  $$("[data-email]").forEach(function (el) { el.textContent = C.email; });
+  $$("[data-mail]").forEach(function (el) { el.href = "mailto:" + C.email; });
+  var f = root.querySelector("[data-lite-form]");
+  if (f) f.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var d = new FormData(f);
+    var body = "Hola, avisadme cuando salga Agendario Lite en Google Play.\n\nNombre: " + (d.get("nombre") || "") + "\nEmail: " + d.get("email");
+    location.href = "mailto:" + C.email + "?subject=" + encodeURIComponent("Avisadme cuando salga Agendario Lite") + "&body=" + encodeURIComponent(body);
+  });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } }); }, { threshold: 0.12 });
+    $$(".rv").forEach(function (el, i) { el.style.transitionDelay = (i % 4) * 70 + "ms"; io.observe(el); });
+  } else $$(".rv").forEach(function (el) { el.classList.add("in"); });
+})();
+</script>
+</div>

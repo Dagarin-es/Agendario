@@ -15,13 +15,13 @@ import { ContactDetailPage } from "./pages/ContactDetail";
 import { ContactFormPage } from "./pages/ContactForm";
 import { ContactListPage } from "./pages/ContactList";
 import { DuplicatesPage } from "./pages/Duplicates";
-import { GroupsPage } from "./pages/Groups";
 import { MergePage } from "./pages/Merge";
 import { ImportPage } from "./pages/Import";
 import { TagsPage } from "./pages/Tags";
 import { LoginPage } from "./pages/Login";
 import { UpcomingPage } from "./pages/Upcoming";
 import { GiftsPage } from "./pages/Gifts";
+import { RemoteListPage, WishListFormPage, WishListPage } from "./components/Wishes";
 import { ShareGiftPage } from "./pages/ShareGift";
 import { ShareImagePage } from "./pages/ShareImage";
 import { UnknownCallPage } from "./pages/UnknownCall";
@@ -60,13 +60,16 @@ export function App() {
         <Route path="contacts/:id/edit" element={<ContactFormPage />} />
         <Route path="upcoming" element={<UpcomingPage />} />
         <Route path="gifts" element={<GiftsPage />} />
+        <Route path="gifts/lists/new" element={<WishListFormPage />} />
+        <Route path="gifts/lists/:id" element={<WishListPage />} />
+        <Route path="gifts/lists/:id/edit" element={<WishListFormPage />} />
+        <Route path="gifts/remote" element={<RemoteListPage />} />
         <Route path="reminders" element={<RemindersPage />} />
         <Route path="notes" element={<NotesPage />} />
         {isApp && <Route path="call-log" element={<CallLogPage />} />}
         <Route path="share-gift" element={<ShareGiftPage />} />
         <Route path="share-image" element={<ShareImagePage />} />
         <Route path="unknown-call/:id" element={<UnknownCallPage />} />
-        <Route path="groups" element={<GroupsPage />} />
         <Route path="tags" element={<TagsPage />} />
         <Route path="import" element={<ImportPage />} />
         <Route path="duplicates" element={<DuplicatesPage />} />

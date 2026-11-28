@@ -132,7 +132,7 @@ export function GiftIdeas({ contactId, ideas }: { contactId: string; ideas: Gift
   return (
     <div>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="text-xs text-slate-400">Solo tú ves tus ideas, aunque el contacto esté compartido.</p>
+        <p className="text-xs text-slate-400">Tus ideas de regalo son solo tuyas.</p>
         {!adding && <button className="btn-ghost shrink-0" onClick={() => setAdding(true)}>+ Añadir</button>}
       </div>
 

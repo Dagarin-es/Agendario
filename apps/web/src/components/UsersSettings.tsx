@@ -116,7 +116,7 @@ export function UsersSettings({ Section, me }: { Section: SectionT; me: User }) 
   const setMode = useMutation({ mutationFn: (mode: RegistrationMode) => api.put("/admin/registration", { mode }), onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-registration"] }) });
 
   return (
-    <Section icon="👥" title="Usuarios" desc="Quién puede entrar en este Agendario. Cada usuario tiene sus propios contactos; solo se ven entre ellos si se comparten.">
+    <Section icon="👥" title="Usuarios" desc="Quién puede entrar en este Agendario. Cada usuario tiene su propia agenda, separada del todo: nadie ve los contactos de los demás.">
       <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
         {users?.map((u) => (
           <li key={u.id} className={`flex flex-wrap items-center gap-2 px-3 py-2.5 ${u.disabled ? "opacity-60" : ""}`}>
@@ -139,7 +139,7 @@ export function UsersSettings({ Section, me }: { Section: SectionT; me: User }) 
                   onClick={async () =>
                     u.disabled
                       ? patch.mutate({ id: u.id, body: { disabled: false } })
-                      : (await confirm({ title: `¿Desactivar a ${u.name}?`, message: "No podrá entrar. Sus contactos no se borran y lo que haya compartido sigue visible.", confirmText: "Desactivar", danger: true })) &&
+                      : (await confirm({ title: `¿Desactivar a ${u.name}?`, message: "No podrá entrar. Sus contactos no se borran.", confirmText: "Desactivar", danger: true })) &&
                         patch.mutate({ id: u.id, body: { disabled: true } })
                   }
                 >

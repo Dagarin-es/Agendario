@@ -38,11 +38,34 @@ import { runUpgrades } from "./lib/upgrades.js";
 import { startPurgeJob } from "./lib/history.js";
 import { startSessionCleanup } from "./lib/auth.js";
 import { startBackupScheduler } from "./lib/backup.js";
-import { exportRoutes, groupRoutes, upcomingRoutes } from "./routes/misc.js";
+import { exportRoutes, upcomingRoutes } from "./routes/misc.js";
+import { wishPublicRoutes, wishRoutes } from "./routes/wishes.js";
+import { publicHost, startWishScheduler } from "./lib/wishes.js";
+import { WISH_FAVICON, wishPageHeaders, wishPageHtml } from "./lib/wishPage.js";
+import { randomBytes } from "node:crypto";
 
 const app = new Hono();
 
 app.use(logger());
+
+// ---------- Subdominio de las listas de deseos ----------
+// Por la dirección pública de las listas SOLO se sirve la página del invitado y su API (/api/l/*).
+// Ni la web, ni el inicio de sesión, ni el resto de la API: quien recibe un enlace no ve nada más.
+app.use(async (c, next) => {
+  const ph = await publicHost();
+  const host = (c.req.header("host") ?? "").toLowerCase();
+  if (!ph || host !== ph) return next();
+  const path = c.req.path;
+  if (path.startsWith("/api/l/")) return next();
+  const noindex = { "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" };
+  if (c.req.method === "GET" && (path === "/" || path === "/index.html")) {
+    const nonce = randomBytes(16).toString("base64");
+    return c.html(wishPageHtml(nonce), 200, wishPageHeaders(nonce));
+  }
+  if (path === "/robots.txt") return c.text("User-agent: *\nDisallow: /\n", 200, noindex);
+  if (path === "/favicon.svg" || path === "/favicon.ico") return c.body(WISH_FAVICON, 200, { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=86400", ...noindex });
+  return c.text("No encontrado", 404, noindex);
+});
 const strictHeaders = secureHeaders({
   crossOriginResourcePolicy: false,
   // Solo código propio; imágenes propias y de los mapas (OpenStreetMap, Esri); sin incrustar en otras webs
@@ -72,14 +95,17 @@ const fileHeaders = secureHeaders({
   referrerPolicy: "same-origin",
 });
 app.use((c, next) => (/^\/api\/attachments\/[\w-]+$/.test(c.req.path) ? fileHeaders(c, next) : strictHeaders(c, next)));
+// La página de los invitados lleva sus propias cabeceras (se sirve arriba, antes de llegar aquí)
 
 // ---------- API ----------
 // La app de Android carga la interfaz desde el propio móvil (https://localhost) y llama a este servidor
 app.use(
   "/api/*",
   cors({
-    origin: (origin) => (["https://localhost", "http://localhost", "capacitor://localhost"].includes(origin) ? origin : null),
-    allowHeaders: ["Content-Type", "Authorization", "X-Agendario-Client"],
+    // La API de las listas (/api/l, sin cookies: entra con el código del enlace) se puede llamar desde cualquier
+    // origen, p. ej. desde el Agendario del invitado («Añadir a mi Agendario»)
+    origin: (origin, c) => (c.req.path.startsWith("/api/l/") ? "*" : ["https://localhost", "http://localhost", "capacitor://localhost"].includes(origin) ? origin : null),
+    allowHeaders: ["Content-Type", "Authorization", "X-Agendario-Client", "X-Lista-Token"],
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Disposition"],
     maxAge: 86400,
@@ -92,12 +118,13 @@ const api = new Hono()
     await next();
     if (c.req.method !== "GET" && c.res.status < 400 && /^\/api\/(contacts|tags|import|duplicates|trash)/.test(c.req.path)) void kickGmail();
   })
+  // Listas de deseos: la página del invitado (sin sesión)
+  .route("/l", wishPublicRoutes)
   .get("/health", (c) => c.json({ ok: true, version: process.env.APP_VERSION ?? APP_VERSION }))
   .route("/auth", authRoutes)
   .route("/users", userRoutes)
   .route("/admin", adminRoutes)
   .route("/contacts", contactRoutes)
-  .route("/groups", groupRoutes)
   .route("/upcoming", upcomingRoutes)
   .route("/export", exportRoutes)
   .route("/import", importRoutes)
@@ -118,7 +145,8 @@ const api = new Hono()
   .route("/todoist", todoistRoutes)
   .route("/", reminderRoutes)
   .route("/", personalRoutes)
-  .route("/", giftRoutes);
+  .route("/", giftRoutes)
+  .route("/", wishRoutes);
 
 app.route("/api", api);
 
@@ -160,6 +188,7 @@ startGmailScheduler();
 startSessionCleanup();
 startBackupScheduler();
 startSyncScheduler();
+startWishScheduler();
 
 const shutdown = async () => {
   console.log("Cerrando…");

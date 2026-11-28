@@ -28,7 +28,6 @@ const actionStyle: Record<HistoryEntry["action"], string> = {
 };
 const actionIcon: Record<HistoryEntry["action"], string> = { create: "✨", update: "✏️", delete: "🗑️", restore: "↩", merge: "🔀" };
 
-const visibilityLabels: Record<string, string> = { private: "Privado", shared: "Compartido", public: "Público" };
 
 const fmt = (iso: string) => new Date(iso).toLocaleString("es-ES", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
@@ -37,7 +36,6 @@ function Value({ field, v }: { field: HistoryField; v: unknown }) {
   const none = <span className="italic text-slate-400">(vacío)</span>;
   if (v == null || v === "" || (Array.isArray(v) && !v.length)) return none;
   if (field === "photoKey") return <span>con foto</span>;
-  if (field === "visibility") return <span>{visibilityLabels[String(v)] ?? String(v)}</span>;
   if (field === "organizationContactId") return <span>enlazada a un contacto</span>;
   if (field === "birthday") return <span>{formatPartialDate(String(v))}</span>;
   if (field === "addresses")

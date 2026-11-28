@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Agendario · Mis deseos (maquetas)</title>
+<style>
+:root{--ind:#4338ca;--ind-d:#312e81;--ind-l:#eef0ff;--ink:#1e1b3a;--mut:#5b5f77;--line:#e4e6f0;--bg:#f3f4fa;--yel:#fcd34d;--green:#059669;--green-l:#e7f8ef;--amber-l:#fff4d6;--pink-l:#fde7f3}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Inter","Roboto",system-ui,sans-serif;color:var(--ink);background:#d9dbe6;display:flex;flex-wrap:wrap;gap:30px;padding:30px;-webkit-font-smoothing:antialiased}
+.screen{width:412px;height:892px;background:var(--bg);position:relative;overflow:hidden;font-size:15px;line-height:1.4}
+/* --- App --- */
+.hdr{padding:18px 18px 10px;display:flex;align-items:center;gap:10px}
+.hdr h1{font-size:26px;font-weight:800;letter-spacing:-.02em;flex:1}
+.hdr .back{width:32px;height:32px;border-radius:50%;background:var(--ind-l);color:var(--ind);display:grid;place-items:center;font-weight:800}
+.crumb{font-size:17px;color:var(--mut)}.crumb b{color:var(--ink)}
+.subtabs{display:flex;gap:6px;padding:4px 14px 12px;overflow:hidden}
+.subtab{white-space:nowrap;padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:#fff;font-weight:600;font-size:14px;color:var(--mut)}
+.subtab.on{background:var(--ind);border-color:var(--ind);color:#fff}
+.subtab .new{background:var(--yel);color:var(--ink);font-size:10px;font-weight:800;border-radius:6px;padding:1px 5px;margin-left:4px;vertical-align:2px}
+.band{position:absolute;left:0;right:0;bottom:0;height:78px;background:rgba(255,255,255,.92);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;padding-bottom:6px}
+.band div{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:600;color:var(--mut)}
+.band span{font-size:22px;width:56px;height:30px;border-radius:15px;display:grid;place-items:center}
+.band .on{color:var(--ind)}.band .on span{background:var(--ind-l)}
+.box{background:#fff;border:1px solid var(--line);border-radius:18px;margin:0 14px 12px;padding:14px}
+.lbl{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.occ{background:linear-gradient(140deg,var(--ind),#6d28d9);color:#fff;border:0}
+.occ .t{font-size:18px;font-weight:800}
+.occ .s{opacity:.85;font-size:14px;margin-top:2px}
+.occ .pill{display:inline-block;margin-top:10px;background:rgba(255,255,255,.18);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:600}
+.row{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.thumb{width:58px;height:58px;border-radius:14px;display:grid;place-items:center;font-size:30px;flex-shrink:0}
+.g1{background:linear-gradient(135deg,#fde68a,#fca5a5)}.g2{background:linear-gradient(135deg,#a7f3d0,#a5f3fc)}.g3{background:linear-gradient(135deg,#ddd6fe,#fbcfe8)}.g4{background:linear-gradient(135deg,#bfdbfe,#c7d2fe)}.g5{background:linear-gradient(135deg,#fed7aa,#fde68a)}.g6{background:linear-gradient(135deg,#e5e7eb,#cbd5e1)}
+.row .n{font-weight:700;font-size:15.5px}
+.row .m{color:var(--mut);font-size:13.5px}
+.row .grow{flex:1;min-width:0}
+.chip{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--amber-l);color:#92400e;margin-top:3px}
+.chip.ind{background:var(--ind-l);color:var(--ind)}
+.chip.g{background:var(--green-l);color:var(--green)}
+.fab{position:absolute;right:18px;bottom:96px;background:var(--ind);color:#fff;font-weight:700;border-radius:18px;padding:16px 20px;box-shadow:0 12px 26px -10px rgba(67,56,202,.7);font-size:15px}
+.field{border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin-bottom:10px;background:#fff}
+.field small{display:block;color:var(--mut);font-size:12px}
+.field b{font-weight:600}
+.two{display:flex;gap:10px}.two .field{flex:1}
+.switch{display:flex;align-items:center;gap:10px;padding:6px 0}
+.switch .sw{width:44px;height:26px;border-radius:13px;background:var(--ind);position:relative;flex-shrink:0}
+.switch .sw::after{content:"";position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff}
+.switch p{font-size:14px}.switch p small{display:block;color:var(--mut);font-size:12.5px}
+.chk{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);flex-shrink:0;display:grid;place-items:center;font-size:14px;color:#fff;font-weight:800}
+.chk.on{background:var(--ind);border-color:var(--ind)}
+.btn{display:block;text-align:center;font-weight:700;border-radius:14px;padding:13px;font-size:15px}
+.btn.p{background:var(--ind);color:#fff}
+.btn.g{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.btn.wa{background:#25d366;color:#fff}
+.note{background:var(--ind-l);border-radius:14px;padding:11px 13px;font-size:13.5px;margin:0 14px 12px;display:flex;gap:10px}
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;color:var(--ind);background:linear-gradient(135deg,#e0e7ff,#fbcfe8);flex-shrink:0}
+.mini{display:flex;gap:6px}
+.mini span{border:1px solid var(--line);border-radius:10px;padding:6px 9px;font-size:13px;font-weight:600;background:#fff}
+.mini span.wa{background:#25d366;border-color:#25d366;color:#fff}
+/* --- Web pública (Safari en iPhone) --- */
+.safari-top{height:54px;background:#f7f7f9;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;border-bottom:1px solid #e3e3e8}
+.url{background:#e8e8ed;border-radius:12px;padding:7px 14px;font-size:14px;color:#333;width:360px;text-align:center}
+.url i{font-style:normal;color:#8e8e93}
+.safari-bot{position:absolute;bottom:0;left:0;right:0;height:62px;background:#f7f7f9;border-top:1px solid #e3e3e8;display:flex;justify-content:space-around;align-items:center;color:#007aff;font-size:20px;padding-bottom:10px}
+.web{background:linear-gradient(180deg,#eef0ff 0,#fafbff 220px);height:calc(892px - 54px - 62px);overflow:hidden;position:relative}
+.whero{padding:18px 18px 8px}
+.brandline{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--ind)}
+.brandline svg{width:20px;height:20px}
+.whero h2{font-size:25px;font-weight:800;letter-spacing:-.02em;margin:10px 0 4px}
+.whero p{color:var(--mut);font-size:14.5px}
+.hi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin:10px 14px;font-size:14px;display:flex;gap:10px;align-items:flex-start}
+.item{background:#fff;border:1px solid var(--line);border-radius:16px;margin:0 14px 10px;padding:12px;display:flex;gap:12px}
+.item .grow{flex:1;min-width:0}
+.item .n{font-weight:700}
+.item .m{font-size:13px;color:var(--mut)}
+.item a{color:var(--ind);font-size:13px;font-weight:600;text-decoration:none}
+.st{margin-top:8px;font-size:13px;font-weight:700;border-radius:10px;padding:7px 10px;display:inline-flex;align-items:center;gap:6px}
+.st.free{background:var(--ind);color:#fff}
+.st.done{background:var(--green-l);color:var(--green)}
+.st.multi{background:var(--amber-l);color:#92400e}
+.item.taken{opacity:.75}
+.item.taken .thumb{filter:saturate(.6)}
+.sheet-back{position:absolute;inset:0;background:rgba(15,13,40,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;padding:10px 18px 22px}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:#d4d6e2;margin:0 auto 12px}
+.sheet h3{font-size:19px;font-weight:800;margin-bottom:2px}
+.opt{border:2px solid var(--line);border-radius:14px;padding:11px 13px;margin-top:10px;display:flex;gap:10px;align-items:flex-start}
+.opt.on{border-color:var(--ind);background:var(--ind-l)}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid #b9bccf;flex-shrink:0;margin-top:1px}
+.opt.on .radio{border:6px solid var(--ind)}
+.opt b{display:block}.opt small{color:var(--mut);font-size:13px}
+.ppl{margin:8px 0 0 30px}
+.ppl div{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14.5px}
+.ppl .chk{width:22px;height:22px}
+.addname{border:1px dashed #b9bccf;border-radius:10px;padding:8px 10px;color:var(--mut);font-size:14px;margin-top:4px}
+.addname b{color:var(--ink)}
+.alert{background:#fff7e0;border:1px solid #fde68a;border-radius:16px;margin:10px 14px;padding:12px 14px;font-size:14px}
+.alert .acts{display:flex;gap:8px;margin-top:10px}
+.alert .acts span{flex:1;text-align:center;border-radius:10px;padding:8px;font-weight:700;font-size:14px}
+.cap{width:412px;font-size:13px;color:#3d4060;margin-top:8px}
+.wrap{display:flex;flex-direction:column}
+.reveal-top{background:linear-gradient(150deg,var(--ind),#7c3aed 70%,#db2777);color:#fff;margin:0 14px 12px;border-radius:20px;padding:16px}
+.reveal-top .t{font-size:19px;font-weight:800}
+.reveal-top .s{opacity:.9;font-size:14px;margin-top:4px}
+.from{font-size:13px;color:var(--mut);margin-top:2px}
+.from b{color:var(--ink)}
+.loose{margin-top:8px;background:#f6f7fb;border-radius:12px;padding:9px 10px;font-size:13px}
+.loose .acts{display:flex;gap:6px;margin-top:7px}
+.loose .acts span{border:1px solid var(--line);background:#fff;border-radius:9px;padding:5px 8px;font-weight:600;font-size:12.5px}
+.loose .acts span.p{background:var(--ind);border-color:var(--ind);color:#fff}
+</style>
+</head>
+<body>
+
+<!-- ============ 1 · App: Regalos › Mis deseos ============ -->
+<div class="wrap"><div class="screen" id="s1">
+  <div class="hdr"><h1>Regalos</h1><span style="font-size:22px">⋮</span></div>
+  <div class="subtabs" style="-webkit-mask-image:linear-gradient(90deg,transparent,#000 40px);mask-image:linear-gradient(90deg,transparent,#000 40px)">
+    <span class="subtab" style="margin-left:-62px">🎁 Ideas</span><span class="subtab">✅ Regalados</span><span class="subtab">🎀 Recibidos</span><span class="subtab on">🌟 Mis deseos</span>
+  </div>
+  <div class="box occ">
+    <div class="t">🎄 Navidad 2026</div>
+    <div class="s">25 de diciembre · dentro de 27 días</div>
+    <span class="pill">6 deseos · 4 invitados</span> <span class="pill">🤫 Sorpresa activada</span>
+  </div>
+  <div class="box">
+    <div class="lbl">🌟 Mis deseos · 9</div>
+    <div class="row"><div class="thumb g1">🎧</div><div class="grow"><div class="n">Auriculares con cancelación</div><div class="m">amazon.es · 249 €</div><span class="chip">🎄 Navidad 2026</span></div></div>
+    <div class="row"><div class="thumb g2">☕</div><div class="grow"><div class="n">Cafetera espresso manual</div><div class="m">elcorteingles.es · 189 €</div><span class="chip">🎄 Navidad 2026</span></div></div>
+    <div class="row"><div class="thumb g3">📚</div><div class="grow"><div class="n">Trilogía «La ciudad de vapor»</div><div class="m">casadellibro.com · 54 €</div><span class="chip">🎄 Navidad 2026</span></div></div>
+    <div class="row"><div class="thumb g4">🧥</div><div class="grow"><div class="n">Chaqueta impermeable</div><div class="m">decathlon.es · 79 € · «talla M, azul o negra»</div><span class="chip">🎄 Navidad 2026</span></div></div>
+    <div class="row"><div class="thumb g5">🍳</div><div class="grow"><div class="n">Sartén de hierro 28 cm</div><div class="m">lekue.com · 45 €</div><span class="chip ind">Sin ocasión</span></div></div>
+  </div>
+  <div class="fab">＋ Deseo</div>
+  <div class="band">
+    <div><span>👥</span>Contactos</div><div class="on"><span>🎁</span>Regalos</div><div><span>📅</span>Fechas</div><div><span>⏰</span>Recordatorios</div>
+  </div>
+</div><div class="cap"><b>1 · App, Regalos › Mis deseos.</b> Una pestaña nueva dentro de Regalos. Arriba, la ocasión en marcha; debajo, todos tus deseos. Cada uno dice si entra en una ocasión.</div></div>
+
+<!-- ============ 2 · App: Nueva ocasión ============ -->
+<div class="wrap"><div class="screen" id="s2">
+  <div class="hdr"><span class="back">‹</span><span class="crumb">Mis deseos › <b>Nueva ocasión</b></span></div>
+  <div class="box">
+    <div class="two"><div class="field" style="flex:0 0 64px;text-align:center"><small>Emoji</small><b style="font-size:22px">🎄</b></div><div class="field"><small>Nombre</small><b>Navidad 2026</b></div></div>
+    <div class="field"><small>Fecha</small><b>25 de diciembre de 2026</b></div>
+    <div class="switch"><span class="sw"></span><p><b>Revelar después de la fecha</b><small>El 26 de diciembre verás quién te regaló cada cosa y pasará a Recibidos.</small></p></div>
+  </div>
+  <div class="box">
+    <div class="lbl">¿Qué deseos entran? · 6 de 9</div>
+    <div class="row"><span class="chk on">✓</span><div class="thumb g1" style="width:44px;height:44px;font-size:22px;border-radius:11px">🎧</div><div class="grow"><div class="n">Auriculares con cancelación</div><div class="m">249 €</div></div></div>
+    <div class="row"><span class="chk on">✓</span><div class="thumb g2" style="width:44px;height:44px;font-size:22px;border-radius:11px">☕</div><div class="grow"><div class="n">Cafetera espresso manual</div><div class="m">189 €</div></div></div>
+    <div class="row"><span class="chk on">✓</span><div class="thumb g3" style="width:44px;height:44px;font-size:22px;border-radius:11px">📚</div><div class="grow"><div class="n">Trilogía «La ciudad de vapor»</div><div class="m">54 €</div></div></div>
+    <div class="row"><span class="chk on">✓</span><div class="thumb g4" style="width:44px;height:44px;font-size:22px;border-radius:11px">🧥</div><div class="grow"><div class="n">Chaqueta impermeable</div><div class="m">79 €</div></div></div>
+    <div class="row"><span class="chk"></span><div class="thumb g5" style="width:44px;height:44px;font-size:22px;border-radius:11px">🍳</div><div class="grow"><div class="n">Sartén de hierro 28 cm</div><div class="m">45 €</div></div></div>
+  </div>
+  <div style="padding:0 14px"><div class="btn p">Siguiente: invitados →</div></div>
+</div><div class="cap"><b>2 · App, nueva ocasión.</b> Nombre, fecha y si quieres que se revele después. Marcas qué deseos entran; los demás se quedan en tu lista.</div></div>
+
+<!-- ============ 3 · App: invitados y enlaces ============ -->
+<div class="wrap"><div class="screen" id="s3">
+  <div class="hdr"><span class="back">‹</span><span class="crumb">Mis deseos › <b>🎄 Navidad 2026</b></span></div>
+  <div class="note"><span>🤫</span><span><b>Sorpresa activada.</b> No verás quién marca qué hasta el 26 de diciembre. Solo sabrás si cada invitado ha abierto su enlace.</span></div>
+  <div class="box">
+    <div class="lbl">Invitados · enlace personal para cada uno</div>
+    <div class="row"><div class="av">LM</div><div class="grow"><div class="n">Lucía Martín</div><div class="m">Hermana · <span style="color:var(--green);font-weight:600">✓ Abierto</span></div></div><div class="mini"><span class="wa">WhatsApp</span><span>⧉</span></div></div>
+    <div class="row"><div class="av">AR</div><div class="grow"><div class="n">Ana Ruiz</div><div class="m">Amiga · <span style="color:var(--green);font-weight:600">✓ Abierto</span></div></div><div class="mini"><span class="wa">WhatsApp</span><span>⧉</span></div></div>
+    <div class="row"><div class="av">PG</div><div class="grow"><div class="n">Pepe García</div><div class="m">Primo · Enviado, sin abrir</div></div><div class="mini"><span class="wa">WhatsApp</span><span>⧉</span></div></div>
+    <div class="row"><div class="av">LS</div><div class="grow"><div class="n">Luis Sánchez</div><div class="m">Cuñado · Sin enviar</div></div><div class="mini"><span class="wa">WhatsApp</span><span>⧉</span></div></div>
+    <div style="margin-top:10px" class="btn g">＋ Añadir invitado de mis contactos</div>
+  </div>
+  <div class="box">
+    <div class="lbl">Mensaje que se envía</div>
+    <div style="background:#e7fdd8;border-radius:12px;padding:10px 12px;font-size:14px">¡Hola, Pepe! Esta es mi lista para Navidad 🎄. Si compras algo, márcalo para que nadie lo repita (yo no veré qué es 😉):<br><span style="color:#0b7cc9">https://agendario.dagarin.es/l/pX7q…</span></div>
+  </div>
+  <div style="padding:0 14px;display:flex;gap:10px"><div class="btn g" style="flex:1">👁 Ver como invitado</div><div class="btn g" style="flex:1">Anular enlaces</div></div>
+</div><div class="cap"><b>3 · App, la ocasión.</b> Eliges a los invitados entre tus contactos y mandas a cada uno su enlace por WhatsApp o lo copias. Solo ves si lo han abierto, nada de lo que marcan.</div></div>
+
+<!-- ============ 4 · Web: lo que ve Ana ============ -->
+<div class="wrap"><div class="screen" id="s4">
+  <div class="safari-top"><div class="url">🔒 agendario.dagarin.es<i>/l/aR4k…</i></div></div>
+  <div class="web">
+    <div class="whero">
+      <div class="brandline"><svg viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#4338CA"/><rect x="22" y="16" width="44" height="64" rx="6" fill="#fff"/><rect x="66" y="20" width="12" height="14" rx="3" fill="#FCD34D"/><rect x="66" y="38" width="12" height="14" rx="3" fill="#A5B4FC"/><rect x="66" y="56" width="12" height="14" rx="3" fill="#F9A8D4"/></svg>Lista de deseos</div>
+      <h2>🎄 Navidad 2026 de Daniel</h2>
+      <p>25 de diciembre · 6 deseos · 2 ya elegidos</p>
+    </div>
+    <div class="hi"><span style="font-size:22px">👋</span><span><b>Hola, Ana.</b> Marca lo que vayas a regalarle para que nadie lo repita. Los demás invitados lo verán; <b>Daniel no</b>.</span></div>
+    <div class="item"><div class="thumb g1">🎧</div><div class="grow"><div class="n">Auriculares con cancelación</div><div class="m">249 € · <a>Ver en amazon.es ↗</a></div><span class="st free">🎁 Lo regalo yo</span></div></div>
+    <div class="item"><div class="thumb g2">☕</div><div class="grow"><div class="n">Cafetera espresso manual</div><div class="m">189 € · <a>Ver en elcorteingles.es ↗</a></div><span class="st free">🎁 Lo regalo yo</span></div></div>
+    <div class="item taken"><div class="thumb g3">📚</div><div class="grow"><div class="n">Trilogía «La ciudad de vapor»</div><div class="m">54 € · <a>Ver en casadellibro.com ↗</a></div><span class="st done">✓ Lo regala Lucía</span></div></div>
+    <div class="item"><div class="thumb g4">🧥</div><div class="grow"><div class="n">Chaqueta impermeable</div><div class="m">79 € · «talla M, azul o negra»</div><span class="st free">🎁 Lo regalo yo</span></div></div>
+  </div>
+  <div class="safari-bot"><span>‹</span><span>›</span><span>⬆︎</span><span>📖</span><span>⧉</span></div>
+</div><div class="cap"><b>4 · Web, lo que ve Ana al abrir su enlace (iPhone, Safari).</b> Sin app ni cuenta: la saluda por su nombre, ve toda la lista con enlaces y precios, y lo que ya está elegido y por quién.</div></div>
+
+<!-- ============ 5 · Web: Ana marca «entre varios» ============ -->
+<div class="wrap"><div class="screen" id="s5">
+  <div class="safari-top"><div class="url">🔒 agendario.dagarin.es<i>/l/aR4k…</i></div></div>
+  <div class="web">
+    <div class="whero"><h2 style="margin-top:0">🎄 Navidad 2026 de Daniel</h2></div>
+    <div class="item"><div class="thumb g1">🎧</div><div class="grow"><div class="n">Auriculares con cancelación</div><div class="m">249 €</div></div></div>
+    <div class="item"><div class="thumb g2">☕</div><div class="grow"><div class="n">Cafetera espresso manual</div><div class="m">189 €</div></div></div>
+    <div class="sheet-back"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <h3>🎧 Auriculares con cancelación</h3>
+      <div style="color:var(--mut);font-size:14px">¿Quién lo regala?</div>
+      <div class="opt"><span class="radio"></span><div><b>Lo regalo yo</b><small>Solo tú.</small></div></div>
+      <div class="opt on"><span class="radio"></span><div style="flex:1"><b>Lo regalamos entre varios</b><small>Marca con quién.</small>
+        <div class="ppl" style="margin-left:0">
+          <div><span class="chk on">✓</span>Pepe García</div>
+          <div><span class="chk on">✓</span>Luis Sánchez</div>
+          <div><span class="chk"></span>Lucía Martín</div>
+          <div class="addname">✍️ Otra persona sin enlace: <b>Marta</b></div>
+        </div></div></div>
+      <div class="btn p" style="margin-top:14px">Guardar: Ana, Pepe, Luis y Marta</div>
+    </div>
+  </div>
+  <div class="safari-bot"><span>‹</span><span>›</span><span>⬆︎</span><span>📖</span><span>⧉</span></div>
+</div><div class="cap"><b>5 · Web, Ana lo marca «entre varios».</b> Elige a Pepe y a Luis entre los invitados y añade a mano a Marta, su pareja, que no tiene enlace.</div></div>
+
+<!-- ============ 6 · Web: lo que ve Pepe ============ -->
+<div class="wrap"><div class="screen" id="s6">
+  <div class="safari-top"><div class="url">🔒 agendario.dagarin.es<i>/l/pX7q…</i></div></div>
+  <div class="web">
+    <div class="whero" style="padding-bottom:0">
+      <div class="brandline"><svg viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#4338CA"/><rect x="22" y="16" width="44" height="64" rx="6" fill="#fff"/><rect x="66" y="20" width="12" height="14" rx="3" fill="#FCD34D"/><rect x="66" y="38" width="12" height="14" rx="3" fill="#A5B4FC"/><rect x="66" y="56" width="12" height="14" rx="3" fill="#F9A8D4"/></svg>Lista de deseos</div>
+      <h2>🎄 Navidad 2026 de Daniel</h2>
+    </div>
+    <div class="alert"><b>🙋 Ana te ha apuntado</b> a los <b>auriculares con cancelación</b>, con Luis y Marta.<div class="acts"><span style="background:var(--ind);color:#fff">👍 De acuerdo</span><span style="background:#fff;border:1px solid var(--line)">No participo</span></div></div>
+    <div class="item"><div class="thumb g1">🎧</div><div class="grow"><div class="n">Auriculares con cancelación</div><div class="m">249 € · <a>Ver en amazon.es ↗</a></div><span class="st multi">👥 Ana, tú, Luis y Marta</span></div></div>
+    <div class="item"><div class="thumb g2">☕</div><div class="grow"><div class="n">Cafetera espresso manual</div><div class="m">189 € · <a>Ver en elcorteingles.es ↗</a></div><span class="st free">🎁 Lo regalo yo</span></div></div>
+    <div class="item taken"><div class="thumb g3">📚</div><div class="grow"><div class="n">Trilogía «La ciudad de vapor»</div><div class="m">54 €</div><span class="st done">✓ Lo regala Lucía</span></div></div>
+    <div class="item"><div class="thumb g4">🧥</div><div class="grow"><div class="n">Chaqueta impermeable</div><div class="m">79 € · «talla M, azul o negra»</div><span class="st free">🎁 Lo regalo yo</span></div></div>
+  </div>
+  <div class="safari-bot"><span>‹</span><span>›</span><span>⬆︎</span><span>📖</span><span>⧉</span></div>
+</div><div class="cap"><b>6 · Web, lo que ve Pepe con su enlace.</b> Aviso de que Ana le ha apuntado, con opción a borrarse. En la lista ve quién regala cada cosa.</div></div>
+
+<!-- ============ 7 · App: revelación ============ -->
+<div class="wrap"><div class="screen" id="s7">
+  <div class="hdr"><span class="back">‹</span><span class="crumb">Mis deseos › <b>🎄 Navidad 2026</b></span></div>
+  <div class="reveal-top"><div class="t">🎉 ¡Ya puedes verlo!</div><div class="s">Esto es lo que te regalaron. 3 regalos pasan a <b>Recibidos</b> y 2 deseos se quedan en tu lista para la próxima.</div></div>
+  <div class="box">
+    <div class="lbl">🎀 Te regalaron</div>
+    <div class="row" style="align-items:flex-start"><div class="thumb g1">🎧</div><div class="grow"><div class="n">Auriculares con cancelación</div><div class="from">De <b>Ana Ruiz</b>, <b>Pepe García</b>, <b>Luis Sánchez</b> y <b>Marta</b></div>
+      <div class="loose">«Marta» no está en tus contactos.<div class="acts"><span class="p">Enlazar con…</span><span>Crear contacto</span><span>Dejarlo así</span></div></div></div></div>
+    <div class="row"><div class="thumb g3">📚</div><div class="grow"><div class="n">Trilogía «La ciudad de vapor»</div><div class="from">De <b>Lucía Martín</b></div></div></div>
+    <div class="row"><div class="thumb g4">🧥</div><div class="grow"><div class="n">Chaqueta impermeable</div><div class="from">De <b>Lucía Martín</b></div></div></div>
+  </div>
+  <div class="box">
+    <div class="lbl">🌟 Vuelven a Mis deseos</div>
+    <div class="row"><div class="thumb g2" style="width:44px;height:44px;font-size:22px;border-radius:11px">☕</div><div class="grow"><div class="n">Cafetera espresso manual</div><div class="m">Nadie la eligió</div></div></div>
+    <div class="row"><div class="thumb g6" style="width:44px;height:44px;font-size:22px;border-radius:11px">⌚</div><div class="grow"><div class="n">Correa de piel para el reloj</div><div class="m">Nadie la eligió</div></div></div>
+  </div>
+</div><div class="cap"><b>7 · App, el 26 de diciembre.</b> Se revela quién te regaló cada cosa y pasa a Recibidos (también lo de varios). Los nombres sueltos, como Marta, se enlazan o se dejan como texto. Lo que nadie eligió vuelve a Mis deseos.</div></div>
+
+</body>
+</html>

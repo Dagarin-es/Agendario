@@ -4,32 +4,16 @@ import { db, schema } from "../db/index.js";
 
 const c = schema.contacts;
 
-/** El usuario está en la lista de compartidos del contacto (directamente o por grupo). */
-function sharedWith(userId: string, onlyWrite = false): SQL {
-  const perm = onlyWrite ? sql`AND s.permission = 'write'` : sql``;
-  return sql`EXISTS (
-    SELECT 1 FROM contact_shares s
-    WHERE s.contact_id = ${c.id} ${perm}
-      AND (s.user_id = ${userId}
-           OR s.group_id IN (SELECT gm.group_id FROM group_members gm WHERE gm.user_id = ${userId}))
-  )`;
-}
-
 /**
- * Reglas de visibilidad:
- * - private: solo el propietario (aunque haya compartidos guardados).
- * - shared:  propietario + usuarios/grupos de la lista.
- * - public:  cualquier usuario del servidor (solo lectura, salvo que esté compartido con escritura).
+ * Cada contacto es solo de su dueño (desde la 1.6.0 no se comparte entre usuarios).
+ * Se conservan canRead/canEdit para no tocar el resto del código: los dos equivalen a «es mío».
  */
 export function canReadSql(userId: string): SQL {
-  return sql`(${c.ownerId} = ${userId}
-    OR ${c.visibility} = 'public'
-    OR (${c.visibility} = 'shared' AND ${sharedWith(userId)}))`;
+  return sql`(${c.ownerId} = ${userId})`;
 }
 
 export function canEditSql(userId: string): SQL<boolean> {
-  return sql<boolean>`(${c.ownerId} = ${userId}
-    OR (${c.visibility} <> 'private' AND ${sharedWith(userId, true)}))`;
+  return sql<boolean>`(${c.ownerId} = ${userId})`;
 }
 
 export function visibleContacts(userId: string) {

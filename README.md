@@ -4,11 +4,11 @@
 
 *Antes se llamaba «Contactos». Si tienes esa instalación, mira **Pasar de Contactos a Agendario**.*
 
-> **Tus contactos, tu servidor.** Versión estable 1.5.1 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
+> **Tus contactos, tu servidor.** Versión estable 1.6.0 · Software libre (licencia **GNU AGPL v3** o posterior, ver `LICENSE`). Manual completo en PDF en `docs/` y en el menú de la propia app.
 
-Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **efemérides**, **contactos compartidos** entre usuarios, **fotos y portadas**, servidor **CardDAV** (con grupos) para el móvil y calendario **.ics** suscribible.
+Agenda de contactos autoalojada con **historial de cambios**, **llamadas y apuntes**, **copias de seguridad cifradas**, **ideas para regalos**, **efemérides**, **listas de deseos** para que te regalen, **fotos y portadas**, servidor **CardDAV** (con grupos) para el móvil y calendario **.ics** suscribible.
 
-Esta es la **versión 1.5.1**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
+Esta es la **versión 1.6.0**: servidor + web app instalable (PWA) en un contenedor Docker, y la primera **app Android** (APK).
 
 ---
 
@@ -22,12 +22,9 @@ Esta es la **versión 1.5.1**: servidor + web app instalable (PWA) en un contene
 - **Copias de seguridad automáticas y cifradas** en una carpeta local, NFS, SMB o Google Drive. Ver *Copias de seguridad*.
 - **Modo oscuro** (automático, claro u oscuro) en ⚙️ Ajustes → Apariencia.
 - **Foto de contacto**: se guarda normalizada (JPEG de hasta 1024 px más una miniatura de 256 px) y va incluida en la exportación vCard.
-- **Visibilidad por contacto**:
-  - *Privado*: solo tú.
-  - *Compartido*: con las personas o los grupos que elijas, con permiso de **ver** o de **editar**.
-  - *Público*: lo ven todos los usuarios del servidor.
-- **Grupos** (por ejemplo "Familia") para compartir con varias personas a la vez.
-- **Etiquetas** en 20 colores, con subetiquetas que se ordenan **arrastrando**, para clasificar contactos y **filtrar** la lista. Son **personales**: puedes etiquetar también los contactos que te comparten y nadie más verá tus etiquetas.
+- **Gestor personal**: puede haber varios usuarios, pero cada uno con **su agenda totalmente separada** (desde la 1.6 no se comparten contactos entre usuarios).
+- **Mis deseos y listas para regalarte** (1.6): tu lista de deseos, ocasiones («Navidad 2026») y lista siempre abierta, con un **enlace personal para cada invitado** que se abre en el navegador sin cuenta. Los invitados marcan «Lo regalo yo» o «entre varios» y ven quién regala cada cosa; tú no, hasta la revelación, que pasa lo regalado a **Recibidos**. Ver *Mis deseos y listas para regalarte*.
+- **Etiquetas** en 20 colores, con subetiquetas que se ordenan **arrastrando**, para clasificar contactos y **filtrar** la lista. Son **personales**.
 - **Favoritos** personales con una estrella (en la ficha y en cada fila de la lista), con filtro junto al buscador; viajan a Gmail como «Destacados» y al móvil/Fastmail/.vcf como la categoría «Favoritos».
 - **Etiquetas en cada dato**: un teléfono, email o dirección se puede asociar a una etiqueta. Al filtrar o exportar por esa etiqueta se usan sus datos. Ver *Etiquetas en teléfonos, emails y direcciones*.
 - **Importación de .vcf**: uno o varios ficheros, o **una carpeta entera** (con subcarpetas). Ver el apartado *Importar contactos*.
@@ -37,7 +34,7 @@ Esta es la **versión 1.5.1**: servidor + web app instalable (PWA) en un contene
 - **Changelog** en el menú (con el número de versión): el historial de cambios de cada versión, dentro de la app.
 - **Android Auto**: los avisos de la app (nota al colgar, recordatorios) se leen en el coche y se contestan con la voz.
 - **Duplicados** al estilo de Google Contacts: borrar uno, combinar automáticamente o combinar manualmente eligiendo qué conservar. Ver *Buscar y combinar duplicados*.
-- **Ideas para regalos**: idea, enlace, precio y notas, con su estado (⏳ pendiente → 🛒 comprado para un evento → 🎁 regalado, con el día en que lo regalaste). **Siempre son privadas**: aunque el contacto esté compartido, nadie más ve tus ideas.
+- **Ideas para regalos**: idea, enlace, precio y notas, con su estado (⏳ pendiente → 🛒 comprado para un evento → 🎁 regalado, con el día en que lo regalaste). **Siempre son privadas**.
 - **Regalos recibidos**: qué te regalaron, cuándo, por qué y quién (uno o varios contactos), en la ficha de cada uno y en **Regalos → Recibidos**, con buscador y filtro por persona. También son privados.
 - **Fechas importantes** (aniversarios, santos…) y **relaciones** entre contactos ("pareja de", "hijo/a de"…).
 - **Próximas fechas**: cumpleaños y fechas importantes de los próximos días, con aviso de cuántas ideas de regalo tienes guardadas para esa persona.
@@ -62,7 +59,7 @@ Funciona igual que el `actualizar.sh` de PVEMon.
 **Primera vez.** Desde tu Mac, sube el zip:
 
 ```bash
-scp agendario-1.5.1.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.6.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor, saca el script del zip y lánzalo:
@@ -96,7 +93,7 @@ Si prefieres hacerlo a mano, estos son los pasos:
 Desde tu Mac:
 
 ```bash
-scp agendario-1.5.1.zip root@IP_DEL_SERVIDOR:/opt/
+scp agendario-1.6.0.zip root@IP_DEL_SERVIDOR:/opt/
 ```
 
 En el servidor:
@@ -104,7 +101,7 @@ En el servidor:
 ```bash
 cd /opt
 apt install -y unzip        # si no lo tienes
-unzip agendario-1.5.1.zip
+unzip agendario-1.6.0.zip
 cd agendario
 ```
 
@@ -148,7 +145,7 @@ Desde la 0.8.0 todo se llama Agendario: carpeta `/opt/agendario`, script `actual
 
 1. Sube el zip y saca el script nuevo:
    ```bash
-   scp agendario-1.5.1.zip root@IP_DEL_SERVIDOR:/opt/
+   scp agendario-1.6.0.zip root@IP_DEL_SERVIDOR:/opt/
    # en el servidor:
    unzip -j -o /opt/agendario-*.zip agendario/scripts/actualizar-agendario.sh -d /opt
    bash /opt/actualizar-agendario.sh
@@ -204,6 +201,16 @@ Para instalar la PWA en el móvil y usarla fuera de casa **hace falta HTTPS**: l
    ```
 
 > Si solo vas a usarlo desde casa o a través de tu VPN (WireGuard/Tailscale), puedes hacer lo mismo con un dominio interno y un certificado DNS-01.
+
+### Subdominio para las listas de deseos (1.6)
+
+Los enlaces que mandas a tus invitados van por **un subdominio solo para eso** (por ejemplo `regalos.tudominio.es`). Por esa dirección Agendario solo enseña la página de la lista: ni la web, ni el inicio de sesión, ni el resto de la API.
+
+1. En tu DNS, crea el registro del subdominio apuntando a tu IP pública (igual que el de Agendario).
+2. En NPM: **Add Proxy Host** con *Domain Names* `regalos.tudominio.es`, el **mismo destino** que Agendario (IP del host Docker, puerto `3002`), *Block Common Exploits* y, en **SSL**, certificado de Let's Encrypt con *Force SSL*. No hace falta nada en *Advanced*.
+3. En Agendario, **⚙️ Ajustes → Sincronización → Listas de deseos: dirección pública** (solo el administrador): pon `https://regalos.tudominio.es`, **Guardar** y **Comprobar**. Tiene que decir «Todo bien: la dirección llega a Agendario y solo enseña las listas».
+
+Sin esta dirección puedes preparar tus deseos y ocasiones, pero no mandar enlaces.
 
 ---
 
@@ -261,7 +268,7 @@ En el menú **⋯ → Importar .vcf**:
    - **Visibilidad** de los contactos nuevos.
 3. Pulsa **Importar** y verás el progreso y un resumen.
 
-**Para tus primeras pruebas:** importa siempre con una etiqueta propia. Si no te convence el resultado, ve a **⋯ → Etiquetas → Borrar con contactos** y se borra de golpe todo lo importado con esa etiqueta. Solo borra contactos tuyos, nunca los que te han compartido.
+**Para tus primeras pruebas:** importa siempre con una etiqueta propia. Si no te convence el resultado, ve a **⋯ → Etiquetas → Borrar con contactos** y se borra de golpe todo lo importado con esa etiqueta.
 
 Qué se importa: nombre, apodo, empresa y departamento, cargo, teléfonos, emails, webs y direcciones (con sus etiquetas, incluidas las de Apple), cumpleaños (también sin año), aniversario (pasa a *Fechas importantes*), notas, **foto** y categorías. Las fotos que vienen como enlace web (algunas exportaciones de Google) no se descargan.
 
@@ -316,7 +323,7 @@ La selección se mantiene aunque cambies de página o de filtro. Cuando hay algo
 - **Exportar** la selección a un .vcf, con o sin tus ideas de regalo.
 - **Añadir una etiqueta**, existente o nueva.
 - **Quitar una etiqueta**.
-- **Borrar** los contactos seleccionados. Solo se borran los tuyos; los que te han compartido se saltan. No hay papelera: haz tus copias antes.
+- **Borrar** los contactos seleccionados. No hay papelera: haz tus copias antes.
 
 ---
 
@@ -341,7 +348,7 @@ Si un grupo tiene más de dos contactos, se revisa por parejas: tras resolver un
 
 **⚡ Combinar todos** combina automáticamente todos los grupos de una vez, después de pedirte confirmación. Respeta las parejas marcadas como «no son duplicados».
 
-En cualquier combinación, las etiquetas, ideas de regalo, regalos recibidos, fechas, relaciones y compartidos pasan al contacto que se conserva.
+En cualquier combinación, las etiquetas, ideas de regalo, regalos recibidos, fechas y relaciones pasan al contacto que se conserva.
 
 ---
 
@@ -350,8 +357,7 @@ En cualquier combinación, las etiquetas, ideas de regalo, regalos recibidos, fe
 1. En **⚙️ Ajustes → Usuarios** (solo administradores) pulsa **+ Crear usuario**: nombre, email y una contraseña temporal. Al entrar se le pedirá cambiarla.
 2. Desde ahí también puedes ponerle otra contraseña, hacerle administrador o desactivarlo. Siempre queda al menos un administrador.
 3. «Registro desde la web» decide si cualquiera puede crearse cuenta (abierto), solo el primero o nadie. Manda sobre `REGISTRATION` del `.env`.
-4. En **⋯ → Grupos**, crea por ejemplo "Familia" y añade a sus miembros.
-5. En un contacto: **Editar → Visibilidad: Compartido** y, en la ficha, elige con quién compartirlo.
+4. Cada usuario tiene **su propia agenda**, separada del todo: nadie ve los contactos de los demás (desde la 1.6 ya no se comparten contactos ni hay grupos).
 
 ---
 
@@ -378,6 +384,19 @@ Agendario es también un servidor CardDAV en `https://TU_DOMINIO/dav/`. En **⚙
 
 Usa siempre la dirección **https** (Nginx Proxy Manager). Lo que crees en una libreta de etiqueta llega con esa etiqueta y lo que borres en el móvil va a la papelera.
 
+## Mis deseos y listas para regalarte
+
+En **Regalos → 🌟 Mis deseos** apuntas lo que te gustaría que te regalaran (enlace, foto, precio y una nota). Desde el móvil también con **Compartir → Agendario → «🌟 Es para mí»** en cualquier tienda.
+
+- **Ocasiones** (🎄 Navidad, tu cumpleaños…) con fecha, y una **lista siempre abierta** sin fecha. Eliges qué deseos entran (o todos).
+- **Invitados**: los eliges de tus contactos y a cada uno le mandas **su enlace personal** (WhatsApp o copiar). Ven la lista en el navegador, sin app ni cuenta, y marcan «Lo regalo yo» o «Lo regalamos entre varios». Los demás invitados ven quién regala cada cosa; **tú no**.
+- **Revelación**: al día siguiente de la ocasión (si está activada) lo regalado pasa a **Recibidos** con quién te lo hizo, los enlaces dejan de funcionar y lo que nadie eligió vuelve a Mis deseos. La lista abierta se revela cuando tú quieras.
+- **«¿Falta alguien?»**: los invitados te sugieren a quién más invitar.
+- **Listas de otras personas**: pega el enlace de una lista que te manden y lo que regales se apunta solo en la ficha de esa persona («Añadir a mi Agendario» hace lo mismo desde la página de la lista en Android).
+- Hace falta el **subdominio de las listas** (ver *Publicarlo con Nginx Proxy Manager*).
+
+---
+
 ## Fechas y regalos
 
 La pestaña **Fechas** muestra un calendario mensual. Cada día con algo señalado lleva un icono de regalo:
@@ -401,7 +420,7 @@ Los **santos** se pueden añadir a mano en «Fechas importantes». Si quieres qu
   Restaurar queda apuntado como un cambio más, así que también se puede deshacer. La foto no se guarda en el historial.
 - **Papelera** (⋯ → Papelera): los contactos borrados (o combinados con otro) se pueden **restaurar** durante 60 días, con su foto, fechas, regalos y enlaces de empresa. Después se eliminan del todo. También puedes eliminarlos antes o vaciar la papelera.
 
-> Las etiquetas, ideas de regalo y apuntes son personales y no aparecen en el historial compartido del contacto.
+> Las etiquetas, ideas de regalo y apuntes son personales y no aparecen en el historial del contacto.
 
 ---
 
@@ -535,19 +554,18 @@ Todas las rutas están bajo `/api` y, salvo `auth/status`, `auth/register`, `aut
 | GET | `/auth/status` | ¿Se puede registrar alguien? |
 | POST | `/auth/register` · `/auth/login` · `/auth/logout` | Sesión |
 | GET | `/auth/me` | Usuario actual |
-| GET | `/users` | Usuarios (para compartir) |
 | GET/POST | `/contacts` | Listar (`?q=` para buscar) / crear |
 | GET/PATCH/DELETE | `/contacts/:id` | Ficha completa / editar / borrar |
 | GET/PUT/DELETE | `/contacts/:id/photo` | Foto (`?size=thumb\|full`) |
-| PUT | `/contacts/:id/shares` | Con quién se comparte (solo el propietario) |
 | POST/DELETE | `/contacts/:id/dates[/:subId]` | Fechas importantes |
 | POST/DELETE | `/contacts/:id/relationships[/:subId]` | Relaciones |
 | POST | `/contacts/:id/gift-ideas` | Nueva idea de regalo |
 | PATCH/DELETE | `/gift-ideas/:id` | Editar (marcar como regalado) / borrar |
 | POST | `/contacts/:id/gifts-received` | Nuevo regalo recibido |
 | DELETE | `/gifts-received/:id` | Borrar regalo recibido |
-| GET/POST/DELETE | `/groups[/:id]` | Grupos |
-| POST/DELETE | `/groups/:id/members[/:userId]` | Miembros |
+| GET/POST/PATCH/DELETE | `/wishes[/:id]` | Mis deseos (+ `/wishes/:id/image`, `/wishes/public-url`, `/wishes/remote`) |
+| GET/POST/PATCH/DELETE | `/wish-lists[/:id]` | Ocasiones y lista abierta (+ `/guests`, `/guests/:gid/link`, `/reveal`, `/archive`) |
+| GET/POST/PATCH | `/l/*` | Página del invitado, sin sesión: cabecera `X-Lista-Token` (`/state`, `/claims`, `/suggestions`, `/images/:id`) |
 | GET | `/upcoming?days=30` | Próximas fechas |
 | GET | `/export/contacts.vcf[?gifts=true]` | Exportar vCard |
 | POST | `/import/vcard` | Importar un lote de vCards (máx. 500 por petición) |
@@ -602,7 +620,7 @@ npm run db:generate
 
 Desde la 1.0 `IS_BETA = false` (sin etiqueta «Beta»). La versión está en `APP_VERSION` de `packages/shared/src/index.ts` (y en el `Dockerfile`).
 
-1. ✅ **Fase 1**: servidor, usuarios, contactos compartidos, fotos, regalos, fechas, relaciones y PWA.
+1. ✅ **Fase 1**: servidor, usuarios, contactos, fotos, regalos, fechas, relaciones y PWA.
    - ✅ 0.2: etiquetas personales con filtro e importación de .vcf (ficheros y carpetas).
    - ✅ 0.3: búsqueda y fusión de duplicados, paginación y nuevo menú.
    - ✅ 0.4: selección múltiple con acciones en bloque y duplicados al estilo de Google Contacts (con vista previa y fichas completas).
@@ -622,6 +640,8 @@ Desde la 1.0 `IS_BETA = false` (sin etiqueta «Beta»). La versión está en `AP
    - ✅ 1.4.1: marcar favoritos con la estrella de cada fila de la lista y capturas nuevas en la web.
    - ✅ 1.5: regalos en la ficha con tres pestañas (ideas, regalados y recibidos), valoración con estrellas, anotación y foto de cada regalo hecho y recibido, pestaña «Regalados» y selectores fijos en Fechas y Regalos.
    - ✅ 1.5.1: título de cada sección siempre en la cabecera de la app, pestañas en una banda fija con bordes visibles, buscador siempre a la vista, ficha con la sección «Contacto» en pestañas, títulos y flechas más grandes y señal de recordatorio en la lista y la ficha.
+   - ✅ 1.6: Mis deseos, ocasiones y lista siempre abierta con enlaces personales para los invitados (subdominio propio), revelación a Recibidos, «¿Falta alguien?» y «Añadir a mi Agendario»; fuera compartir contactos y grupos.
+   - En marcha: **Agendario Lite** (sin servidor, solo app Android, para Google Play).
    - ✅ 1.2.1: editar ideas de regalo, avisos con bola en el icono (vencidos y cumpleaños sin regalo) y correcciones de la app.
    - ✅ 1.2: adjuntos en las llamadas, «Últimas notas», recordatorios con pestaña propia y Todoist, selección por pulsación larga y avisos en Android Auto.
    - Más adelante: recordatorios con apps de tareas autoalojadas por CalDAV (Vikunja, Nextcloud Tasks).
@@ -637,4 +657,5 @@ Desde la 1.0 `IS_BETA = false` (sin etiqueta «Beta»). La versión está en `AP
 - Cambiar la contraseña cierra las demás sesiones; también hay «Cerrar sesión en los demás dispositivos». Las contraseñas provisionales obligan a cambiarlas antes de usar nada más.
 - Cabeceras de seguridad (CSP solo con código propio, sin incrustar en otras webs, `Referrer-Policy`, `Permissions-Policy`).
 - Las vistas previas de enlaces no pueden leer direcciones de la red local (protección SSRF).
+- **Listas de deseos**: subdominio propio por el que solo se sirve la página de la lista (ni la web ni el login ni el resto de la API); códigos de 256 bits detrás de «#» (no llegan a los registros del proxy), guardados solo como huella SHA-256, que caducan al cerrar la ocasión y se pueden anular; `Referrer-Policy: no-referrer`, `noindex`, CSP con nonce y sin recursos de terceros; límite de peticiones y de códigos fallidos por IP; los invitados nunca hacen que el servidor descargue nada; al dueño no se le devuelve quién ha elegido qué hasta la revelación.
 - Ningún secreto en el código: el `.env`, el keystore de Android y las credenciales de Google quedan fuera del repositorio.

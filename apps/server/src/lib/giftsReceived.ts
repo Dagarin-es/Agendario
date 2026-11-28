@@ -42,6 +42,7 @@ export async function listReceived(userId: string, opts: { contactId?: string; i
     rating: g.rating,
     imageKey: g.imageKey,
     contacts: byGift.get(g.id) ?? [],
+    fromNames: g.fromNames ?? [],
     createdAt: g.createdAt.toISOString(),
   }));
 }
@@ -58,6 +59,12 @@ export async function checkContacts(userId: string, ids: string[]) {
 /** Sustituye la lista de contactos de un regalo (primero añade y luego quita: nunca se queda vacío). */
 export async function setGiftContacts(giftId: string, contactIds: string[]) {
   await db.transaction(async (tx) => {
+    // Sin contactos (solo nombres sueltos): fuera los enlaces (el regalo no se borra si tiene nombres)
+    if (!contactIds.length) {
+      await tx.delete(link).where(eq(link.giftId, giftId));
+      await tx.update(gr).set({ contactId: null }).where(eq(gr.id, giftId));
+      return;
+    }
     await tx.insert(link).values(contactIds.map((contactId) => ({ giftId, contactId }))).onConflictDoNothing();
     const keep = new Set(contactIds);
     const current = await tx.select({ contactId: link.contactId }).from(link).where(eq(link.giftId, giftId));

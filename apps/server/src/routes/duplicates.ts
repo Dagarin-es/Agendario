@@ -65,7 +65,7 @@ async function computeGroups(userId: string, userName: string): Promise<Duplicat
           jobTitle: r.jobTitle,
           birthday: r.birthday,
           hasPhoto: !!r.photoKey,
-          visibility: r.visibility,
+          visibility: "private" as const,
           ownerId: r.ownerId,
           ownerName: userName,
           isMine: true,

@@ -1,20 +1,20 @@
 """
 Manual en PDF: no hay fuente del manual original (1.1.0). Este script toma ese PDF (commit 79ae2e6,
 `git show 79ae2e6:apps/web/public/manual/Agendario-Manual.pdf > base-1.1.pdf`), cambia la versión de la
-portada y de los pies de página, corrige «20m» → «30m» (Nginx Proxy Manager) y le añade los capítulos 9 a 16
-(capitulo9.html … capitulo16.html, hechos con Chromium).
+portada y de los pies de página, corrige «20m» → «30m» (Nginx Proxy Manager) y le añade los capítulos 9 a 17
+(capitulo9.html … capitulo17.html, hechos con Chromium).
 Uso:  python3 docs/manual/build-manual.py base-1.1.pdf apps/web/public/manual/Agendario-Manual.pdf
-Necesita playwright (Chromium), pypdf y la fuente Inter Display. Al cambiar de versión, edita la versión aquí (VERSION) y en los pies de capitulo9…16.html.
+Necesita playwright (Chromium), pypdf y la fuente Inter Display. Al cambiar de versión, edita la versión aquí (VERSION) y en los pies de capitulo9…17.html.
 """
 import os, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE, OUT = sys.argv[1], sys.argv[2]
 TMP = tempfile.mkdtemp()
-VERSION = "1.5.1"
+VERSION = "1.6.0"
 from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
     b = p.chromium.launch(executable_path=os.environ.get("CHROME") or None); pg = b.new_page()
-    for ch in ("capitulo9", "capitulo10", "capitulo11", "capitulo12", "capitulo13", "capitulo14", "capitulo15", "capitulo16"):
+    for ch in ("capitulo9", "capitulo10", "capitulo11", "capitulo12", "capitulo13", "capitulo14", "capitulo15", "capitulo16", "capitulo17"):
         pg.goto("file://" + os.path.join(HERE, ch + ".html")); pg.wait_for_timeout(500)
         pg.pdf(path=os.path.join(TMP, ch + ".pdf"), width="8.2767in", height="11.7067in", print_background=True, margin={"top":"0","bottom":"0","left":"0","right":"0"})
     # «client_max_body_size 20m;» → «30m;» (capítulo 2, página 8, bloque oscuro; y tabla de problemas, página 40)
@@ -43,7 +43,7 @@ for i, page in enumerate(src.pages):
     if i in fixes: page.merge_page(fixes[i])
     w.add_page(page)
 for pg_ in w.pages: pg_.compress_content_streams()
-for ch in ("capitulo9", "capitulo10", "capitulo11", "capitulo12", "capitulo13", "capitulo14", "capitulo15", "capitulo16"):
+for ch in ("capitulo9", "capitulo10", "capitulo11", "capitulo12", "capitulo13", "capitulo14", "capitulo15", "capitulo16", "capitulo17"):
     for page in PdfReader(os.path.join(TMP, ch + ".pdf")).pages: w.add_page(page)
 w.add_metadata({"/Title": f"Agendario · Manual de instalación y uso {VERSION}", "/Author": "Agendario"})
 w.compress_identical_objects(remove_identicals=True, remove_orphans=True)

@@ -170,6 +170,9 @@
 #agendario .stage .laptop{transform:none;width:100%}
 #agendario .stage .phone{position:relative;right:auto;bottom:auto;width:290px;transform:none}
 #agendario .stage .fade{animation:agl-in .35s ease}
+@keyframes agl-in{from{opacity:0;transform:translateY(6px)}}
+/* Texto de la función elegida, debajo de la captura: solo en el móvil (en el ordenador ya va en cada botón) */
+#agendario .gal-cap{display:none}
 /* Galería, ordenador · app: el móvil en el centro y las opciones repartidas a izquierda y derecha, centradas en vertical */
 #agendario .gal.app{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:48px}
 #agendario .gal.app .stage{grid-column:2;grid-row:1}
@@ -186,6 +189,8 @@
  #agendario .gal .gal-top,#agendario .gal.app .gal-top{display:flex;flex-direction:row;gap:6px;max-width:none;overflow-x:auto;padding-bottom:8px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
  #agendario .gal-list button,#agendario .gal.app .gal-list button{white-space:nowrap;flex-shrink:0;text-align:center;padding:10px 16px}
  #agendario .gal-list button span{display:none}
+ #agendario .gal-cap{display:block;margin:-2px auto 0;max-width:340px;min-height:2.8em;padding:0 12px;text-align:center;font-size:15px;line-height:1.4;color:var(--mut)}
+ #agendario .gal-cap.fade{animation:agl-in .35s ease}
  #agendario .gal-top.fl{-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
  #agendario .gal-top.fr{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
  #agendario .gal-top.fl.fr{-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
@@ -312,7 +317,7 @@
       <span class="eyebrow">Software libre · Autoalojado</span>
       <h1>Tus contactos,<br><span>tu servidor.</span></h1>
       <p class="formula"><b>Agenda</b> + <b>Diario</b> = <b class="res">Agendario</b></p>
-      <p class="lead">La agenda de tus contactos y el diario de todo lo que vivís con ellos. Sincroniza con otros servicios, apunta esas ideas de regalo, guarda los momentos importantes de tu vida, relaciona a tus contactos y haz copias de seguridad automáticas. Todo lo que siempre has echado de menos en los gestores de contactos de siempre, y mucho más.</p>
+      <p class="lead">La agenda de tus contactos y el diario de todo lo que vivís con ellos. Sincroniza con otros servicios, apunta esas ideas de regalo, haz tu lista de deseos para que te regalen, guarda los momentos importantes de tu vida, relaciona a tus contactos y haz copias de seguridad automáticas. Todo lo que siempre has echado de menos en los gestores de contactos de siempre, y mucho más.</p>
       <div class="cta">
         <a class="btn btn-p" href="#instalar">Instálalo en 5 minutos →</a>
         <a class="btn btn-g" data-gh-link href="https://github.com/Dagarin-es/agendario" target="_blank" rel="noopener">
@@ -320,7 +325,7 @@
           Ver en GitHub
         </a>
       </div>
-      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.5.1</b> <span data-gh-date></span></div>
+      <div class="ver"><span class="dot"></span> Última versión: <b data-gh-version>1.6.0</b> <span data-gh-date></span></div>
     </div>
     <div class="devices rv">
       <div class="laptop"><div class="screen"><span data-shot="hero_web"></span></div></div>
@@ -419,7 +424,7 @@
       <p class="lead">Agendario no tiene «nube de Agendario». No hay cuentas en servidores de terceros, ni anuncios, ni análisis de uso. El servidor es tuyo y la app habla solo con él.</p>
       <div class="lock">
         <div><span>📱</span><span><b>Registro de llamadas solo para ti.</b> La app de Android puede apuntar tus llamadas en la ficha de cada contacto, pero esa información va directa del móvil a <i>tu</i> servidor. No viaja a ningún otro sitio.</span></div>
-        <div><span>🔒</span><span><b>Ideas de regalo y apuntes privados.</b> Aunque compartas un contacto con tu familia, lo tuyo sigue siendo solo tuyo.</span></div>
+        <div><span>🔒</span><span><b>Cada uno, su agenda.</b> Aunque compartáis servidor en casa, cada usuario tiene la suya, separada del todo: nadie ve tus contactos, tus ideas de regalo ni tus apuntes.</span></div>
         <div><span>🛟</span><span><b>Copias cifradas con tu contraseña.</b> Ni siquiera quien guarde la copia puede leerla.</span></div>
         <div><span>🧾</span><span><b>Código abierto.</b> Cualquiera puede revisar qué hace y qué no hace.</span></div>
       </div>
@@ -454,7 +459,8 @@
       <div class="card rv"><div class="ico y">🏷️</div><h3>Etiquetas y subetiquetas</h3><p>Como carpetas, en 20 colores, también en cada teléfono o email. Ordénalas arrastrando, filtra y exporta por etiqueta.</p></div>
       <div class="card rv"><div class="ico">⭐</div><h3>Favoritos</h3><p>Márcalos con un toque en la estrella, desde la lista o desde la ficha, y fíltralos al momento junto al buscador. Viajan a Gmail como destacados y al móvil como grupo.</p></div>
       <div class="card rv"><div class="ico p">🕓</div><h3>Historial y papelera</h3><p>60 días para deshacer cualquier cambio o recuperar un contacto borrado.</p></div>
-      <div class="card rv"><div class="ico g">👨‍👩‍👧</div><h3>Varios usuarios</h3><p>Cada uno con su agenda, contactos privados, compartidos o públicos para toda la casa.</p></div>
+      <div class="card rv"><div class="ico y">🌟</div><h3>Mis deseos</h3><p>Tu lista de lo que te gustaría que te regalaran. Mándala con un enlace personal a cada uno: marcan lo que regalan y tú no te enteras hasta después.</p></div>
+      <div class="card rv"><div class="ico g">👨‍👩‍👧</div><h3>Varios usuarios</h3><p>Toda la casa en el mismo servidor, cada uno con su agenda, separada del todo.</p></div>
     </div>
   </div>
 </section>
@@ -479,11 +485,25 @@
         <ul>
           <li><span class="ico y">🔁</span><span><b>Nunca repites regalo</b>Ves todo lo que le has regalado, año a año, con fotos y fechas.</span></li>
           <li><span class="ico">⭐</span><span><b>Sabes qué funcionó</b>Las estrellas y tus notas te dicen qué acertaste y qué no, para la próxima vez.</span></li>
-          <li><span class="ico p">🔒</span><span><b>Solo para ti</b>Las ideas y los regalos son privados de cada usuario, aunque compartáis la agenda en casa.</span></li>
+          <li><span class="ico p">🔒</span><span><b>Solo para ti</b>Las ideas y los regalos son privados de cada usuario, aunque compartáis servidor en casa.</span></li>
           <li><span class="ico g">🔔</span><span><b>Avisos a tiempo</b>El calendario y el móvil te avisan de los cumpleaños que vienen sin regalo.</span></li>
         </ul>
       </div>
       <div class="rv"><div class="gphone"><div data-shot="app_regalos_ficha"></div></div></div>
+    </div>
+    <div class="grid2 gwin" id="deseos">
+      <div class="rv"><div class="gphone"><div data-shot="app_deseos"></div></div></div>
+      <div class="rv">
+        <span class="eyebrow no-top">🌟 Nuevo en la 1.6 · Mis deseos</span>
+        <h3 style="font-size:28px">Y al revés: lo que quieres que te regalen</h3>
+        <ul>
+          <li><span class="ico y">📝</span><span><b>Tu lista de deseos</b>Con enlace, foto, precio y una nota («talla M, azul o negra»). Desde el móvil, compartiendo desde cualquier tienda.</span></li>
+          <li><span class="ico">🔗</span><span><b>Un enlace para cada invitado</b>Para Navidad, tu cumpleaños o siempre abierta. Lo abren en el navegador, sin app ni cuenta, también en el iPhone.</span></li>
+          <li><span class="ico g">👥</span><span><b>«Lo regalo yo» o entre varios</b>Cada uno marca lo que va a regalar y nadie lo repite. Los invitados ven quién regala qué.</span></li>
+          <li><span class="ico p">🤫</span><span><b>Tú no te enteras</b>Hasta el día siguiente: entonces se revela quién te regaló cada cosa y pasa sola a tus regalos recibidos.</span></li>
+        </ul>
+        <p style="margin-top:14px"><a class="btn btn-g" href="https://dagarin.es/regalario">Así funcionan las listas →</a></p>
+      </div>
     </div>
     <p class="thanks">Mi reconocimiento a <a href="https://emilcar.fm" target="_blank" rel="noopener">Emilcar</a> y su <a href="https://danaus.app" target="_blank" rel="noopener">Danaus</a> por haber inspirado esta sección de regalos.</p>
   </div>
@@ -510,6 +530,7 @@
     <div class="gal web rv" data-gal>
       <div class="gal-list gal-top" data-gal-top></div>
       <div class="stage" data-gal-stage></div>
+      <p class="gal-cap" data-gal-cap aria-live="polite"></p>
       <div class="gal-list gal-bot" data-gal-bot></div>
     </div>
   </div>
@@ -610,6 +631,12 @@ EOF</div>
       </div></div>
 
       <div class="step rv"><div class="n"></div><div>
+        <h3>Subdominio para las listas de deseos (opcional)</h3>
+        <p>Los enlaces que mandas a tus invitados van por un subdominio solo para eso, por ejemplo <code>regalos.tudominio.es</code>: por él Agendario solo enseña la página de la lista, nunca tu agenda ni el inicio de sesión.</p>
+        <p>Crea el registro DNS y, en Nginx Proxy Manager, otro <i>Proxy Host</i> para ese subdominio hacia el <b>mismo</b> <code>IP:3002</code>, con su certificado de Let's Encrypt. Después, en Agendario: <b>Ajustes → Sincronización → Listas de deseos: dirección pública</b>, pon <code>https://regalos.tudominio.es</code>, guarda y pulsa <b>Comprobar</b>.</p>
+      </div></div>
+
+      <div class="step rv"><div class="n"></div><div>
         <h3>Para actualizar</h3>
         <p>Cuando salga una versión nueva, dos comandos. Tus datos y tu <code>.env</code> no se tocan.</p>
         <div class="code" data-copy>cd /opt/agendario && docker compose pull && docker compose up -d</div>
@@ -662,14 +689,13 @@ EOF</div>
     </div>
     <div class="road rv">
       <!-- Hoja de ruta: «Hecho» = lo de las últimas versiones; «En marcha» e «Ideas» son propuestas, edítalas a tu gusto -->
-      <div class="col done"><h3>✅ Hecho · 1.5</h3>
-        <div class="item">Regalos en la ficha con tres pestañas: ideas, regalados y recibidos, con estrellas, anotación y foto</div>
-        <div class="item">Nueva pestaña «Regalados» con todo lo que has regalado</div>
-        <div class="item">App con el nombre de cada sección siempre en la cabecera y pestañas en una banda fija</div>
-        <div class="item">Ficha más clara: teléfonos, emails y otros datos en pestañas dentro de «Contacto»</div>
-        <div class="item">Señal de recordatorio junto al nombre, en la lista y en la ficha</div>
-        <div class="item">Buscador de contactos siempre a la vista</div>
-        <div class="item">Favoritos con una estrella, también en Gmail y en el móvil</div>
+      <div class="col done"><h3>✅ Hecho · 1.6</h3>
+        <div class="item"><b>Mis deseos</b>: tu lista de lo que quieres que te regalen</div>
+        <div class="item">Ocasiones y lista siempre abierta, con un enlace personal para cada invitado (sin app ni cuenta)</div>
+        <div class="item">«Lo regalo yo» o entre varios, con sorpresa hasta la revelación, que pasa todo a Recibidos</div>
+        <div class="item">«¿Falta alguien?» y «Añadir a mi Agendario»</div>
+        <div class="item">Gestor personal: cada usuario con su agenda, sin compartir contactos</div>
+        <div class="item">En el móvil, el texto de cada captura debajo de la imagen en esta web</div>
         <button type="button" class="btn btn-g road-all" data-changelog-open>📜 Ver todos los cambios</button>
       </div>
       <div class="col now"><h3>🚧 En marcha</h3>
@@ -701,7 +727,8 @@ EOF</div>
       <details><summary>¿Cómo traigo mis contactos de Google o del iPhone?</summary><p>Exporta un fichero .vcf desde Google Contacts o iCloud e impórtalo en Ajustes → Sincronización. Puedes etiquetarlo todo para deshacer la importación de golpe si no te convence.</p></details>
       <details><summary>¿Y si se rompe mi servidor?</summary><p>Configura una o varias copias automáticas cifradas (NAS por NFS o SMB, Google Drive…). Restaurar es elegir la copia, escribir su contraseña y confirmar.</p></details>
       <details><summary>¿Funciona con mi gestor de tareas?</summary><p>Con Todoist, sí: cada recordatorio crea una tarea con un enlace a la ficha del contacto, y lo que completes o cambies en un lado se refleja en el otro. Si usas un gestor de tareas autoalojado, está en la hoja de ruta.</p></details>
-      <details><summary>¿Puedo compartir la agenda con mi familia?</summary><p>Sí. Cada persona tiene su usuario y su agenda, y puedes compartir contactos (solo ver o también editar) con personas o grupos.</p></details>
+      <details><summary>¿Puede usarlo toda la familia?</summary><p>Sí, en el mismo servidor: cada persona tiene su usuario y su agenda, separada del todo. Agendario es un gestor personal: los contactos no se comparten entre usuarios.</p></details>
+      <details><summary>¿Cómo funcionan las listas de deseos?</summary><p>Apuntas en <b>Mis deseos</b> lo que te gustaría que te regalaran, creas una ocasión (Navidad, tu cumpleaños…) y mandas a cada invitado su enlace personal. Lo abren en el navegador, sin app ni cuenta, y marcan lo que van a regalar, solos o entre varios. Ellos ven quién regala qué; tú no, hasta el día siguiente, cuando se revela y pasa todo a tus regalos recibidos. Necesita un subdominio propio para los enlaces (ver Instalación). Todos los detalles en <a href="https://dagarin.es/regalario">dagarin.es/regalario</a>.</p></details>
     </div>
   </div>
 </section>
@@ -736,8 +763,12 @@ window.AGENDARIO_CONFIG = {
   // renombre al subirlas junto a las antiguas. Las de «noSuffix» siguen siendo las de antes.
   suffix: "-v151",
   noSuffix: ["install_registro", "install_importar"],
+  // Capturas nuevas de cada versión con su propio sufijo (las demás siguen con «suffix»)
+  suffixFor: { web_deseos: "-v160", web_deseos_oscuro: "-v160", app_deseos: "-v160", app_deseos_oscuro: "-v160" },
+  // Carpeta de esas capturas nuevas (si las subes otro mes que las demás); vacío = shotsBase
+  suffixBase: "https://dagarin.es/wp-content/uploads/2026/12/",
   favicon: "",                // vacío = icono de Agendario incrustado; o URL de un PNG subido (p. ej. …/agendario-icono.png)
-  manual: "https://dagarin.es/wp-content/uploads/2026/11/Agendario-Manual-1.5.1.pdf", // vacío = shotsBase + "Agendario-Manual.pdf"
+  manual: "https://dagarin.es/wp-content/uploads/2026/12/Agendario-Manual-1.6.0.pdf", // vacío = shotsBase + "Agendario-Manual.pdf"
   // URL sueltas, solo si WordPress renombró alguna imagen (tienen prioridad)
   shots: {
     // Portada
@@ -757,6 +788,7 @@ window.AGENDARIO_CONFIG = {
     web_etiquetas: "", web_etiquetas_oscuro: "",
     web_duplicados: "", web_duplicados_oscuro: "",
     web_copias: "", web_copias_oscuro: "",
+    web_deseos: "", web_deseos_oscuro: "",
     // Galería · app
     app_lista: "", app_lista_oscuro: "",
     app_ficha: "", app_ficha_oscuro: "",
@@ -769,7 +801,8 @@ window.AGENDARIO_CONFIG = {
     app_regalos_ficha: "",
     app_etiquetas: "", app_etiquetas_oscuro: "",
     app_llamadas: "", app_llamadas_oscuro: "",
-    app_copias: "", app_copias_oscuro: ""
+    app_copias: "", app_copias_oscuro: "",
+    app_deseos: "", app_deseos_oscuro: ""
   }
 };
 
@@ -793,8 +826,9 @@ window.AGENDARIO_CONFIG = {
 
   /* Capturas: imagen si hay URL; si no, un recuadro con el nombre que falta */
   function shot(key, alt) {
-    var suf = C.suffix && (C.noSuffix || []).indexOf(key) < 0 ? C.suffix : "";
-    var url = C.shots[key] || (C.shotsBase && KEYS.indexOf(key) >= 0 ? C.shotsBase + key + suf + (C.ext || ".webp") : "");
+    var suf = (C.suffixFor || {})[key] != null ? C.suffixFor[key] : C.suffix && (C.noSuffix || []).indexOf(key) < 0 ? C.suffix : "";
+    var base = (C.suffixFor || {})[key] != null && C.suffixBase ? C.suffixBase : C.shotsBase;
+    var url = C.shots[key] || (base && KEYS.indexOf(key) >= 0 ? base + key + suf + (C.ext || ".webp") : "");
     if (url) return '<img class="shot" loading="lazy" src="' + url + '" alt="' + (alt || "") + '">';
     return '<div class="ph">' + key + '</div>';
   }
@@ -855,6 +889,7 @@ window.AGENDARIO_CONFIG = {
       ["regalos_recibidos", "Recibidos", "Lo que te han regalado"],
       ["etiquetas", "Etiquetas", "Arrastrar, colores y Gmail"],
       ["duplicados", "Duplicados", "Combinar con vista previa"],
+      ["deseos", "Mis deseos", "Listas para que te regalen, con sorpresa"],
       ["copias", "Backups", "Tus contactos siempre a salvo"]
     ],
     app: [
@@ -867,11 +902,12 @@ window.AGENDARIO_CONFIG = {
       ["regalos_recibidos", "Recibidos", "Lo que te han regalado, de uno o de varios"],
       ["etiquetas", "Etiquetas", "Mantén pulsado y arrastra"],
       ["llamadas", "Llamadas", "Registro solo para ti"],
+      ["deseos", "Mis deseos", "Tu lista, un enlace para cada invitado"],
       ["copias", "Backups", "Tus contactos siempre a salvo"]
     ]
   };
   var state = { dev: "web", mode: "claro", i: 0 };
-  var gal = $("[data-gal]"), top = $("[data-gal-top]"), bot = $("[data-gal-bot]"), stage = $("[data-gal-stage]");
+  var gal = $("[data-gal]"), top = $("[data-gal-top]"), bot = $("[data-gal-bot]"), stage = $("[data-gal-stage]"), cap = $("[data-gal-cap]");
   var narrow = window.matchMedia("(max-width:900px)"), built = "";
   function btn(it, i) {
     return '<button type="button" data-i="' + i + '"><b>' + it[1] + '</b><span>' + it[2] + "</span></button>";
@@ -907,6 +943,11 @@ window.AGENDARIO_CONFIG = {
     stage.innerHTML = state.dev === "web"
       ? '<div class="laptop fade"><div class="screen">' + inner + "</div></div>"
       : '<div class="phone fade"><div class="screen">' + inner + "</div></div>";
+    // Móvil: el texto de la función, debajo de la captura (en el ordenador ya se ve en cada botón)
+    if (cap && cap.textContent !== it[2]) {
+      cap.textContent = it[2];
+      cap.classList.remove("fade"); void cap.offsetWidth; cap.classList.add("fade");
+    }
   }
   if (narrow.addEventListener) narrow.addEventListener("change", render); else if (narrow.addListener) narrow.addListener(render);
   window.addEventListener("resize", edges);
@@ -994,7 +1035,7 @@ window.AGENDARIO_CONFIG = {
     ["porque", "funciones", "regalos", "capturas", "instalar", "android", "preguntas"].forEach(function (id) { var s = document.getElementById(id); if (s) spy.observe(s); });
   } else { $$(".rv").forEach(function (el) { el.classList.add("in"); }); }
   /* Flecha «volver al principio» junto a la etiqueta de cada sección (menos la portada) */
-  $$("section .eyebrow").forEach(function (eb) {
+  $$("section .eyebrow:not(.no-top)").forEach(function (eb) {
     var b = document.createElement("button");
     b.type = "button"; b.className = "totop"; b.textContent = "↑";
     b.title = "Volver al principio"; b.setAttribute("aria-label", "Volver al principio de la página");

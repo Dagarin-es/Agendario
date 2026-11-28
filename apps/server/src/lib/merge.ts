@@ -87,7 +87,7 @@ export function autoMergeValues(keep: Row, remove: Row): Omit<MergeRequest, "kee
 /**
  * Fusiona `removeId` en `keepId`:
  * - el que se conserva recibe `values` (elegidos en el panel o calculados automáticamente);
- * - se trasladan etiquetas, regalos, fechas, relaciones y compartidos;
+ * - se trasladan etiquetas, regalos, fechas y relaciones;
  * - el duplicado se borra y su UID se recuerda para no recrearlo al reimportar.
  */
 export async function mergeContacts(userId: string, req: MergeRequest) {
@@ -170,7 +170,6 @@ export async function mergeContacts(userId: string, req: MergeRequest) {
         AND NOT EXISTS (
           SELECT 1 FROM contact_shares k WHERE k.contact_id = ${keepId}
             AND k.user_id IS NOT DISTINCT FROM s.user_id AND k.group_id IS NOT DISTINCT FROM s.group_id)`);
-    await tx.delete(schema.contactShares).where(eq(schema.contactShares.contactId, removeId));
 
     await tx.delete(dd).where(or(eq(dd.aId, removeId), eq(dd.bId, removeId)));
     // Los contactos que tenían como empresa al duplicado pasan a apuntar al principal

@@ -211,6 +211,20 @@
       "when": 1795850000000,
       "tag": "0029_gift_ratings",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1795950000000,
+      "tag": "0030_remove_sharing",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1796050000000,
+      "tag": "0031_wishes",
+      "breakpoints": true
     }
   ]
 }

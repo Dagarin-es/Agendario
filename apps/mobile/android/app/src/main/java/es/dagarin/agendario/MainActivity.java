@@ -30,6 +30,13 @@ public class MainActivity extends BridgeActivity {
             String p = "/" + (u.getHost() == null ? "" : u.getHost()) + (u.getPath() == null ? "" : u.getPath());
             // Solo rutas propias conocidas (nada de rutas raras desde enlaces de fuera)
             if (p.matches("^/(contacts/[0-9a-fA-F-]{36}|reminders|notes)$")) path = p;
+            // «Añadir a mi Agendario» desde la página de una lista de deseos: agendario://lista?u=<enlace de la lista>
+            if ("lista".equals(u.getHost())) {
+                String link = u.getQueryParameter("u");
+                if (link != null && link.length() < 400 && link.matches("^https://[^\\s#/]+/?#l=[A-Za-z0-9_-]{40,64}$")) {
+                    path = "/gifts/remote?u=" + android.net.Uri.encode(link);
+                }
+            }
             intent.setData(null);
         }
         if (path != null) {

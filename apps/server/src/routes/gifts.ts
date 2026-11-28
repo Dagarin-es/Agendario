@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -164,11 +164,19 @@ export const giftRoutes = new Hono<AppEnv>()
   .patch("/gifts-received/:id", idParam, zValidator("json", giftReceivedPatchSchema), async (c) => {
     const user = c.get("user");
     const { id } = c.req.valid("param");
-    const { contactIds, ...body } = c.req.valid("json");
-    const [old] = await db.select({ id: gr.id }).from(gr).where(and(eq(gr.id, id), eq(gr.userId, user.id)));
+    const { contactIds, fromNames, ...body } = c.req.valid("json");
+    const [old] = await db.select({ id: gr.id, fromNames: gr.fromNames }).from(gr).where(and(eq(gr.id, id), eq(gr.userId, user.id)));
     if (!old) throw new HTTPException(404, { message: "Regalo no encontrado" });
-    if (Object.keys(body).length) await db.update(gr).set(body).where(eq(gr.id, id));
-    if (contactIds) await setGiftContacts(id, await checkContacts(user.id, contactIds));
+    const names = fromNames ? [...new Set(fromNames)] : old.fromNames;
+    // Siempre tiene que quedar alguien: un contacto o un nombre suelto
+    const ids = contactIds ? (contactIds.length ? await checkContacts(user.id, contactIds) : []) : undefined;
+    if (ids && !ids.length && !names.length) throw new HTTPException(400, { message: "Elige quién te lo regaló" });
+    if (fromNames && !names.length && !ids) {
+      const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.giftReceivedContacts).where(eq(schema.giftReceivedContacts.giftId, id));
+      if (!n) throw new HTTPException(400, { message: "Elige quién te lo regaló" });
+    }
+    if (Object.keys(body).length || fromNames) await db.update(gr).set({ ...body, ...(fromNames ? { fromNames: names } : {}) }).where(eq(gr.id, id));
+    if (ids) await setGiftContacts(id, ids);
     return c.json(await getReceived(user.id, id));
   })
 

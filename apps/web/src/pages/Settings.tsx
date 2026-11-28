@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { WishPublicUrlSettings } from "../components/Wishes";
 import { Chevron } from "../components/Chevron";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
@@ -695,6 +696,7 @@ export function SettingsPage() {
           <SyncSettings Section={Section} />
           {me && <CardDavSettings Section={Section} me={me} />}
           <CalendarFeedSettings Section={Section} />
+          {me?.isAdmin && <WishPublicUrlSettings Section={Section} />}
           <Section icon="📇" title="Importar y exportar .vcf" desc="Para traer contactos de otra agenda o sacar una copia que abre cualquier programa de contactos.">
             <div className="flex flex-wrap gap-2">
               <Link to="/import" className="btn-ghost border border-slate-200">📥 Importar .vcf</Link>

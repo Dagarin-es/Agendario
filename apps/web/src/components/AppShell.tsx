@@ -60,6 +60,9 @@ const tabs = [
 
 const titles: [RegExp, string][] = [
   [/^\/$/, "Contactos"],
+  [/^\/gifts\/lists\/new/, "Nueva lista"],
+  [/^\/gifts\/lists\//, "Lista de deseos"],
+  [/^\/gifts\/remote/, "Lista de otra persona"],
   [/^\/gifts/, "Regalos"],
   [/^\/share-gift/, "Añadir idea de regalo"],
   [/^\/upcoming/, "Fechas"],
@@ -73,7 +76,6 @@ const titles: [RegExp, string][] = [
   [/^\/contacts\//, "Contacto"],
   [/^\/settings/, "Ajustes"],
   [/^\/tags/, "Etiquetas"],
-  [/^\/groups/, "Grupos"],
   [/^\/trash/, "Papelera"],
   [/^\/import/, "Importar"],
   [/^\/call-log/, "Registro de llamadas"],
@@ -85,7 +87,6 @@ const menuPages: [RegExp, string, string][] = [
   [/^\/notes/, "📝", "Últimas notas"],
   [/^\/call-log/, "📞", "Registro de llamadas"],
   [/^\/tags/, "🏷️", "Etiquetas"],
-  [/^\/groups/, "👪", "Grupos"],
   [/^\/trash/, "🗑️", "Papelera"],
 ];
 
@@ -218,7 +219,7 @@ export function AppShell() {
         )}
         {menuPage && !sheet ? (
           <span className="flex min-w-0 flex-1 items-center gap-2 text-[20px] font-medium tracking-tight text-indigo-950">
-            <button className="shrink-0 rounded-full px-1 -mx-1 active:bg-indigo-100" onClick={() => { void haptic(); setSheet(true); }} aria-haspopup="dialog" aria-label="Abrir el menú de usuario">{APP_NAME}</button>
+            <button className="shrink-0 rounded-full px-1 -mx-1 active:bg-indigo-100" onClick={() => { void haptic(); nav("/"); }} aria-label="Volver a Contactos">{APP_NAME}</button>
             <span className="crumb-arrow" aria-hidden="true">
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 5l7 7-7 7" /></svg>
             </span>
@@ -373,7 +374,6 @@ function MoreSheet({ onClose, onAbout }: { onClose: () => void; onAbout: () => v
           <Link to="/notes" className={item} onClick={onClose}>📝 Últimas notas</Link>
           <Link to="/call-log" className={item} onClick={onClose}>📞 Registro de llamadas</Link>
           <Link to="/tags" className={item} onClick={onClose}>🏷️ Etiquetas</Link>
-          <Link to="/groups" className={item} onClick={onClose}>👪 Grupos</Link>
           <Link to="/trash" className={item} onClick={onClose}>🗑️ Papelera</Link>
           <Link to="/settings" className={item} onClick={onClose}>⚙️ Ajustes</Link>
           <div className="my-1 h-px bg-slate-200" />

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useGiftSort } from "../lib/giftSort";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import type { GiftIdea, GiftOverviewItem, GivenGift } from "@agendario/shared";
 import { Avatar } from "../components/Avatar";
@@ -8,6 +8,7 @@ import { Modal } from "../components/Dialogs";
 import { GiftEditDialog, GiftStatusButton, GiftThumb, GivenEditDialog, QuickIdeaForm } from "../components/Gifts";
 import { givenImage, GivenGiftRow } from "../components/GiftExtras";
 import { ReceivedGiftsList } from "../components/GiftsReceived";
+import { WishesView } from "../components/Wishes";
 import { api } from "../lib/api";
 import { syncNativeReminders } from "../lib/native";
 import { formatDate } from "../lib/format";
@@ -61,22 +62,26 @@ function Card({ it, onAdd, onEdit, onChanged }: { it: GiftOverviewItem; onAdd: (
   );
 }
 
-/** Regalos: «Para regalar» (fechas e ideas), «Regalados» (lo ya regalado) y «Recibidos» (lo que te han regalado). */
+/** Regalos: «Para regalar» (fechas e ideas), «Regalados» (lo ya regalado), «Recibidos» (lo que te han regalado) y «Mis deseos» (lo que quieres que te regalen). */
 export function GiftsPage() {
   const [params, setParams] = useSearchParams();
   const v = params.get("vista");
-  const view = v === "recibidos" || v === "regalados" ? v : "regalar";
+  const view = v === "recibidos" || v === "regalados" || v === "deseos" ? v : "regalar";
   const tabs = [
     { id: "regalar", label: "🎁 Para regalar" },
     { id: "regalados", label: "✅ Regalados" },
     { id: "recibidos", label: "🎀 Recibidos" },
+    { id: "deseos", label: "🌟 Mis deseos" },
   ] as const;
+  // La pestaña elegida, siempre a la vista en la banda (en el móvil se desplaza de lado)
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => { navRef.current?.querySelector<HTMLElement>(".is-on")?.scrollIntoView({ block: "nearest", inline: "nearest" }); }, [view]);
   return (
     <div className="space-y-3">
       <h1 className="sr-only">Regalos</h1>
       {/* Siempre arriba al desplazar */}
       {/* Banda de pestañas pegada a la cabecera: siempre visible */}
-      <nav className="m3-subtabs" role="tablist" aria-label="Regalos">
+      <nav ref={navRef} className="m3-subtabs" role="tablist" aria-label="Regalos">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -89,7 +94,7 @@ export function GiftsPage() {
           </button>
         ))}
       </nav>
-      {view === "recibidos" ? <ReceivedGiftsList /> : view === "regalados" ? <GivenList /> : <ToGive />}
+      {view === "recibidos" ? <ReceivedGiftsList /> : view === "regalados" ? <GivenList /> : view === "deseos" ? <WishesView /> : <ToGive />}
     </div>
   );
 }
