@@ -5,6 +5,7 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 ## Para la próxima versión
 
 - **Aviso al abrir el enlace de una lista (28-11-2026, se quedó fuera de la 1.6.0)**: en `lib/wishPage.ts` (tarjeta de entrada, `if (!seen)`), quitar «Si eres {dueño}, no sigas…» y dejar: **«Hola Ana. Este enlace es solo para ti. No lo compartas con nadie. Si no eres Ana, no debes continuar.»** (con `state.me.name`). El botón «Soy Ana, continuar» se queda.
+- **Fallo: dirección pública de las listas con puerto (28-11-2026)**: con `https://regalario.dagarin.es:8443`, «Comprobar» dice «también deja pasar el resto de la aplicación» y la página del invitado no sale. Causa: `publicHost()` (`lib/wishes.ts`) devuelve `host` con puerto (`regalario.dagarin.es:8443`) y la guardia de `index.ts` lo compara con la cabecera `Host`, que Nginx Proxy Manager manda sin puerto (`$host`). Arreglo: comparar solo el nombre (`hostname`, sin puerto) en los dos lados (guardia y comprobación). Probarlo con y sin puerto, y con `Host` con y sin puerto.
 - **Emoji de Mis deseos (28-11-2026)**: cambiar 🌟 por 🧞 (genio), que se confundía con ⭐ de Favoritos: pestaña de Regalos (`pages/Gifts.tsx`), título de `components/Wishes.tsx`, «🧞 Es para mí: a Mis deseos» en `pages/ShareGift.tsx` y el manual (`capitulo17.html`). Las landings ya lo llevan.
 
 ## Revisión en Google Play (cuando Daniel diga)
