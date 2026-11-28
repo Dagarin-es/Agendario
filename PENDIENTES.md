@@ -5,6 +5,12 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 ## Para la próxima versión
 
 - **Landing (ya entregada a Daniel, 28-11-2026)**: en el móvil, debajo de la captura de la galería sale el texto corto de la opción elegida (`.gal-cap`, solo ≤900 px) y se define la animación `agl-in` que faltaba. La versión buena está en el proyecto de Claude (`web/agendario-landing.html`): al generar, copiarla a `docs/web/agendario-landing.html`.
+- **Quitar todo lo de compartir (28-11-2026)**: Agendario pasa a ser un gestor personal y privado. Se mantienen **varios usuarios**, cada uno con su agenda totalmente separada; desaparece compartir contactos entre usuarios.
+  - **Limpieza completa ya** (Daniel confirma que no hay contactos compartidos ni públicos): migración que borra las tablas `contact_shares`, `group_members` y `groups` y la columna `contacts.visibility` (y los enums `visibility`/`permission` si ya no se usan). Comprobar antes en la migración que no queda nada compartido; si lo hubiera, no tocar nada y avisar.
+  - **Servidor**: fuera `groupRoutes`, las rutas de compartir y la visibilidad; todo lo de «contactos visibles/editables» pasa a ser «los del dueño» (contactos, búsqueda, duplicados, combinar, CardDAV, Fastmail, Gmail y sus fotos, exportar, calendario, historial…). Quitar los esquemas y tipos de shared que ya no se usen.
+  - **Copias de seguridad**: sacar esas tablas de `TABLES`; al restaurar una copia antigua, ignorar `groups`, `group_members`, `contact_shares` y el campo `visibility` sin fallar.
+  - **Web y app**: fuera `SharePanel`, la página `Groups` y sus entradas en el menú (`Layout`, `AppShell`), el selector de visibilidad y cualquier aviso de «compartido». Las APK antiguas que llamen a esas rutas deben recibir un error limpio, sin romperse.
+  - **Landing**: cambiar la tarjeta «Varios usuarios» (cada uno con su agenda, separada), la pregunta «¿Puedo compartir la agenda con mi familia?» y el «aunque compartas un contacto con tu familia» de Privacidad y de Regalos. **Manual**: quitar o cambiar lo que hable de compartir y de grupos. README y CHANGELOG al día.
 
 ## Revisión en Google Play (cuando Daniel diga)
 
