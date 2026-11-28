@@ -7,8 +7,8 @@
   Cómo usarla (igual que la de Agendario):
    1. Página «Regalario» con la plantilla «Elementor Canvas».
    2. Widget «HTML» y pega TODO este fichero dentro.
-   3. Sube las imágenes regalario_*-v160.webp a la biblioteca de medios (el
-      mismo mes) y pon la carpeta en REGALARIO_CONFIG.shotsBase (al final).
+   3. Sube por SFTP las imágenes regalario_*-v160.webp a la carpeta fija
+      wp-content/uploads/agendario/ (la misma que las de Agendario).
       Mientras falte una imagen se ve un recuadro con su nombre.
    Todo el CSS va dentro de #regalario: no toca el resto del blog.
   ============================================================================
@@ -248,11 +248,11 @@
 <script>
 window.REGALARIO_CONFIG = {
   email: "agendario@dagarin.com",
-  // Carpeta de la biblioteca de medios donde subiste las regalario_*-v160.webp (acaba en /)
-  shotsBase: "https://dagarin.es/wp-content/uploads/2026/12/",
+  // Carpeta fija donde están las regalario_*-v160.webp (acaba en /)
+  shotsBase: "https://dagarin.es/wp-content/uploads/agendario/",
   suffix: "-v160",
   ext: ".webp",
-  // URL sueltas, solo si WordPress renombró alguna imagen (tienen prioridad)
+  // URL sueltas para alguna imagen concreta (tienen prioridad)
   shots: {
     regalario_lista: "", regalario_varios: "", regalario_apuntado: "", regalario_falta: "",
     regalario_app_ocasion: "", regalario_app_revelado: "", regalario_app_enviar: ""

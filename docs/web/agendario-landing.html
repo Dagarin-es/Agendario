@@ -6,11 +6,10 @@
    1. Crea la página «Agendario» con la plantilla «Elementor Ancho completo»
       (o «Elementor Canvas» si no quieres la cabecera del blog).
    2. Añade un widget «HTML» y pega TODO este fichero dentro.
-   3. Sube a la biblioteca de medios las imágenes .webp del zip y el manual
-      (Agendario-Manual.pdf), todas el mismo mes, y pon en
-      AGENDARIO_CONFIG.shotsBase (al final del fichero) la carpeta donde han
-      quedado, p. ej. https://dagarin.es/wp-content/uploads/2026/11/
-      Si WordPress cambia el nombre de alguna, pega su URL en «shots».
+   3. Sube por SFTP las imágenes .webp y el manual (Agendario-Manual.pdf) a
+      la carpeta fija wp-content/uploads/agendario/ (sin mes ni año, fuera de
+      la biblioteca de medios). En cada versión se sobrescriben o se añaden
+      ficheros en esa misma carpeta: la dirección no cambia nunca.
       Mientras falte una imagen se ve un recuadro con su nombre.
    Todo el CSS va dentro de #agendario: no toca el resto del blog.
   ============================================================================
@@ -751,25 +750,24 @@ EOF</div>
 
 <script>
 /* ==========================================================================
-   CONFIGURACIÓN: pega aquí las URL de la biblioteca de medios de WordPress.
+   CONFIGURACIÓN: carpeta de las imágenes y del manual en dagarin.es.
    ========================================================================== */
 window.AGENDARIO_CONFIG = {
   repo: "Dagarin-es/agendario",
   email: "agendario@dagarin.com",
-  // Carpeta de la biblioteca de medios donde subiste las .webp y el manual (acaba en /)
-  shotsBase: "https://dagarin.es/wp-content/uploads/2026/11/",
+  // Carpeta fija donde están las .webp y el manual (acaba en /)
+  shotsBase: "https://dagarin.es/wp-content/uploads/agendario/",
   ext: ".webp",
-  // Las capturas de la 1.5.1 llevan este sufijo en el nombre (web_lista-v151.webp…) para que WordPress no las
-  // renombre al subirlas junto a las antiguas. Las de «noSuffix» siguen siendo las de antes.
+  // Sufijo de versión en el nombre de cada captura (web_lista-v151.webp…). Las de «noSuffix» no lo llevan.
   suffix: "-v151",
   noSuffix: ["install_registro", "install_importar"],
   // Capturas nuevas de cada versión con su propio sufijo (las demás siguen con «suffix»)
   suffixFor: { web_deseos: "-v160", web_deseos_oscuro: "-v160", app_deseos: "-v160", app_deseos_oscuro: "-v160" },
-  // Carpeta de esas capturas nuevas (si las subes otro mes que las demás); vacío = shotsBase
-  suffixBase: "https://dagarin.es/wp-content/uploads/2026/12/",
+  // Carpeta de esas capturas nuevas; vacío = shotsBase
+  suffixBase: "",
   favicon: "",                // vacío = icono de Agendario incrustado; o URL de un PNG subido (p. ej. …/agendario-icono.png)
-  manual: "https://dagarin.es/wp-content/uploads/2026/12/Agendario-Manual-1.6.0.pdf", // vacío = shotsBase + "Agendario-Manual.pdf"
-  // URL sueltas, solo si WordPress renombró alguna imagen (tienen prioridad)
+  manual: "",                 // vacío = shotsBase + "Agendario-Manual.pdf"
+  // URL sueltas para alguna imagen concreta (tienen prioridad)
   shots: {
     // Portada
     hero_web: "", hero_app: "",
