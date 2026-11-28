@@ -156,7 +156,7 @@
 #agendario .gal-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:32px 0}
 /* Galería, ordenador · web: la mitad de las opciones encima del portátil y la otra mitad debajo */
 #agendario .gal{display:flex;flex-direction:column;align-items:center;gap:22px}
-#agendario .gal-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;width:100%}
+#agendario .gal-list{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);align-items:start;gap:8px;width:100%}
 #agendario .gal-list:empty{display:none}
 #agendario .gal-list button{all:unset;box-sizing:border-box;cursor:pointer;padding:12px 14px;border-radius:14px;border:1px solid transparent;font-size:15px;text-align:center;transition:background .2s,border-color .2s,box-shadow .2s}
 #agendario .gal-list button:hover{background:rgba(255,255,255,.6)}
@@ -285,6 +285,15 @@
 #agendario .rv{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
 #agendario .rv.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){#agendario .rv{opacity:1;transform:none;transition:none}#agendario .float{animation:none}}
+#agendario .feat.bento .big{grid-column:span 2;grid-row:span 2;background:linear-gradient(160deg,#fffaf0,#fff3d6);border-color:#fde68a;padding:30px;display:flex;flex-direction:column}
+#agendario .feat.bento .big h3{font-size:26px;margin:16px 0 10px}
+#agendario .feat.bento .big p{font-size:16.5px;color:var(--ink)}
+#agendario .feat.bento .big ul{list-style:none;margin:16px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:15px;color:var(--mut)}
+#agendario .feat.bento .big .ico{width:64px;height:64px;font-size:34px;background:#fff}
+#agendario .feat.bento .new{position:absolute;top:22px;right:22px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#92400e;background:#fde68a;border-radius:999px;padding:5px 10px}
+#agendario .feat.bento .big{position:relative}
+#agendario .feat.bento .more{margin-top:auto;padding-top:18px;font-weight:700}
+@media(max-width:560px){#agendario .feat.bento .big{grid-column:auto;grid-row:auto}#agendario .feat.bento .big ul{grid-template-columns:1fr}}
 </style>
 
 <!-- ======================= NAVEGACIÓN ======================= -->
@@ -442,7 +451,8 @@
       <h2 class="h2">Mucho más que una lista de teléfonos</h2>
       <p class="lead">Todo lo que siempre has echado de menos en tu gestor de contactos, en la web, en el móvil y en el ordenador.</p>
     </div>
-    <div class="feat">
+    <div class="feat bento">
+      <div class="card rv big"><span class="new">Nuevo en la 1.6</span><div class="ico y">🧞</div><h3>Mis deseos</h3><p>Tu lista de lo que te gustaría que te regalaran, con foto, precio y una nota. Mándala con un enlace personal a cada invitado: marcan lo que regalan, solos o entre varios, y tú no te enteras hasta después.</p><ul><li>🔗 Un enlace para cada uno, sin app ni cuenta</li><li>👥 «Lo regalo yo» o entre varios</li><li>🤫 Sorpresa hasta el día siguiente</li><li>🎀 Lo regalado pasa solo a Recibidos</li></ul><a class="more" href="#deseos">Cómo funciona ↓</a></div>
       <div class="card rv"><div class="ico">👤</div><h3>Fichas completas</h3><p>Foto y portada, varios teléfonos, emails, webs y direcciones geolocalizadas en el mapa.</p></div>
       <div class="card rv"><div class="ico p">🎂</div><h3>Fechas y avisos</h3><p>Cumpleaños, aniversarios y un calendario que te avisa de los regalos pendientes.</p></div>
       <div class="card rv"><div class="ico g">📔</div><h3>Efemérides</h3><p>Tus propias fechas para recordar: el coche nuevo, un ascenso, un viaje… con foto y comentario.</p></div>
@@ -458,7 +468,6 @@
       <div class="card rv"><div class="ico y">🏷️</div><h3>Etiquetas y subetiquetas</h3><p>Como carpetas, en 20 colores, también en cada teléfono o email. Ordénalas arrastrando, filtra y exporta por etiqueta.</p></div>
       <div class="card rv"><div class="ico">⭐</div><h3>Favoritos</h3><p>Márcalos con un toque en la estrella, desde la lista o desde la ficha, y fíltralos al momento junto al buscador. Viajan a Gmail como destacados y al móvil como grupo.</p></div>
       <div class="card rv"><div class="ico p">🕓</div><h3>Historial y papelera</h3><p>60 días para deshacer cualquier cambio o recuperar un contacto borrado.</p></div>
-      <div class="card rv"><div class="ico y">🌟</div><h3>Mis deseos</h3><p>Tu lista de lo que te gustaría que te regalaran. Mándala con un enlace personal a cada uno: marcan lo que regalan y tú no te enteras hasta después.</p></div>
       <div class="card rv"><div class="ico g">👨‍👩‍👧</div><h3>Varios usuarios</h3><p>Toda la casa en el mismo servidor, cada uno con su agenda, separada del todo.</p></div>
     </div>
   </div>
@@ -493,7 +502,7 @@
     <div class="grid2 gwin" id="deseos">
       <div class="rv"><div class="gphone"><div data-shot="app_deseos"></div></div></div>
       <div class="rv">
-        <span class="eyebrow no-top">🌟 Nuevo en la 1.6 · Mis deseos</span>
+        <span class="eyebrow no-top">🧞 Nuevo en la 1.6 · Mis deseos</span>
         <h3 style="font-size:28px">Y al revés: lo que quieres que te regalen</h3>
         <ul>
           <li><span class="ico y">📝</span><span><b>Tu lista de deseos</b>Con enlace, foto, precio y una nota («talla M, azul o negra»). Desde el móvil, compartiendo desde cualquier tienda.</span></li>
