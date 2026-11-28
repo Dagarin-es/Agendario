@@ -4,7 +4,8 @@ Aquí se apunta lo que Daniel va pidiendo. No se genera nada hasta que diga «ge
 
 ## Para la próxima versión
 
-(Nada todavía: lo de la 1.6.0 ya está hecho.)
+- **Aviso al abrir el enlace de una lista (28-11-2026, se quedó fuera de la 1.6.0)**: en `lib/wishPage.ts` (tarjeta de entrada, `if (!seen)`), quitar «Si eres {dueño}, no sigas…» y dejar: **«Hola Ana. Este enlace es solo para ti. No lo compartas con nadie. Si no eres Ana, no debes continuar.»** (con `state.me.name`). El botón «Soy Ana, continuar» se queda.
+- **Emoji de Mis deseos (28-11-2026)**: cambiar 🌟 por 🧞 (genio), que se confundía con ⭐ de Favoritos: pestaña de Regalos (`pages/Gifts.tsx`), título de `components/Wishes.tsx`, «🧞 Es para mí: a Mis deseos» en `pages/ShareGift.tsx` y el manual (`capitulo17.html`). Las landings ya lo llevan.
 
 ## Revisión en Google Play (cuando Daniel diga)
 
